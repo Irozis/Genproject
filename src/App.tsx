@@ -332,21 +332,42 @@ export default function App() {
     setProject((p) => {
       const rules = getFormat(formatKey, p.customFormats)
       const override = p.formatOverrides?.[formatKey]
+      const focal = p.imageFocals?.[formatKey]
+      const masterForFormat: Scene = focal && p.master.image
+        ? {
+            ...p.master,
+            image: { ...p.master.image, focalX: focal.x, focalY: focal.y },
+          }
+        : p.master
       const positioned = buildScene(
-        p.master,
+        masterForFormat,
         formatKey,
         p.brandKit,
         p.enabled,
-        { ...(override ? { override } : {}), customFormats: p.customFormats },
+        {
+          ...(override ? { override } : {}),
+          assetHint: p.assetHint,
+          blockOverrides: p.blockOverrides?.[formatKey],
+          locale: p.activeLocale,
+          customFormats: p.customFormats,
+        },
       )
       const fixed = fixLayout(positioned, rules)
+      const fixedLayout = extractLayout(fixed)
       const next: Scene = {
         ...p.master,
         title: p.master.title && fixed.title
           ? { ...p.master.title, fill: fixed.title.fill }
           : p.master.title,
       }
-      return { ...p, master: next }
+      return {
+        ...p,
+        master: next,
+        blockOverrides: {
+          ...(p.blockOverrides ?? {}),
+          [formatKey]: fixedLayout,
+        },
+      }
     })
   }, [setProject])
 
@@ -532,4 +553,14 @@ function Toast({ text, onDismiss }: { text: string; onDismiss: () => void }) {
       <button className="toast__close" onClick={onDismiss}>×</button>
     </div>
   )
+}
+
+function extractLayout(scene: Scene): Partial<Record<BlockKind, Block>> {
+  const out: Partial<Record<BlockKind, Block>> = {}
+  for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
+    const b = scene[k]
+    if (!b) continue
+    out[k] = { x: b.x, y: b.y, w: b.w, h: b.h }
+  }
+  return out
 }

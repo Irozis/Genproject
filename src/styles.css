@@ -309,7 +309,7 @@ input, select, textarea {
 .el-row__head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   padding: 8px 10px;
 }
 .el-row__check {
@@ -320,7 +320,23 @@ input, select, textarea {
   font-size: 13px;
   cursor: pointer;
 }
+.el-row__inline-text {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+}
+.el-row__inline-text:focus {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
 .el-row__toggle {
+  margin-left: auto;
   width: 24px; height: 24px;
   border-radius: 6px;
   color: var(--ink-2);

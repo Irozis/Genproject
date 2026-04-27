@@ -71,6 +71,16 @@ describe('chooseModel', () => {
     expect(chooseModel(p)).toBe('hero-overlay')
   })
 
+  it('returns split-right-image for horizontal formats', () => {
+    const p = {
+      hasImage: true,
+      imageIsLarge: true,
+      isPortrait: false,
+      isWide: true,
+    }
+    expect(chooseModel(p)).toBe('split-right-image')
+  })
+
   it('returns image-top-text-bottom for portrait formats', () => {
     for (const fmt of ['marketplace-highlight', 'story-vertical'] as const) {
       const rules = getFormat(fmt)

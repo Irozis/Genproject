@@ -21,18 +21,23 @@ export type ContentProfile = {
 export function profile(scene: Scene, rules: FormatRuleSet, enabled: EnabledMap): ContentProfile {
   const hasImage = enabled.image && !!scene.image && !!scene.image.src
   const imageIsLarge = hasImage && (scene.image?.w ?? 0) >= 30
-  const isPortrait = rules.aspectRatio < 0.85
-  const isWide = rules.aspectRatio > 2
+  // Portrait starts below ~4:5. 1080x1350 and 1080x1920 both count; 1:1 does not.
+  const isPortrait = rules.aspectRatio < 0.9
+  // "Horizontal" for split layout. Real-world ad banners are often only mildly wide.
+  const isWide = rules.aspectRatio > 1.1
   return { hasImage, imageIsLarge, isPortrait, isWide }
 }
 
 export function chooseModel(p: ContentProfile): CompositionModel {
   // Strict, explicit decision tree. No scoring, no fallback chain.
   if (!p.hasImage) return 'text-dominant'
+  // Horizontal formats read best as text column + media column.
   if (p.isWide) return 'split-right-image'
+  // Portrait formats keep image-first storytelling, then text stack.
   if (p.isPortrait) return 'image-top-text-bottom'
+  // Square / near-square formats use text overlay with a protective scrim.
   if (p.imageIsLarge) return 'hero-overlay'
-  return 'split-right-image'
+  return 'hero-overlay'
 }
 
 // ---------------------------------------------------------------------------
