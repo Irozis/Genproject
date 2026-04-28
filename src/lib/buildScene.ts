@@ -57,11 +57,12 @@ export function buildScene(
 
   // 3. compute positioned scene
   const positioned = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
+  const withUserTextOverrides = applyUserTextOverrides(master, positioned)
 
   // 4. focal-aware background: when an image with non-default focal is placed,
   //    retarget a gradient background to radiate from the subject. Linear
   //    gradients stay linear when image is absent or focal is dead-centre.
-  const focalAware = applyFocalGradient(positioned)
+  const focalAware = applyFocalGradient(withUserTextOverrides)
 
   // 5. snap text blocks to a quarter-gutter baseline so stacks line up visually
   //    across formats without anyone having to hand-tune y values.
@@ -75,6 +76,40 @@ export function buildScene(
 
   // 8. apply explicit per-format geometry overrides copied from another format.
   return applyBlockOverrides(clamped, options.blockOverrides)
+}
+
+type TextStyleOverride = Partial<Pick<
+  NonNullable<Scene['title']>,
+  'fontSize' | 'fill' | 'align' | 'maxLines' | 'transform'
+>>
+
+type SceneWithBlockOverrides = Scene & {
+  blocks?: Partial<Record<'title' | 'subtitle' | 'cta' | 'badge', TextStyleOverride>>
+}
+
+function applyUserTextOverrides(master: Scene, scene: Scene): Scene {
+  const overrides = (master as SceneWithBlockOverrides).blocks
+  if (!overrides) return scene
+  const out: Scene = { ...scene }
+  for (const kind of ['title', 'subtitle', 'cta', 'badge'] as const) {
+    const block = out[kind]
+    const user = overrides[kind]
+    if (!block || !user) continue
+    const fontSize = user.fontSize ?? block.fontSize
+    const fill = user.fill ?? block.fill
+    const align = user.align ?? block.align
+    const maxLines = user.maxLines ?? block.maxLines
+    const transform = user.transform ?? block.transform
+    ;(out as Record<string, unknown>)[kind] = {
+      ...block,
+      fontSize,
+      fill,
+      align,
+      maxLines,
+      transform,
+    }
+  }
+  return out
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {
