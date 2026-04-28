@@ -78,6 +78,22 @@ describe('fixLayout — contrast check', () => {
     expect(fixed.title?.fill).toBe('#000000')
   })
 
+  it('also fixes low-contrast subtitle fill', () => {
+    const rules = getFormat('marketplace-card')
+    const scene: Scene = {
+      background: { kind: 'gradient', stops: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] },
+      accent: '#000000',
+      subtitle: {
+        text: 'Sub',
+        x: 8, y: 16, w: 60,
+        fontSize: 3, charsPerLine: 24, maxLines: 2,
+        weight: 400, fill: '#F8F8F8',
+      },
+    }
+    const fixed = fixLayout(scene, rules)
+    expect(fixed.subtitle?.fill).toBe('#111111')
+  })
+
   it('inverts to white on dark solid background', () => {
     const rules = getFormat('marketplace-card')
     const scene: Scene = {
@@ -104,6 +120,25 @@ describe('fixLayout — contrast check', () => {
       title: { ...baseScene.title!, fill: '#F0F0F0' },
     }
     expect(fixLayout(split, rules).title?.fill).toBe('#111111')
+  })
+})
+
+describe('fixLayout — text font fitting', () => {
+  it('shrinks text block fontSize when content overflows bounds', () => {
+    const rules = getFormat('marketplace-card')
+    const scene: Scene = {
+      background: { kind: 'solid', color: '#FFFFFF' },
+      accent: '#000000',
+      title: {
+        text: 'Very long title that should not fit inside a tiny text rectangle',
+        x: 10, y: 10, w: 14, h: 6,
+        fontSize: 10, charsPerLine: 18, maxLines: 2,
+        weight: 800, fill: '#111111',
+      },
+    }
+    const fixed = fixLayout(scene, rules)
+    expect((fixed.title?.fontSize ?? 0)).toBeLessThan(scene.title!.fontSize)
+    expect((fixed.title?.fontSize ?? 0) * rules.width / 100).toBeGreaterThanOrEqual(12)
   })
 })
 
@@ -247,5 +282,17 @@ describe('checkOverflow', () => {
     }
     const issues = checkOverflow(scene, rules)
     expect(issues.some((i) => /below fold/.test(i.message))).toBe(true)
+  })
+
+  it('fixLayout reduces warnings for below-fold + low-contrast scene', () => {
+    const scene: Scene = {
+      background: cleanBg, accent: '#000',
+      title: { ...textDefaults, x: 10, y: 92, w: 60, text: 'Title', fill: '#FAFAFA' },
+      subtitle: { ...textDefaults, x: 10, y: 93, w: 60, text: 'Subtitle', fill: '#F5F5F5' },
+    }
+    const before = checkOverflow(scene, rules).length
+    const fixed = fixLayout(scene, rules)
+    const after = checkOverflow(fixed, rules).length
+    expect(after).toBeLessThan(before)
   })
 })

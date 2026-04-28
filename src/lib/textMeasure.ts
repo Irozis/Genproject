@@ -50,6 +50,13 @@ export type WrapInput = {
   balance?: boolean
 }
 
+export type FontFitInput = {
+  baseFontSizePx: number
+  minFontSizePx: number
+  fits: (fontSizePx: number) => boolean
+  precisionPx?: number
+}
+
 export function wrapText(input: WrapInput): string[] {
   const { text, fontSizePx, fontWeight, fontFamily, maxWidthPx, maxLines } = input
   const avoidOrphans = input.avoidOrphans !== false
@@ -102,6 +109,26 @@ export function wrapText(input: WrapInput): string[] {
   }
   if (avoidOrphans && !ellipsisApplied) return rebalanceOrphan(result, measure, maxWidthPx)
   return result
+}
+
+export function fitFontSize(input: FontFitInput): number {
+  const precision = input.precisionPx ?? 0.25
+  const min = Math.max(0, input.minFontSizePx)
+  const base = Math.max(min, input.baseFontSizePx)
+  if (input.fits(base)) return base
+  if (!input.fits(min)) return min
+
+  let lo = min
+  let hi = base
+  while (hi - lo > precision) {
+    const mid = (lo + hi) / 2
+    if (input.fits(mid)) {
+      lo = mid
+    } else {
+      hi = mid
+    }
+  }
+  return lo
 }
 
 function rawMeasure(s: string, fontSpec: string, ctx: CanvasRenderingContext2D | null): number {

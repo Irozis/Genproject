@@ -2,6 +2,7 @@
 // Does NOT change composition model. Only nudges sizes/colors to fix readability.
 
 import { luminance } from './color'
+import { fitFontSize, wrapText } from './textMeasure'
 import type { Background, BlockKind, FormatRuleSet, Scene, TextBlock } from './types'
 
 export type LayoutIssue = {
@@ -23,9 +24,13 @@ export function fixLayout(scene: Scene, rules: FormatRuleSet): Scene {
     const b = scene[k]
     if (!b) continue
     const x = clamp(b.x, sz.left, 100 - sz.right - 1)
-    const y = clamp(b.y, sz.top, 100 - sz.bottom - 1)
-    const w = Math.min(b.w, 100 - sz.right - x)
-    ;(out as Record<string, unknown>)[k] = { ...b, x, y, w }
+    const w = clamp(Math.min(b.w, 100 - sz.right - x), 1, 100)
+    // Keep the full block (including implicit text height) inside the safe zone.
+    const h = b.h ?? estimateTextHeight(b as TextBlock)
+    const maxY = Math.max(sz.top, 100 - sz.bottom - h)
+    const y = clamp(b.y, sz.top, maxY)
+    const clamped = { ...b, x, y, w }
+    ;(out as Record<string, unknown>)[k] = maybeShrinkTextToBounds(k, clamped, rules)
   }
 
   // text contrast against approximate background color
@@ -33,7 +38,60 @@ export function fixLayout(scene: Scene, rules: FormatRuleSet): Scene {
   if (out.title && isLowContrast(out.title.fill, bgApprox)) {
     out.title = { ...out.title, fill: invertReadable(bgApprox) }
   }
+  if (out.subtitle && isLowContrast(out.subtitle.fill, bgApprox)) {
+    out.subtitle = { ...out.subtitle, fill: invertReadable(bgApprox) }
+  }
   return out
+}
+
+function maybeShrinkTextToBounds(
+  kind: BlockKind,
+  block: Scene[BlockKind],
+  rules: FormatRuleSet,
+): Scene[BlockKind] {
+  if (!block || !isTextNode(kind, block)) return block
+  const t = block as TextBlock & { type?: string }
+  if (!t.text?.trim()) return t
+  if (!t.h || t.h <= 0) return t
+
+  const widthPx = (t.w / 100) * rules.width
+  const heightPx = (t.h / 100) * rules.height
+  if (widthPx <= 0 || heightPx <= 0) return t
+
+  const basePx = (t.fontSize / 100) * rules.width
+  const minPx = 12
+  if (basePx <= minPx) return t
+
+  const lineHeight = t.lineHeight ?? 1.2
+  const doesFit = (fontSizePx: number): boolean => {
+    const lines = wrapText({
+      text: t.text,
+      fontSizePx,
+      fontWeight: t.weight,
+      fontFamily: 'Inter, Arial, sans-serif',
+      maxWidthPx: widthPx,
+      maxLines: t.maxLines,
+    })
+    if (lines.length === 0) return true
+    const hasEllipsis = (lines[lines.length - 1] ?? '').endsWith('…')
+    if (hasEllipsis) return false
+    const textHeightPx = fontSizePx * lineHeight * lines.length
+    return textHeightPx <= heightPx
+  }
+
+  const fittedPx = fitFontSize({
+    baseFontSizePx: basePx,
+    minFontSizePx: minPx,
+    fits: doesFit,
+  })
+  const fittedPct = (fittedPx / rules.width) * 100
+  return fittedPct < t.fontSize ? { ...t, fontSize: Math.max((minPx / rules.width) * 100, fittedPct) } : t
+}
+
+function isTextNode(kind: BlockKind, block: Scene[BlockKind]): boolean {
+  const runtimeType = (block as { type?: string } | undefined)?.type
+  if (runtimeType !== undefined) return runtimeType === 'text'
+  return kind === 'title' || kind === 'subtitle' || kind === 'cta' || kind === 'badge'
 }
 
 function clamp(v: number, lo: number, hi: number): number {

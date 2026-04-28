@@ -89,8 +89,27 @@ export function tonalStops(base: string): [string, string, string] {
 export function luminance(hex: string): number {
   const c = hex.replace('#', '')
   if (c.length !== 6) return 0.5
-  const r = parseInt(c.slice(0, 2), 16) / 255
-  const g = parseInt(c.slice(2, 4), 16) / 255
-  const b = parseInt(c.slice(4, 6), 16) / 255
+  const sr = parseInt(c.slice(0, 2), 16) / 255
+  const sg = parseInt(c.slice(2, 4), 16) / 255
+  const sb = parseInt(c.slice(4, 6), 16) / 255
+  const linearize = (channel: number): number =>
+    channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4)
+  const r = linearize(sr)
+  const g = linearize(sg)
+  const b = linearize(sb)
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+export function contrastRatio(fg: string, bg: string): number {
+  const l1 = luminance(fg)
+  const l2 = luminance(bg)
+  const lighter = Math.max(l1, l2)
+  const darker = Math.min(l1, l2)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+export function wcagLevel(cr: number): 'AAA' | 'AA' | 'fail' {
+  if (cr >= 7.0) return 'AAA'
+  if (cr >= 4.5) return 'AA'
+  return 'fail'
 }
