@@ -127,6 +127,14 @@ function pct(v: number, total: number): number {
   return (v / 100) * total
 }
 
+function resolveFontSizePx(fontSize: number, frameHeight: number): number {
+  if (!Number.isFinite(fontSize) || fontSize <= 0) return 0
+  // Scene stores typography as percentage (0..100). Larger values are treated
+  // as already-pixel font sizes for compatibility with direct px overrides.
+  if (fontSize <= 100) return (fontSize / 100) * frameHeight
+  return fontSize
+}
+
 // ---------------------------------------------------------------------------
 // Background
 // ---------------------------------------------------------------------------
@@ -600,7 +608,7 @@ function TextNode({
   fontFamily: string
   accent: string
 }) {
-  const fontSizePx = pct(block.fontSize, W)
+  const fontSizePx = resolveFontSizePx(block.fontSize, H)
   const xLeft = pct(block.x, W)
   const yTop = pct(block.y, H)
   const wPx = pct(block.w, W)
@@ -718,7 +726,7 @@ function BadgeNode({
   H: number
   fontFamily: string
 }) {
-  const fontSizePx = pct(block.fontSize, W)
+  const fontSizePx = resolveFontSizePx(block.fontSize, H)
   const padX = fontSizePx * 0.7
   const padY = fontSizePx * 0.4
   const x = pct(block.x, W)
@@ -771,7 +779,7 @@ function CtaNode({
   const y = pct(block.y, H)
   const w = pct(block.w, W)
   const h = pct(block.h ?? 7, H)
-  const fontSizePx = pct(block.fontSize, W)
+  const fontSizePx = resolveFontSizePx(block.fontSize, H)
   const rx = Math.min(block.rx, h / 2)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
   return (

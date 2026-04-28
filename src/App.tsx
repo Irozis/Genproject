@@ -133,9 +133,6 @@ export default function App() {
   const patchScene = useCallback((patch: (s: Scene) => Scene) => {
     setProject((p) => {
       const nextMaster = patch(p.master)
-      console.log('[App] onPatchScene', {
-        masterChanged: nextMaster !== p.master,
-      })
       return { ...p, master: nextMaster }
     })
   }, [setProject])
