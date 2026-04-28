@@ -1,0 +1,302 @@
+[
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_1",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_1",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_1",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_1",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_2",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_2",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_2",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_2",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_3",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_3",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_3",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "en",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "product_3",
+    "pass": true
+  }
+]

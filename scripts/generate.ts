@@ -17,6 +17,7 @@ type CliOptions = {
   outDir: string
   locale: string
   regime: TextRegime
+  noFix: boolean
 }
 
 type FeedRow = {
@@ -56,8 +57,8 @@ async function main(): Promise<void> {
         locale: options.locale,
         customFormats: project.customFormats,
       })
-      const fixed = fixLayout(built, rules)
-      const compliance = runCompliance(fixed, rules, project.brandKit)
+      const sceneForChecks = options.noFix ? built : fixLayout(built, rules)
+      const compliance = runCompliance(sceneForChecks, rules, project.brandKit)
       const finalized: SummaryEntry = {
         ...compliance,
         assetId: row.id,
@@ -65,7 +66,7 @@ async function main(): Promise<void> {
         pass: compliance.checks.every((check) => check.status !== 'fail'),
       }
 
-      const svg = renderSceneSvg(fixed, rules, project)
+      const svg = renderSceneSvg(sceneForChecks, rules, project)
       await writeFile(path.join(rowDir, `${safeSegment(String(formatKey))}.svg`), svg, 'utf8')
       await writeFile(
         path.join(rowDir, `${safeSegment(String(formatKey))}.compliance.json`),
@@ -91,9 +92,14 @@ async function main(): Promise<void> {
 
 function parseArgs(argv: string[]): CliOptions {
   const map = new Map<string, string>()
+  let noFix = false
   for (let i = 0; i < argv.length; i++) {
     const token = argv[i]
     if (!token.startsWith('--')) continue
+    if (token === '--no-fix') {
+      noFix = true
+      continue
+    }
     const value = argv[i + 1]
     if (!value || value.startsWith('--')) {
       throw new Error(`Missing value for argument: ${token}`)
@@ -120,6 +126,7 @@ function parseArgs(argv: string[]): CliOptions {
     outDir,
     locale,
     regime: regimeRaw,
+    noFix,
   }
 }
 

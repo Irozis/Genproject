@@ -1,0 +1,324 @@
+{
+  "id": "test-project",
+  "name": "Test Project",
+  "master": {
+    "background": {
+      "kind": "solid",
+      "color": "#ffffff"
+    },
+    "accent": "#ffffff",
+    "title": {
+      "text": "Summer drop, ready to ship",
+      "x": 6,
+      "y": 18,
+      "w": 60,
+      "fontSize": 7,
+      "charsPerLine": 18,
+      "maxLines": 3,
+      "weight": 900,
+      "fill": "#1a1a1a"
+    },
+    "subtitle": {
+      "text": "Marketplace-ready layouts in one click.",
+      "x": 6,
+      "y": 44,
+      "w": 50,
+      "fontSize": 3,
+      "charsPerLine": 32,
+      "maxLines": 2,
+      "weight": 400,
+      "fill": "#1a1a1a"
+    },
+    "cta": {
+      "text": "Shop now",
+      "x": 6,
+      "y": 84,
+      "w": 30,
+      "h": 7,
+      "fontSize": 2.6,
+      "charsPerLine": 14,
+      "maxLines": 1,
+      "weight": 700,
+      "fill": "#1a1a1a",
+      "bg": "#ffffff",
+      "rx": 999
+    },
+    "image": {
+      "x": 50,
+      "y": 8,
+      "w": 44,
+      "h": 84,
+      "src": null,
+      "rx": 16,
+      "fit": "cover"
+    },
+    "blocks": [
+      {
+        "id": "title",
+        "x": 8,
+        "y": 12,
+        "w": 48,
+        "h": 22
+      },
+      {
+        "id": "subtitle",
+        "x": 8,
+        "y": 38,
+        "w": 48,
+        "h": 12
+      },
+      {
+        "id": "cta",
+        "x": 8,
+        "y": 82,
+        "w": 28,
+        "h": 8
+      },
+      {
+        "id": "image",
+        "x": 58,
+        "y": 12,
+        "w": 34,
+        "h": 76
+      }
+    ]
+  },
+  "enabled": {
+    "title": true,
+    "subtitle": true,
+    "cta": true,
+    "badge": false,
+    "logo": false,
+    "image": true
+  },
+  "brandKit": {
+    "brandName": "Atlas Goods",
+    "displayFont": "\"Inter Display\", Inter, system-ui, sans-serif",
+    "textFont": "Inter, system-ui, sans-serif",
+    "palette": {
+      "ink": "#1a1a1a",
+      "inkMuted": "#4E5155",
+      "surface": "#FFFFFF",
+      "accent": "#ffffff",
+      "accentSoft": "#f1f1f1"
+    },
+    "gradient": [
+      "#FFEDD5",
+      "#FED7AA",
+      "#FDBA74"
+    ],
+    "toneOfVoice": "neutral",
+    "ctaStyle": "pill"
+  },
+  "goal": "promo-pack",
+  "visualSystem": "product-card",
+  "assetHint": null,
+  "imageSrc": "https://picsum.photos/1200/1200",
+  "logoSrc": null,
+  "activeLocale": "en",
+  "availableLocales": [
+    "en"
+  ],
+  "selectedFormats": [
+    "custom:marketplace-card-1200",
+    "custom:product-highlight-1080x1350",
+    "custom:social-square-1080",
+    "custom:story-1080x1920"
+  ],
+  "blockOverrides": {
+    "custom:marketplace-card-1200": {
+      "title": {
+        "x": 8,
+        "y": 12,
+        "w": 46,
+        "h": 20
+      },
+      "subtitle": {
+        "x": 8,
+        "y": 35,
+        "w": 46,
+        "h": 12
+      },
+      "cta": {
+        "x": 8,
+        "y": 82,
+        "w": 28,
+        "h": 8
+      },
+      "image": {
+        "x": 56,
+        "y": 10,
+        "w": 36,
+        "h": 80
+      }
+    },
+    "custom:product-highlight-1080x1350": {
+      "title": {
+        "x": 8,
+        "y": 11,
+        "w": 50,
+        "h": 20
+      },
+      "subtitle": {
+        "x": 8,
+        "y": 34,
+        "w": 50,
+        "h": 12
+      },
+      "cta": {
+        "x": 8,
+        "y": 80,
+        "w": 30,
+        "h": 8
+      },
+      "image": {
+        "x": 54,
+        "y": 10,
+        "w": 38,
+        "h": 78
+      }
+    },
+    "custom:social-square-1080": {
+      "title": {
+        "x": 8,
+        "y": 12,
+        "w": 46,
+        "h": 20
+      },
+      "subtitle": {
+        "x": 8,
+        "y": 35,
+        "w": 46,
+        "h": 12
+      },
+      "cta": {
+        "x": 8,
+        "y": 82,
+        "w": 28,
+        "h": 8
+      },
+      "image": {
+        "x": 56,
+        "y": 10,
+        "w": 36,
+        "h": 80
+      }
+    },
+    "custom:story-1080x1920": {
+      "title": {
+        "x": 8,
+        "y": 10,
+        "w": 52,
+        "h": 20
+      },
+      "subtitle": {
+        "x": 8,
+        "y": 33,
+        "w": 52,
+        "h": 12
+      },
+      "cta": {
+        "x": 8,
+        "y": 78,
+        "w": 32,
+        "h": 8
+      },
+      "image": {
+        "x": 12,
+        "y": 46,
+        "w": 76,
+        "h": 42
+      }
+    }
+  },
+  "customFormats": [
+    {
+      "key": "custom:marketplace-card-1200",
+      "label": "Marketplace Card 1200x1200",
+      "width": 1200,
+      "height": 1200,
+      "aspectRatio": 1,
+      "safeZone": {
+        "top": 5,
+        "right": 5,
+        "bottom": 5,
+        "left": 5
+      },
+      "gutter": 4,
+      "minTitleSize": 5,
+      "maxTitleLines": 3,
+      "requiredElements": [
+        "title",
+        "subtitle",
+        "cta",
+        "image"
+      ]
+    },
+    {
+      "key": "custom:product-highlight-1080x1350",
+      "label": "Product Highlight 1080x1350",
+      "width": 1080,
+      "height": 1350,
+      "aspectRatio": 0.8,
+      "safeZone": {
+        "top": 5,
+        "right": 5,
+        "bottom": 5,
+        "left": 5
+      },
+      "gutter": 4,
+      "minTitleSize": 5,
+      "maxTitleLines": 3,
+      "requiredElements": [
+        "title",
+        "subtitle",
+        "cta",
+        "image"
+      ]
+    },
+    {
+      "key": "custom:social-square-1080",
+      "label": "Social Square 1080x1080",
+      "width": 1080,
+      "height": 1080,
+      "aspectRatio": 1,
+      "safeZone": {
+        "top": 5,
+        "right": 5,
+        "bottom": 5,
+        "left": 5
+      },
+      "gutter": 4,
+      "minTitleSize": 5,
+      "maxTitleLines": 3,
+      "requiredElements": [
+        "title",
+        "subtitle",
+        "cta",
+        "image"
+      ]
+    },
+    {
+      "key": "custom:story-1080x1920",
+      "label": "Story 1080x1920",
+      "width": 1080,
+      "height": 1920,
+      "aspectRatio": 0.5625,
+      "safeZone": {
+        "top": 8,
+        "right": 5,
+        "bottom": 8,
+        "left": 5
+      },
+      "gutter": 3,
+      "minTitleSize": 5,
+      "maxTitleLines": 4,
+      "requiredElements": [
+        "title",
+        "subtitle",
+        "cta",
+        "image"
+      ]
+    }
+  ]
+}

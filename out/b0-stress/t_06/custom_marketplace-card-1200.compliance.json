@@ -1,0 +1,25 @@
+{
+  "formatId": "custom:marketplace-card-1200",
+  "locale": "en",
+  "checks": [
+    {
+      "rule": "safe zone",
+      "status": "pass"
+    },
+    {
+      "rule": "WCAG AA contrast",
+      "status": "fail",
+      "detail": "min ratio 1.00 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+    },
+    {
+      "rule": "required elements",
+      "status": "pass"
+    },
+    {
+      "rule": "overflow",
+      "status": "pass"
+    }
+  ],
+  "assetId": "t_06",
+  "pass": false
+}

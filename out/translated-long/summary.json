@@ -1,0 +1,3002 @@
+[
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "n_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "t_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_01",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_02",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_03",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_04",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_05",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_06",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_07",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_08",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_09",
+    "pass": true
+  },
+  {
+    "formatId": "custom:marketplace-card-1200",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:product-highlight-1080x1350",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:social-square-1080",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 18.88 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_10",
+    "pass": true
+  },
+  {
+    "formatId": "custom:story-1080x1920",
+    "locale": "ru",
+    "checks": [
+      {
+        "rule": "safe zone",
+        "status": "pass"
+      },
+      {
+        "rule": "WCAG AA contrast",
+        "status": "pass",
+        "detail": "min ratio 7.98 (thresholds: fail < 3.0, warn < 4.5, pass >= 4.5)"
+      },
+      {
+        "rule": "required elements",
+        "status": "pass"
+      },
+      {
+        "rule": "overflow",
+        "status": "pass"
+      }
+    ],
+    "assetId": "s_10",
+    "pass": true
+  }
+]
