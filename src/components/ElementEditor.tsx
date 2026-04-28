@@ -3,11 +3,11 @@ import type { BlockKind, Scene, TextAlign } from '../lib/types'
 type Props = {
   kind: BlockKind
   scene: Scene
-  onChange: (patch: (master: Scene) => Scene) => void
+  onPatchScene: (patch: (master: Scene) => Scene) => void
   activeLocale?: string
 }
 
-export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
+export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props) {
   if (kind === 'title' || kind === 'subtitle' || kind === 'badge') {
     const block = scene[kind]
     if (!block) return null
@@ -19,7 +19,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             type="text"
             value={block.text}
             onChange={(e) =>
-              patchTextBlock(onChange, kind, (current) => ({ ...current, text: e.target.value }))
+              patchTextBlock(onPatchScene, kind, (current) => ({ ...current, text: e.target.value }))
             }
           />
         </label>
@@ -30,7 +30,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
               type="text"
               value={block.textByLocale?.[activeLocale] ?? ''}
               onChange={(e) =>
-                patchTextBlock(onChange, kind, (current) => ({
+                patchTextBlock(onPatchScene, kind, (current) => ({
                   ...current,
                   textByLocale: {
                     ...(current.textByLocale ?? {}),
@@ -49,9 +49,15 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             max={14}
             step={0.5}
             value={block.fontSize}
-            onChange={(e) =>
-              patchTextBlock(onChange, kind, (current) => ({ ...current, fontSize: Number(e.target.value) }))
-            }
+            onChange={(e) => {
+              const value = Number(e.target.value)
+              console.log('fontSize changed', value)
+              onPatchScene((s) => {
+                const block = s[kind]
+                if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
+                return { ...s, [kind]: { ...block, fontSize: value } }
+              })
+            }}
           />
         </label>
         <label className="field">
@@ -61,9 +67,15 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             min={1}
             max={4}
             value={block.maxLines}
-            onChange={(e) =>
-              patchTextBlock(onChange, kind, (current) => ({ ...current, maxLines: Number(e.target.value) }))
-            }
+            onChange={(e) => {
+              const value = Number(e.target.value)
+              console.log('maxLines changed', value)
+              onPatchScene((s) => {
+                const block = s[kind]
+                if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
+                return { ...s, [kind]: { ...block, maxLines: value } }
+              })
+            }}
           />
         </label>
         <label className="field field--inline">
@@ -71,22 +83,38 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
           <input
             type="color"
             value={block.fill}
-            onChange={(e) =>
-              patchTextBlock(onChange, kind, (current) => ({ ...current, fill: e.target.value }))
-            }
+            onChange={(e) => {
+              const value = e.target.value
+              console.log('color changed', value)
+              onPatchScene((s) => {
+                const block = s[kind]
+                if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
+                return { ...s, [kind]: { ...block, fill: value } }
+              })
+            }}
           />
         </label>
         <AlignField
           value={block.align ?? 'left'}
-          onChange={(next) =>
-            patchTextBlock(onChange, kind, (current) => ({ ...current, align: next }))
-          }
+          onChange={(next) => {
+            console.log('align changed', next)
+            onPatchScene((s) => {
+              const block = s[kind]
+              if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
+              return { ...s, [kind]: { ...block, align: next } }
+            })
+          }}
         />
         <CaseField
           value={block.transform ?? 'none'}
-          onChange={(next) =>
-            patchTextBlock(onChange, kind, (current) => ({ ...current, transform: next }))
-          }
+          onChange={(next) => {
+            console.log('case changed', next)
+            onPatchScene((s) => {
+              const block = s[kind]
+              if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
+              return { ...s, [kind]: { ...block, transform: next } }
+            })
+          }}
         />
       </div>
     )
@@ -103,7 +131,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             type="text"
             value={block.text}
             onChange={(e) =>
-              patchTextBlock(onChange, 'cta', (current) => ({ ...current, text: e.target.value }))
+              patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, text: e.target.value }))
             }
           />
         </label>
@@ -114,7 +142,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
               type="text"
               value={block.textByLocale?.[activeLocale] ?? ''}
               onChange={(e) =>
-                patchTextBlock(onChange, 'cta', (current) => ({
+                patchTextBlock(onPatchScene, 'cta', (current) => ({
                   ...current,
                   textByLocale: {
                     ...(current.textByLocale ?? {}),
@@ -134,7 +162,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             step={0.1}
             value={block.fontSize}
             onChange={(e) =>
-              patchTextBlock(onChange, 'cta', (current) => ({ ...current, fontSize: Number(e.target.value) }))
+              patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, fontSize: Number(e.target.value) }))
             }
           />
         </label>
@@ -144,7 +172,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             type="color"
             value={block.bg}
             onChange={(e) =>
-              patchTextBlock(onChange, 'cta', (current) => ({ ...current, bg: e.target.value }))
+              patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, bg: e.target.value }))
             }
           />
         </label>
@@ -154,14 +182,14 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             type="color"
             value={block.fill}
             onChange={(e) =>
-              patchTextBlock(onChange, 'cta', (current) => ({ ...current, fill: e.target.value }))
+              patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, fill: e.target.value }))
             }
           />
         </label>
         <CaseField
           value={block.transform ?? 'none'}
           onChange={(next) =>
-            patchTextBlock(onChange, 'cta', (current) => ({ ...current, transform: next }))
+            patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, transform: next }))
           }
         />
       </div>
@@ -178,7 +206,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
           <select
             value={block.fit}
             onChange={(e) =>
-              onChange((s) => ({
+              onPatchScene((s) => ({
                 ...s,
                 image: { ...block, fit: e.target.value as 'cover' | 'contain' },
               }))
@@ -196,7 +224,7 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
             max={48}
             value={block.rx}
             onChange={(e) =>
-              onChange((s) => ({ ...s, image: s.image ? { ...s.image, rx: Number(e.target.value) } : s.image }))
+              onPatchScene((s) => ({ ...s, image: s.image ? { ...s.image, rx: Number(e.target.value) } : s.image }))
             }
           />
         </label>
@@ -216,11 +244,11 @@ export function ElementEditor({ kind, scene, onChange, activeLocale }: Props) {
 }
 
 function patchTextBlock(
-  onChange: (patch: (master: Scene) => Scene) => void,
+  onPatchScene: (patch: (master: Scene) => Scene) => void,
   kind: 'title' | 'subtitle' | 'badge' | 'cta',
   update: (current: NonNullable<Scene['title']> | NonNullable<Scene['cta']>) => NonNullable<Scene['title']> | NonNullable<Scene['cta']>,
 ) {
-  onChange((s) => {
+  onPatchScene((s) => {
     const current = s[kind]
     if (!current) return s
     return { ...s, [kind]: update(current as NonNullable<Scene['title']> | NonNullable<Scene['cta']>) }

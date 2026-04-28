@@ -50,7 +50,7 @@ export function ElementRow({ kind, label, enabled, forceOpen, scene, onToggle, o
           {isOpen ? '▴' : '▾'}
         </button>
       </div>
-      {isOpen && enabled ? <ElementEditor kind={kind} scene={scene} onChange={onPatchScene} activeLocale={activeLocale} /> : null}
+      {isOpen && enabled ? <ElementEditor kind={kind} scene={scene} onPatchScene={onPatchScene} activeLocale={activeLocale} /> : null}
     </div>
   )
 }

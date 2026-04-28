@@ -131,7 +131,13 @@ export default function App() {
   }, [project.master, project.imageSrc, project.logoSrc])
 
   const patchScene = useCallback((patch: (s: Scene) => Scene) => {
-    setProject((p) => ({ ...p, master: patch(p.master) }))
+    setProject((p) => {
+      const nextMaster = patch(p.master)
+      console.log('[App] onPatchScene', {
+        masterChanged: nextMaster !== p.master,
+      })
+      return { ...p, master: nextMaster }
+    })
   }, [setProject])
 
   // Inline-edit callback — invoked by FormatPreview on dbl-click + blur/Enter.
