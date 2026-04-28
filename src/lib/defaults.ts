@@ -8,6 +8,7 @@ import type {
   Project,
   Scene,
 } from './types'
+import { DEFAULT_COMPOSITION_BY_FORMAT } from './formats'
 
 const DEFAULT_PALETTE: Palette = {
   ink: '#0E1014',
@@ -114,6 +115,11 @@ export const DEFAULT_FORMATS: FormatKey[] = [
   'marketplace-highlight',
   'social-square',
   'story-vertical',
+  'wb-card',
+  'wb-infographic',
+  'ozon-card',
+  'avito-listing',
+  'avito-square',
 ]
 
 export function newProject(name = 'untitled-project'): Project {
@@ -129,6 +135,7 @@ export function newProject(name = 'untitled-project'): Project {
     imageSrc: null,
     logoSrc: null,
     selectedFormats: [...DEFAULT_FORMATS],
+    formatOverrides: { ...DEFAULT_COMPOSITION_BY_FORMAT },
   }
 }
 

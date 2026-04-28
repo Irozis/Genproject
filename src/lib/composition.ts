@@ -10,6 +10,7 @@ import type {
   Scene,
   TextBlock,
 } from './types'
+import { fitFontSize as fitFontSizePx, wrapText } from './textMeasure'
 
 export type ContentProfile = {
   hasImage: boolean
@@ -127,6 +128,11 @@ const MIN_SUBTITLE_SIZE = 2.0
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
+}
+
+function pxToHeightPct(px: number, rules: FormatRuleSet): number {
+  if (rules.height <= 0) return 0
+  return (px / rules.height) * 100
 }
 
 // Resolve the format's typescale multiplier. Default 1.0 when a format doesn't
@@ -279,9 +285,11 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
   const sz = rules.safeZone
   const left = sz.left
   const r = rhythm(rules)
-  const splitX = 58
   const imageGap = 2
-  const textW = splitX - sz.left - imageGap
+  const splitX = 58
+  const baseTextW = splitX - sz.left - imageGap
+  const textW = rules.aspectRatio > 1 ? Math.max(50, baseTextW) : baseTextW
+  const imageX = left + textW + imageGap
 
   const out: Scene = {
     background: scene.background,
@@ -291,9 +299,9 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
   if (enabled.image && scene.image) {
     out.image = {
       ...scene.image,
-      x: splitX + imageGap,
+      x: imageX,
       y: sz.top,
-      w: 100 - sz.right - (splitX + imageGap),
+      w: 100 - sz.right - imageX,
       h: 100 - sz.top - sz.bottom,
       rx: scene.image.rx ?? 16,
       fit: scene.image.fit ?? 'cover',
@@ -310,8 +318,26 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
   const ts = tscale(rules)
   const baseSplitTitle = 6.5 * ts
   const splitTarget = Math.min(3, rules.maxTitleLines)
+  const baseSplitTitlePx = (baseSplitTitle / 100) * rules.width
+  const minTitlePx = 14
   const titleFontSize = scene.title
-    ? fitFontSize(scene.title.text, textW, splitTarget, baseSplitTitle, rules.minTitleSize)
+    ? (fitFontSizePx({
+        baseFontSizePx: baseSplitTitlePx,
+        minFontSizePx: minTitlePx,
+        fits: (fontSizePx) => {
+          const lines = wrapText({
+            text: scene.title?.text ?? '',
+            fontSizePx,
+            fontWeight: TITLE_TOKENS.weight,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            maxWidthPx: (textW / 100) * rules.width,
+            maxLines: splitTarget,
+          })
+          return lines.length <= splitTarget
+        },
+      }) /
+        rules.width) *
+      100
     : baseSplitTitle
   if (enabled.title && scene.title) {
     out.title = apply(
@@ -332,28 +358,49 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
       ? estimateLines(scene.title.text, titleFontSize, textW, Math.min(rules.maxTitleLines, 4))
       : 1
     const titleH = textBlockHeight(titleFontSize, titleLines, 1.02)
+    const titleSubtitleGap = pxToHeightPct(12, rules)
     const subW = textW * 0.95
     const subFont = fitFontSize(scene.subtitle.text, subW, 3, 2.8 * ts, MIN_SUBTITLE_SIZE)
+    const subtitleLines = estimateLines(scene.subtitle.text, subFont, subW, 3)
+    const subtitleH = textBlockHeight(subFont, subtitleLines, 1.35)
     out.subtitle = apply(
       {
         ...scene.subtitle,
         x: left,
-        y: r.titleY + titleH + r.afterTitleGap,
+        y: r.titleY + titleH + titleSubtitleGap,
         w: subW,
         fontSize: subFont,
       },
       SUBTITLE_TOKENS,
     )
+
+    if (enabled.cta && scene.cta) {
+      const subtitleCtaGap = pxToHeightPct(16, rules)
+      const ctaFont = 2.6
+      const ctaTextW = Math.max(24, textW * 0.62)
+      const ctaLines = estimateLines(scene.cta.text, ctaFont, ctaTextW, 2)
+      const ctaTextH = textBlockHeight(ctaFont, ctaLines, 1.0)
+      const ctaPadV = pxToHeightPct(20, rules)
+      out.cta = {
+        ...scene.cta,
+        ...CTA_TOKENS,
+        x: left,
+        y: r.titleY + titleH + titleSubtitleGap + subtitleH + subtitleCtaGap,
+        w: ctaTextW,
+        h: ctaTextH + ctaPadV,
+        fontSize: ctaFont,
+      }
+    }
   }
 
-  if (enabled.cta && scene.cta) {
+  if (enabled.cta && scene.cta && !out.cta) {
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left,
-      y: r.ctaY - 6,
+      y: r.titleY + pxToHeightPct(16, rules),
       w: 30,
-      h: 7,
+      h: pxToHeightPct(48, rules),
       fontSize: 2.6,
     }
   }
@@ -361,7 +408,7 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
   if (enabled.logo && scene.logo) {
     out.logo = {
       ...scene.logo,
-      x: splitX - 7,
+      x: imageX - 7,
       y: sz.top,
       w: 6,
       h: 6,

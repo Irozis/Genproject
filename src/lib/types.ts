@@ -6,6 +6,11 @@ export type BuiltinFormatKey =
   | 'marketplace-highlight'   // 1080×1350
   | 'social-square'           // 1080×1080
   | 'story-vertical'          // 1080×1920
+  | 'wb-card'                 // 900×1200
+  | 'wb-infographic'          // 900×1200
+  | 'ozon-card'               // 900×1200
+  | 'avito-listing'           // 1200×900
+  | 'avito-square'            // 1080×1080
 export type FormatKey = BuiltinFormatKey | `custom:${string}`
 
 export type CompositionModel =

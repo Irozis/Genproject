@@ -3,7 +3,7 @@ import { BrandSystemPanel } from './BrandSystemPanel'
 import { ElementRow } from './ElementRow'
 import { FilePicker } from './FilePicker'
 import { SidebarTabs, type SidebarTab } from './SidebarTabs'
-import { FORMAT_KEYS, getFormat } from '../lib/formats'
+import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
 import type { BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, Project, Scene } from '../lib/types'
 
@@ -91,7 +91,23 @@ export function Sidebar({
 
             <SectionHeader>Formats</SectionHeader>
             <div className="format-list">
-              {FORMAT_KEYS.map((k) => {
+              {BASE_FORMAT_KEYS.map((k) => {
+                const enabled = project.selectedFormats.includes(k)
+                const f = getFormat(k)
+                return (
+                  <label key={k} className={`format-row${enabled ? ' is-on' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={() => onToggleFormat(k)}
+                    />
+                    <span className="format-row__label">{f.label}</span>
+                    <span className="format-row__dim">{f.width}×{f.height}</span>
+                  </label>
+                )
+              })}
+              <div style={{ fontSize: 12, opacity: 0.7, marginTop: 8, marginBottom: 4 }}>Маркетплейсы РФ</div>
+              {RU_MARKETPLACE_FORMAT_KEYS.map((k) => {
                 const enabled = project.selectedFormats.includes(k)
                 const f = getFormat(k)
                 return (

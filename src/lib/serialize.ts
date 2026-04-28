@@ -202,6 +202,11 @@ const formatKeySchema = z.enum([
   'marketplace-highlight',
   'social-square',
   'story-vertical',
+  'wb-card',
+  'wb-infographic',
+  'ozon-card',
+  'avito-listing',
+  'avito-square',
 ])
 const anyFormatKeySchema = z.union([formatKeySchema, z.string().startsWith('custom:')])
 
