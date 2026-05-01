@@ -214,6 +214,13 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   }))
 
   const rules = applyLayoutDensity(getFormat(formatKey, customFormats), density)
+  const aspectClass = rules.aspectRatio > 4
+    ? ' preview--ultrawide'
+    : rules.aspectRatio > 1.25
+      ? ' preview--wide'
+      : rules.aspectRatio < 0.8
+        ? ' preview--tall'
+        : ' preview--square'
   // Apply per-format focal override onto master.image before building the scene
   // so the override flows through layout + SVG rendering identically to master.
   const effectiveMaster = useMemo<Scene>(() => {
@@ -238,7 +245,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   const issues = useMemo(() => checkOverflow(scene, rules), [scene, rules])
 
   return (
-    <article className="preview">
+    <article className={`preview${aspectClass}`}>
       <header className="preview__head">
         <div>
           <div className="preview__title">{rules.label}</div>
@@ -250,17 +257,17 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             type="button"
             className={`btn btn-ghost btn-xs preview__mode${isCustom ? ' is-on' : ''}`}
             onClick={() => isCustom ? onDisableCustom?.(formatKey) : onEnableCustom?.(formatKey, scene)}
-            title={isCustom ? 'Use master settings for this format' : 'Customize this format separately'}
+            title={isCustom ? 'Использовать master-настройки' : 'Настроить этот формат отдельно'}
             aria-pressed={!!isCustom}
           >
-            {isCustom ? 'Custom' : 'Separate'}
+            {isCustom ? 'Отдельно' : 'Настроить'}
           </button>
           {zoomed ? (
             <button
               type="button"
               className="btn btn-ghost btn-xs"
               onClick={resetView}
-              title={`Reset zoom & pan (${Math.round(view.zoom * 100)}%)`}
+              title={`Сбросить масштаб и сдвиг (${Math.round(view.zoom * 100)}%)`}
             >
               {Math.round(view.zoom * 100)}%✕
             </button>
@@ -269,25 +276,25 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             type="button"
             className={`btn btn-ghost btn-xs btn-icon${showGuides ? ' is-on' : ''}`}
             onClick={() => setShowGuides((v) => !v)}
-            title="Toggle safe-area guides"
+            title="Показать/скрыть safe-area"
             aria-pressed={showGuides}
-            aria-label="Toggle safe-area guides"
+            aria-label="Показать/скрыть safe-area"
           >
             ⌗
           </button>
           <button
             className="btn btn-ghost btn-xs btn-icon"
             onClick={() => onFix(formatKey)}
-            title="Fix layout"
-            aria-label="Fix layout"
+            title="Исправить макет"
+            aria-label="Исправить макет"
           >
             ↻
           </button>
           <details className="kebab">
             <summary
               className="btn btn-ghost btn-xs btn-icon"
-              aria-label="More preview actions"
-              title="More actions"
+              aria-label="Еще действия с превью"
+              title="Еще действия"
             >
               ⋯
             </summary>
@@ -298,7 +305,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
                 role="menuitem"
                 onClick={() => isCustom ? onDisableCustom?.(formatKey) : onEnableCustom?.(formatKey, scene)}
               >
-                {isCustom ? 'Inherit master' : 'Customize format'}
+                {isCustom ? 'Наследовать master' : 'Настроить формат'}
               </button>
               <button
                 type="button"
@@ -307,7 +314,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
                 onClick={() => onCopyLayout?.(extractLayout(scene))}
                 disabled={!onCopyLayout}
               >
-                Copy layout
+                Скопировать макет
               </button>
               <button
                 type="button"
@@ -316,7 +323,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
                 onClick={() => onPasteLayout?.()}
                 disabled={!onPasteLayout || !canPaste}
               >
-                Paste layout
+                Вставить макет
               </button>
             </div>
           </details>
@@ -434,6 +441,9 @@ function blockToOverride(block: NonNullable<Scene[BlockKind]>): BlockOverride {
     'fit',
     'focalX',
     'focalY',
+    'cropZoom',
+    'cropX',
+    'cropY',
     'bgOpacity',
   ] as const
   const out: Record<string, unknown> = {}
@@ -521,10 +531,10 @@ function PreviewHotspots({
         const isImage = k === 'image'
         const isEditable = editable.has(k) && !!onTextDoubleClick
         const hint = isImage && onImageShiftClick
-          ? `${k} (Shift-click to set focal, Shift+Alt to reset)`
+          ? `${labelForHotspot(k)} (Shift-click: задать фокус, Shift+Alt: сбросить)`
           : isEditable
-            ? `${k} (double-click to edit)`
-            : k
+            ? `${labelForHotspot(k)} (двойной клик: редактировать)`
+            : labelForHotspot(k)
         return (
           <button
             key={k}
@@ -552,6 +562,25 @@ function PreviewHotspots({
       })}
     </div>
   )
+}
+
+function labelForHotspot(kind: BlockKind | EditableTextKind): string {
+  switch (kind) {
+    case 'title':
+      return 'Заголовок'
+    case 'subtitle':
+      return 'Подзаголовок'
+    case 'cta':
+      return 'Кнопка'
+    case 'badge':
+      return 'Бейдж'
+    case 'logo':
+      return 'Логотип'
+    case 'image':
+      return 'Изображение'
+    default:
+      return kind
+  }
 }
 
 // Positioned textarea on top of the preview. Commits on Enter or blur,
@@ -593,7 +622,7 @@ function InlineTextEditor({
         }
       }}
       spellCheck={false}
-      aria-label={`Edit ${kind} text`}
+      aria-label={`Редактировать текст: ${labelForHotspot(kind)}`}
       style={{
         left: `${block.x}%`,
         top: `${block.y}%`,

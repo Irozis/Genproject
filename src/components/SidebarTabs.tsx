@@ -12,13 +12,13 @@ export function SidebarTabs({ active, onChange }: Props) {
         className={`tab${active === 'setup' ? ' is-active' : ''}`}
         onClick={() => onChange('setup')}
       >
-        Setup
+        Настройки
       </button>
       <button
         className={`tab${active === 'assets' ? ' is-active' : ''}`}
         onClick={() => onChange('assets')}
       >
-        Assets
+        Медиа
       </button>
     </div>
   )

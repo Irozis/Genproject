@@ -83,23 +83,19 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     return (
       <div className="format-grid-empty" role="status">
         <div className="format-grid-empty__card">
-          <div className="format-grid-empty__title">No formats selected</div>
+          <div className="format-grid-empty__title">Форматы не выбраны</div>
           <div className="format-grid-empty__body">
-            Pick at least one format in the sidebar (Formats section) to see live previews here.
+            Выберите хотя бы один формат в сайдбаре, чтобы увидеть превью.
           </div>
         </div>
       </div>
     )
   }
 
-  // Hard-cap at 4 columns: wider grids start to make each preview unusable.
-  // When there are fewer than 4 formats we shrink to match so the row fills
-  // evenly instead of leaving empty cells.
-  const cols = Math.min(4, formats.length)
   return (
     <div
       className="format-grid"
-      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))' }}
     >
       {formats.map((k) => (
         <FormatPreview

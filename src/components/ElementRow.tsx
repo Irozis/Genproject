@@ -36,8 +36,8 @@ export function ElementRow({ kind, label, enabled, forceOpen, scene, onToggle, o
             className="el-row__inline-text"
             value={inlineText}
             onChange={(e) => setInlineText(onPatchScene, kind, activeLocale, e.target.value)}
-            placeholder={`Enter ${label.toLowerCase()} text`}
-            aria-label={`${label} text`}
+            placeholder={`Введите текст: ${label.toLowerCase()}`}
+            aria-label={`Текст: ${label}`}
             onClick={(e) => e.stopPropagation()}
           />
         ) : null}

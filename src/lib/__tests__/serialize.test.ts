@@ -23,7 +23,7 @@ describe('projectSchema — round trip', () => {
     const p: Project = {
       ...newProject('sample'),
       blockOverrides: {
-        'marketplace-card': { title: { x: 10, y: 20, w: 50, h: 10 } },
+        'vk-square': { title: { x: 10, y: 20, w: 50, h: 10 } },
       },
       paletteLocked: true,
       activeLocale: 'ru',
@@ -46,7 +46,7 @@ describe('projectSchema — round trip', () => {
     const result = projectSchema.safeParse(JSON.parse(JSON.stringify(p)))
     expect(result.success).toBe(true)
     if (result.success) {
-      expect(result.data.blockOverrides?.['marketplace-card']?.title?.x).toBe(10)
+      expect(result.data.blockOverrides?.['vk-square']?.title?.x).toBe(10)
       expect(result.data.paletteLocked).toBe(true)
       expect(result.data.activeLocale).toBe('ru')
       expect(result.data.customFormats?.[0]?.key).toBe('custom:sq300')
@@ -143,7 +143,7 @@ describe('projectSchema — round trip', () => {
     const p = newProject('custom-formats')
     const withCustom = {
       ...p,
-      selectedFormats: ['marketplace-card', 'custom:sq300'],
+      selectedFormats: ['vk-square', 'custom:sq300'],
     }
     const result = projectSchema.safeParse(JSON.parse(JSON.stringify(withCustom)))
     expect(result.success).toBe(true)

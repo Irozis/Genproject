@@ -41,7 +41,7 @@ export const DEFAULT_MASTER: Scene = {
   background: { kind: 'gradient', stops: ['#FFEDD5', '#FED7AA', '#FDBA74'] },
   accent: '#FF5A1F',
   title: {
-    text: 'Summer drop, ready to ship',
+    text: 'Покупки к лету лучше делать заранее',
     x: 6,
     y: 18,
     w: 60,
@@ -54,7 +54,7 @@ export const DEFAULT_MASTER: Scene = {
     lineHeight: 1.02,
   },
   subtitle: {
-    text: 'Marketplace-ready layouts in one click.',
+    text: 'Готовые макеты для маркетплейсов в пару кликов.',
     x: 6,
     y: 44,
     w: 50,
@@ -67,7 +67,7 @@ export const DEFAULT_MASTER: Scene = {
     lineHeight: 1.35,
   },
   cta: {
-    text: 'Shop now',
+    text: 'Купить сейчас',
     x: 6,
     y: 84,
     w: 30,
@@ -81,7 +81,7 @@ export const DEFAULT_MASTER: Scene = {
     rx: 999,
   },
   badge: {
-    text: 'New',
+    text: 'Новинка',
     x: 6,
     y: 6,
     w: 18,
@@ -111,18 +111,29 @@ export const DEFAULT_MASTER: Scene = {
 }
 
 export const DEFAULT_FORMATS: FormatKey[] = [
-  'marketplace-card',
-  'marketplace-highlight',
-  'social-square',
-  'story-vertical',
+  'vk-square',
+  'vk-vertical',
+  'vk-landscape',
+  'vk-stories',
+  'telegram-story',
+  'instagram-story',
   'wb-card',
   'wb-infographic',
   'ozon-card',
+  'ozon-fresh-square',
+  'yandex-market-card',
+  'yandex-market-banner',
+  'yandex-market-stretch',
+  'yandex-market-vertical',
   'avito-listing',
-  'avito-square',
+  'avito-fullscreen',
+  'avito-skyscraper',
+  'yandex-rsy-240x400',
+  'yandex-rsy-300x250',
+  'yandex-rsy-728x90',
 ]
 
-export function newProject(name = 'untitled-project'): Project {
+export function newProject(name = 'novyy-proekt'): Project {
   return {
     id: cryptoId(),
     name,

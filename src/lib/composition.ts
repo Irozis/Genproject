@@ -313,9 +313,13 @@ const layoutTextDominant: Layout = (scene, rules, enabled) => {
 
 // 58% text column on left, 42% image column on right.
 const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
+  if (rules.aspectRatio > 4) return layoutUltraWideBanner(scene, rules, enabled)
+  if (rules.key === 'yandex-rsy-300x250') return layoutCompactBanner(scene, rules, enabled)
+
   const sz = rules.safeZone
   const left = sz.left
   const r = rhythm(rules)
+  const isAvito = rules.key === 'avito-listing' || rules.key === 'avito-fullscreen' || rules.key === 'avito-skyscraper'
   const imageGap = 2
   const splitX = 58
   const baseTextW = splitX - sz.left - imageGap
@@ -335,7 +339,7 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
       w: 100 - sz.right - imageX,
       h: 100 - sz.top - sz.bottom,
       rx: scene.image.rx ?? 16,
-      fit: scene.image.fit ?? 'cover',
+      fit: isAvito ? 'contain' : (scene.image.fit ?? 'cover'),
     }
   }
 
@@ -445,6 +449,166 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
       ...scene.logo,
       x: imageX - 7,
       y: sz.top,
+      w: 6,
+      h: 6,
+    }
+  }
+
+  return out
+}
+
+const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
+  const sz = rules.safeZone
+  const left = sz.left
+  const out: Scene = { background: scene.background, accent: scene.accent }
+
+  const imageW = enabled.image && scene.image ? 20 : 0
+  const ctaW = enabled.cta && scene.cta ? 17 : 0
+  const gap = rules.gutter
+  const titleW = 100 - sz.left - sz.right - imageW - ctaW - gap * 2
+  const titleFont = scene.title
+    ? fitFontSize(scene.title.text, titleW, 1, 3.2, rules.minTitleSize)
+    : 3.2
+  const actualTitleFont = capFontSize(scene.title, titleFont)
+
+  if (enabled.title && scene.title) {
+    out.title = apply(
+      {
+        ...scene.title,
+        x: left,
+        y: 18,
+        w: titleW,
+        fontSize: actualTitleFont,
+        maxLines: 1,
+      },
+      TITLE_TOKENS,
+    )
+  }
+
+  if (enabled.subtitle && scene.subtitle) {
+    const subW = Math.max(18, titleW * 0.75)
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: 57,
+        w: subW,
+        fontSize: capFontSize(scene.subtitle, 1.35),
+        maxLines: 1,
+      },
+      { ...SUBTITLE_TOKENS, opacity: 0.65 },
+    )
+  }
+
+  if (enabled.cta && scene.cta) {
+    out.cta = {
+      ...scene.cta,
+      ...CTA_TOKENS,
+      x: left + titleW + gap,
+      y: 30,
+      w: ctaW,
+      h: 38,
+      fontSize: capFontSize(scene.cta, 1.45),
+      maxLines: 1,
+    }
+  }
+
+  if (enabled.image && scene.image) {
+    out.image = {
+      ...scene.image,
+      x: 100 - sz.right - imageW,
+      y: 8,
+      w: imageW,
+      h: 84,
+      rx: scene.image.rx ?? 12,
+      fit: scene.image.fit ?? 'cover',
+    }
+  }
+
+  if (enabled.logo && scene.logo && !out.image) {
+    out.logo = {
+      ...scene.logo,
+      x: 100 - sz.right - 5,
+      y: 22,
+      w: 5,
+      h: 40,
+    }
+  }
+
+  return out
+}
+
+const layoutCompactBanner: Layout = (scene, rules, enabled) => {
+  const sz = rules.safeZone
+  const left = sz.left
+  const out: Scene = { background: scene.background, accent: scene.accent }
+  const imageW = enabled.image && scene.image ? 36 : 0
+  const gap = 4
+  const textW = 100 - sz.left - sz.right - imageW - gap
+  const titleTarget = maxLinesFor(scene.title, 3, 3)
+  const titleFont = scene.title
+    ? fitFontSize(scene.title.text, textW, titleTarget, 5.4, rules.minTitleSize)
+    : 5.4
+  const actualTitleFont = capFontSize(scene.title, titleFont)
+
+  if (enabled.title && scene.title) {
+    out.title = apply(
+      {
+        ...scene.title,
+        x: left,
+        y: 24,
+        w: textW,
+        fontSize: actualTitleFont,
+        maxLines: titleTarget,
+      },
+      TITLE_TOKENS,
+    )
+  }
+
+  if (enabled.subtitle && scene.subtitle) {
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: 56,
+        w: textW * 0.92,
+        fontSize: capFontSize(scene.subtitle, 2.25),
+        maxLines: 2,
+      },
+      SUBTITLE_TOKENS,
+    )
+  }
+
+  if (enabled.cta && scene.cta) {
+    out.cta = {
+      ...scene.cta,
+      ...CTA_TOKENS,
+      x: left,
+      y: 76,
+      w: Math.min(34, textW * 0.7),
+      h: 9,
+      fontSize: capFontSize(scene.cta, 2.3),
+      maxLines: 1,
+    }
+  }
+
+  if (enabled.image && scene.image) {
+    out.image = {
+      ...scene.image,
+      x: 100 - sz.right - imageW,
+      y: 10,
+      w: imageW,
+      h: 80,
+      rx: scene.image.rx ?? 12,
+      fit: scene.image.fit ?? 'cover',
+    }
+  }
+
+  if (enabled.logo && scene.logo) {
+    out.logo = {
+      ...scene.logo,
+      x: 100 - sz.right - imageW - 7,
+      y: 10,
       w: 6,
       h: 6,
     }

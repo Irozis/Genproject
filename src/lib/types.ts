@@ -2,15 +2,26 @@
 // Keep flat. No deep nesting. No fallback/scoring/archetype shapes.
 
 export type BuiltinFormatKey =
-  | 'marketplace-card'        // 1200×1200
-  | 'marketplace-highlight'   // 1080×1350
-  | 'social-square'           // 1080×1080
-  | 'story-vertical'          // 1080×1920
-  | 'wb-card'                 // 900×1200
-  | 'wb-infographic'          // 900×1200
-  | 'ozon-card'               // 900×1200
-  | 'avito-listing'           // 1200×900
-  | 'avito-square'            // 1080×1080
+  | 'vk-square'
+  | 'vk-vertical'
+  | 'vk-landscape'
+  | 'vk-stories'
+  | 'telegram-story'
+  | 'instagram-story'
+  | 'wb-card'
+  | 'wb-infographic'
+  | 'ozon-card'
+  | 'ozon-fresh-square'
+  | 'yandex-market-card'
+  | 'yandex-market-banner'
+  | 'yandex-market-stretch'
+  | 'yandex-market-vertical'
+  | 'avito-listing'
+  | 'avito-fullscreen'
+  | 'avito-skyscraper'
+  | 'yandex-rsy-240x400'
+  | 'yandex-rsy-300x250'
+  | 'yandex-rsy-728x90'
 export type FormatKey = BuiltinFormatKey | `custom:${string}`
 
 export type CompositionModel =
@@ -80,6 +91,9 @@ export type ImageBlock = Block & {
   // part stays in frame when cover-cropping). Default 0.5/0.5 = center.
   focalX?: number
   focalY?: number
+  cropZoom?: number
+  cropX?: number
+  cropY?: number
 }
 
 export type LogoBlock = Block & {

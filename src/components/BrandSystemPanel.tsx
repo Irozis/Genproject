@@ -39,14 +39,14 @@ export function BrandSystemPanel({
   return (
     <section className={`panel${open ? ' is-open' : ''}`}>
       <button className="panel__head" onClick={() => setOpen((o) => !o)}>
-        <span>Brand system</span>
+        <span>Бренд-система</span>
         <span>{open ? '▴' : '▾'}</span>
       </button>
       {open ? (
         <div className="panel__body">
           {alternatives && alternatives.length > 1 && onApplyAlternative ? (
             <div className="field">
-              <span>Palette suggestions</span>
+              <span>Варианты палитры</span>
               <div className="palette-alts">
                 {alternatives.map((alt, i) => {
                   const active = alt.palette.accent.toLowerCase() === brandKit.palette.accent.toLowerCase()
@@ -56,8 +56,8 @@ export function BrandSystemPanel({
                       type="button"
                       className={`palette-alts__item${active ? ' is-on' : ''}`}
                       onClick={() => onApplyAlternative(alt)}
-                      title={`Accent ${alt.palette.accent}`}
-                      aria-label={`Apply palette variant ${i + 1}`}
+                      title={`Акцент ${alt.palette.accent}`}
+                      aria-label={`Применить вариант палитры ${i + 1}`}
                       aria-pressed={active}
                     >
                       <span
@@ -79,7 +79,7 @@ export function BrandSystemPanel({
             </div>
           ) : null}
           <label className="field">
-            <span>Brand name</span>
+            <span>Название бренда</span>
             <input
               type="text"
               value={brandKit.brandName}
@@ -87,7 +87,7 @@ export function BrandSystemPanel({
             />
           </label>
           <label className="field field--inline">
-            <span>Ink (primary text)</span>
+            <span>Основной текст</span>
             <input
               type="color"
               value={brandKit.palette.ink}
@@ -95,7 +95,7 @@ export function BrandSystemPanel({
             />
           </label>
           <label className="field field--inline">
-            <span>Accent</span>
+            <span>Акцент</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <input
                 type="color"
@@ -106,7 +106,7 @@ export function BrandSystemPanel({
                 type="button"
                 className="btn btn-ghost btn-xs"
                 onClick={() => onTogglePaletteLock?.(!paletteLocked)}
-                title={paletteLocked ? 'Unlock palette updates from image' : 'Lock palette against image updates'}
+                title={paletteLocked ? 'Разрешить обновление палитры по изображению' : 'Зафиксировать палитру'}
                 aria-pressed={!!paletteLocked}
               >
                 {paletteLocked ? '🔒' : '🔓'}
@@ -114,7 +114,7 @@ export function BrandSystemPanel({
             </div>
           </label>
           <label className="field field--inline">
-            <span>Surface (CTA text)</span>
+            <span>Светлая поверхность</span>
             <input
               type="color"
               value={brandKit.palette.surface}
@@ -122,7 +122,7 @@ export function BrandSystemPanel({
             />
           </label>
           <fieldset className="field">
-            <legend>Gradient</legend>
+            <legend>Градиент</legend>
             <div className="gradient-row">
               {brandKit.gradient.map((c, i) => (
                 <input
@@ -139,7 +139,7 @@ export function BrandSystemPanel({
             </div>
           </fieldset>
           <div className="field">
-            <span>Font pair</span>
+            <span>Пара шрифтов</span>
             <div className="font-pair-grid">
               {FONT_PAIRS.map((p) => {
                 const active = findMatchingPair(brandKit.displayFont, brandKit.textFont)?.id === p.id
@@ -173,7 +173,7 @@ export function BrandSystemPanel({
             </div>
           </div>
           <label className="field">
-            <span>Display font</span>
+            <span>Шрифт заголовков</span>
             <input
               type="text"
               value={brandKit.displayFont}
@@ -181,7 +181,7 @@ export function BrandSystemPanel({
             />
           </label>
           <label className="field">
-            <span>Text font</span>
+            <span>Шрифт текста</span>
             <input
               type="text"
               value={brandKit.textFont}
@@ -189,31 +189,31 @@ export function BrandSystemPanel({
             />
           </label>
           <label className="field field--inline">
-            <span>CTA style</span>
+            <span>Стиль кнопки</span>
             <select
               value={brandKit.ctaStyle}
               onChange={(e) => onChange({ ...brandKit, ctaStyle: e.target.value as CtaStyle })}
             >
-              <option value="pill">Pill</option>
-              <option value="rounded">Rounded</option>
-              <option value="sharp">Sharp</option>
+              <option value="pill">Капсула</option>
+              <option value="rounded">Скругленный</option>
+              <option value="sharp">Строгий</option>
             </select>
           </label>
           <label className="field">
-            <span>Tone of voice</span>
+            <span>Тон коммуникации</span>
             <select
               value={brandKit.toneOfVoice}
               onChange={(e) => onChange({ ...brandKit, toneOfVoice: e.target.value as Tone })}
             >
-              <option value="neutral">neutral</option>
-              <option value="bold">bold</option>
-              <option value="friendly">friendly</option>
-              <option value="minimal">minimal</option>
-              <option value="editorial">editorial</option>
+              <option value="neutral">нейтральный</option>
+              <option value="bold">смелый</option>
+              <option value="friendly">дружелюбный</option>
+              <option value="minimal">минималистичный</option>
+              <option value="editorial">редакционный</option>
             </select>
           </label>
           <div className="field">
-            <span>Brand kits</span>
+            <span>Наборы бренда</span>
             <div style={{ display: 'grid', gap: 6 }}>
               {(snapshots ?? []).map((snap) => (
                 <div key={snap.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -224,13 +224,13 @@ export function BrandSystemPanel({
                       className="btn btn-ghost btn-xs"
                       onClick={() => onApplySnapshot?.(snap.id)}
                     >
-                      Apply
+                      Применить
                     </button>
                     <button
                       type="button"
                       className="btn btn-ghost btn-xs"
                       onClick={() => onDeleteSnapshot?.(snap.id)}
-                      aria-label={`Delete ${snap.name}`}
+                      aria-label={`Удалить ${snap.name}`}
                     >
                       ×
                     </button>
@@ -242,7 +242,7 @@ export function BrandSystemPanel({
                   type="text"
                   value={snapshotName}
                   onChange={(e) => setSnapshotName(e.target.value)}
-                  placeholder="Snapshot name"
+                  placeholder="Название набора"
                 />
                 <button
                   type="button"
@@ -252,7 +252,7 @@ export function BrandSystemPanel({
                     setSnapshotName('')
                   }}
                 >
-                  Save current as...
+                  Сохранить текущий
                 </button>
               </div>
             </div>

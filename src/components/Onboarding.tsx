@@ -11,21 +11,21 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   return (
     <div className="onboarding">
-      <header className="onboarding__brand">Adaptive Graphics</header>
+      <header className="onboarding__brand">Генератор креативов</header>
 
-      <h1 className="onboarding__title">Build once. Ship marketplace-ready layouts.</h1>
+      <h1 className="onboarding__title">Один макет - все форматы для маркетплейсов.</h1>
       <p className="onboarding__sub">
-        Generate every format you need from one master creative — deterministic, fast, on-brand.
+        Соберите мастер-креатив и быстро адаптируйте его под карточки, сторис, объявления и инфографику.
       </p>
 
       <section className="onboarding__primary card">
         <div className="card__icon" aria-hidden>↑</div>
         <div className="card__body">
-          <div className="card__title">Import reference image</div>
-          <div className="card__desc">Drop a product photo — we'll match colors and pick a composition.</div>
+          <div className="card__title">Загрузить референс</div>
+          <div className="card__desc">Добавьте фото товара - мы подберем палитру и композицию.</div>
           <FilePicker
-            label="Choose file"
-            hint="or drag an image here"
+            label="Выбрать файл"
+            hint="или перетащите изображение сюда"
             onFile={(dataUrl) => onChoose('reference', { imageDataUrl: dataUrl })}
           />
         </div>
@@ -33,28 +33,28 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
 
       <section className="onboarding__pair">
         <button className="card card--action" onClick={() => onChoose('master')}>
-          <div className="card__title">Build master creative</div>
-          <div className="card__desc">Start from a blank canvas with full control.</div>
-          <span className="card__cta">Create new →</span>
+          <div className="card__title">Создать мастер-креатив</div>
+          <div className="card__desc">Начните с чистого макета и настройте все вручную.</div>
+          <span className="card__cta">Создать новый</span>
         </button>
         <button className="card card--action" onClick={() => onChoose('template')}>
-          <div className="card__title">Start from brand template</div>
-          <div className="card__desc">Pick a preset visual system.</div>
-          <span className="card__cta">Browse →</span>
+          <div className="card__title">Выбрать бренд-шаблон</div>
+          <div className="card__desc">Возьмите готовую визуальную систему как старт.</div>
+          <span className="card__cta">Открыть шаблоны</span>
         </button>
       </section>
 
       <ol className="onboarding__steps">
-        <li><span>1</span> Choose mode</li>
-        <li><span>2</span> Define pack</li>
-        <li><span>3</span> Select direction</li>
-        <li><span>4</span> Save and export</li>
+        <li><span>1</span> Выберите сценарий</li>
+        <li><span>2</span> Настройте форматы</li>
+        <li><span>3</span> Доведите макеты</li>
+        <li><span>4</span> Экспортируйте результат</li>
       </ol>
 
       <div className="onboarding__import">
-        Or{' '}
+        Или{' '}
         <button className="link" type="button" onClick={() => fileRef.current?.click()}>
-          import a saved .json project
+          импортируйте сохраненный .json-проект
         </button>
         <input
           ref={fileRef}

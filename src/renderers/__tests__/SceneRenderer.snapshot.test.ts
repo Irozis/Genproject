@@ -8,18 +8,18 @@ import { FIXTURE_BRAND_KIT, FIXTURE_ENABLED, FIXTURE_MASTER } from '../../lib/__
 import type { CompositionModel, FormatKey, VisualSystemKey } from '../../lib/types'
 
 const combos: Array<[VisualSystemKey, FormatKey, CompositionModel]> = [
-  ['product-card', 'marketplace-card', 'split-right-image'],
-  ['product-card', 'social-square', 'text-dominant'],
-  ['product-card', 'marketplace-highlight', 'image-top-text-bottom'],
-  ['product-card', 'story-vertical', 'hero-overlay'],
-  ['minimal', 'marketplace-card', 'hero-overlay'],
-  ['minimal', 'social-square', 'split-right-image'],
-  ['minimal', 'marketplace-highlight', 'text-dominant'],
-  ['minimal', 'story-vertical', 'image-top-text-bottom'],
-  ['bold-editorial', 'marketplace-card', 'text-dominant'],
-  ['bold-editorial', 'social-square', 'hero-overlay'],
-  ['bold-editorial', 'marketplace-highlight', 'split-right-image'],
-  ['bold-editorial', 'story-vertical', 'image-top-text-bottom'],
+  ['product-card', 'vk-square', 'split-right-image'],
+  ['product-card', 'vk-landscape', 'split-right-image'],
+  ['product-card', 'wb-card', 'image-top-text-bottom'],
+  ['product-card', 'instagram-story', 'hero-overlay'],
+  ['minimal', 'yandex-market-card', 'hero-overlay'],
+  ['minimal', 'ozon-fresh-square', 'split-right-image'],
+  ['minimal', 'yandex-market-banner', 'text-dominant'],
+  ['minimal', 'telegram-story', 'image-top-text-bottom'],
+  ['bold-editorial', 'vk-square', 'text-dominant'],
+  ['bold-editorial', 'vk-stories', 'hero-overlay'],
+  ['bold-editorial', 'avito-listing', 'split-right-image'],
+  ['bold-editorial', 'yandex-rsy-240x400', 'image-top-text-bottom'],
 ]
 
 describe('SceneRenderer snapshots', () => {

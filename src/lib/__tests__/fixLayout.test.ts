@@ -16,7 +16,7 @@ const baseScene: Scene = {
 
 describe('fixLayout — safe zone clamping', () => {
   it('clamps a block that starts before safe zone left', () => {
-    const rules = getFormat('marketplace-card') // safeZone.left = 6
+    const rules = getFormat('vk-square') // safeZone.left = 6
     const scene: Scene = {
       ...baseScene,
       title: { ...baseScene.title!, x: -5, y: 10, w: 50 },
@@ -26,7 +26,7 @@ describe('fixLayout — safe zone clamping', () => {
   })
 
   it('clamps a block that starts above safe zone top', () => {
-    const rules = getFormat('marketplace-card') // safeZone.top = 6
+    const rules = getFormat('vk-square') // safeZone.top = 6
     const scene: Scene = {
       ...baseScene,
       title: { ...baseScene.title!, x: 6, y: -10, w: 50 },
@@ -36,7 +36,7 @@ describe('fixLayout — safe zone clamping', () => {
   })
 
   it('trims width that overflows safe zone right', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       ...baseScene,
       title: { ...baseScene.title!, x: 6, y: 10, w: 200 },
@@ -47,7 +47,7 @@ describe('fixLayout — safe zone clamping', () => {
   })
 
   it('preserves a block already within safe zone', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const fixed = fixLayout(baseScene, rules)
     expect(fixed.title?.x).toBe(baseScene.title!.x)
     expect(fixed.title?.y).toBe(baseScene.title!.y)
@@ -56,7 +56,7 @@ describe('fixLayout — safe zone clamping', () => {
 
 describe('fixLayout — contrast check', () => {
   it('changes white title on white background to black', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       background: { kind: 'gradient', stops: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] },
       accent: '#000000',
@@ -68,7 +68,7 @@ describe('fixLayout — contrast check', () => {
   })
 
   it('leaves dark title on white background unchanged', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       background: { kind: 'gradient', stops: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] },
       accent: '#FF0000',
@@ -79,7 +79,7 @@ describe('fixLayout — contrast check', () => {
   })
 
   it('also fixes low-contrast subtitle fill', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       background: { kind: 'gradient', stops: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] },
       accent: '#000000',
@@ -95,7 +95,7 @@ describe('fixLayout — contrast check', () => {
   })
 
   it('inverts to white on dark solid background', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       background: { kind: 'solid', color: '#000000' },
       accent: '#FFFFFF',
@@ -106,7 +106,7 @@ describe('fixLayout — contrast check', () => {
   })
 
   it('reads approx bg color for tonal and split backgrounds', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const tonal: Scene = {
       background: { kind: 'tonal', base: '#111111' },
       accent: '#FFFFFF',
@@ -125,7 +125,7 @@ describe('fixLayout — contrast check', () => {
 
 describe('fixLayout — text font fitting', () => {
   it('shrinks text block fontSize when content overflows bounds', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       background: { kind: 'solid', color: '#FFFFFF' },
       accent: '#000000',
@@ -144,7 +144,7 @@ describe('fixLayout — text font fitting', () => {
 
 describe('fixLayout — preserves scene-level extras', () => {
   it('copies scrim and decor through unchanged', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       ...baseScene,
       scrim: { y: 50, h: 50, color: '#000000', opacity: 0.4 },
@@ -156,7 +156,7 @@ describe('fixLayout — preserves scene-level extras', () => {
   })
 
   it('clamps logo and image blocks too', () => {
-    const rules = getFormat('marketplace-card')
+    const rules = getFormat('vk-square')
     const scene: Scene = {
       ...baseScene,
       logo: { x: -5, y: -5, w: 200, h: 10, src: null, bgOpacity: 1 },
@@ -186,7 +186,7 @@ const ctaDefaults: Omit<CtaBlock, 'x' | 'y' | 'w' | 'text'> = {
 }
 
 describe('checkOverflow', () => {
-  const rules = getFormat('marketplace-card') // safeZone 6/6/6/6
+  const rules = getFormat('vk-square') // safeZone 6/6/6/6
   const cleanBg: Scene['background'] = { kind: 'gradient', stops: ['#FFFFFF', '#FFFFFF', '#FFFFFF'] }
 
   it('returns no issues for a healthy scene', () => {

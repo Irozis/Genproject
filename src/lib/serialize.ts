@@ -48,6 +48,9 @@ const imageBlockSchema = z.object({
   fit: z.enum(['cover', 'contain']),
   focalX: z.number().optional(),
   focalY: z.number().optional(),
+  cropZoom: z.number().optional(),
+  cropX: z.number().optional(),
+  cropY: z.number().optional(),
 })
 
 const logoBlockSchema = z.object({
@@ -161,6 +164,9 @@ const blockOverrideSchema = z.object({
   fit: z.enum(['cover', 'contain']).optional(),
   focalX: z.number().optional(),
   focalY: z.number().optional(),
+  cropZoom: z.number().optional(),
+  cropX: z.number().optional(),
+  cropY: z.number().optional(),
   bgOpacity: z.number().optional(),
 })
 
@@ -217,6 +223,22 @@ const assetHintSchema = z.object({
 })
 
 const formatKeySchema = z.enum([
+  'vk-square',
+  'vk-vertical',
+  'vk-landscape',
+  'vk-stories',
+  'telegram-story',
+  'instagram-story',
+  'ozon-fresh-square',
+  'yandex-market-card',
+  'yandex-market-banner',
+  'yandex-market-stretch',
+  'yandex-market-vertical',
+  'avito-fullscreen',
+  'avito-skyscraper',
+  'yandex-rsy-240x400',
+  'yandex-rsy-300x250',
+  'yandex-rsy-728x90',
   'marketplace-card',
   'marketplace-highlight',
   'social-square',

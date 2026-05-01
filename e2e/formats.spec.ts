@@ -3,17 +3,17 @@ import { test, expect } from '@playwright/test'
 test.describe('Onboarding', () => {
   test('shows wordmark and three mode cards', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByText('Adaptive Graphics')).toBeVisible()
-    await expect(page.getByText('Import reference image')).toBeVisible()
-    await expect(page.getByText('Build master creative')).toBeVisible()
-    await expect(page.getByText('Start from brand template')).toBeVisible()
+    await expect(page.getByText('Генератор креативов')).toBeVisible()
+    await expect(page.getByText('Загрузить референс')).toBeVisible()
+    await expect(page.getByText('Создать мастер-креатив')).toBeVisible()
+    await expect(page.getByText('Выбрать бренд-шаблон')).toBeVisible()
   })
 })
 
 test.describe('Editor — entry', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.getByText('Create new →').click()
+    await page.getByText('Создать новый').click()
   })
 
   test('renders editor header at ≤52px height', async ({ page }) => {
@@ -30,12 +30,12 @@ test.describe('Editor — entry', () => {
     expect(box!.width).toBe(320)
   })
 
-  test('shows all four format previews by default', async ({ page }) => {
+  test('shows key default format previews', async ({ page }) => {
     const previewTitles = page.locator('.preview__title')
-    await expect(previewTitles.filter({ hasText: /^Marketplace Card$/ })).toBeVisible()
-    await expect(previewTitles.filter({ hasText: /^Product Highlight$/ })).toBeVisible()
-    await expect(previewTitles.filter({ hasText: /^Social Square$/ })).toBeVisible()
-    await expect(previewTitles.filter({ hasText: /^Story$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^VK Пост 1:1$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^VK Пост 4:5$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^Telegram История$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^WB Карточка 3:4$/ })).toBeVisible()
   })
 
   test('page itself does not scroll (editor is 100vh)', async ({ page }) => {
@@ -48,23 +48,22 @@ test.describe('Editor — entry', () => {
 test.describe('Editor — live update', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.getByText('Create new →').click()
+    await page.getByText('Создать новый').click()
   })
 
   test('toggling title off removes it from all previews', async ({ page }) => {
-    const titleCheckbox = page.getByRole('checkbox', { name: 'Title', exact: true })
+    const titleCheckbox = page.getByRole('checkbox', { name: 'Заголовок', exact: true })
     await titleCheckbox.uncheck()
 
-    // The SVG should no longer contain the title text
-    // (default text is "Summer drop, ready to ship")
+    // The SVG should no longer contain the title text.
     const svgText = await page.locator('.preview__svg').first().textContent()
-    expect(svgText ?? '').not.toContain('Summer drop')
+    expect(svgText ?? '').not.toContain('Покупки к лету')
   })
 
   test('switching sidebar to Assets tab shows image upload', async ({ page }) => {
-    await page.getByRole('button', { name: 'Assets' }).click()
-    await expect(page.getByText('Main image')).toBeVisible()
-    await expect(page.getByText('Logo')).toBeVisible()
+    await page.getByRole('button', { name: 'Медиа' }).click()
+    await expect(page.getByText('Основное изображение')).toBeVisible()
+    await expect(page.getByText('Логотип')).toBeVisible()
   })
 })
 
@@ -79,7 +78,7 @@ test.describe('Visual snapshots', () => {
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
     await page.goto('/')
-    await page.getByText('Create new →').click()
+    await page.getByText('Создать новый').click()
     await page.waitForTimeout(200) // let SVGs render
 
     await expect(page).toHaveScreenshot('editor-default.png', { maxDiffPixelRatio: 0.02 })

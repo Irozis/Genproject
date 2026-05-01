@@ -4,7 +4,7 @@ import { getFormat } from '../formats'
 import { DEFAULT_BRAND_KIT } from '../defaults'
 import type { Scene } from '../types'
 
-const format = getFormat('marketplace-card')
+const format = getFormat('yandex-market-banner')
 
 function checkStatus(scene: Scene, rule: string): 'pass' | 'warn' | 'fail' {
   const result = runCompliance(scene, format, DEFAULT_BRAND_KIT)

@@ -1,4 +1,4 @@
-import type { BlockKind, Scene, TextAlign, TextFitMode } from '../lib/types'
+import type { BlockKind, ImageBlock, Scene, TextAlign, TextFitMode } from '../lib/types'
 
 type Props = {
   kind: BlockKind
@@ -15,7 +15,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
       <div className="el-editor">
         <PositionPanel kind={kind} block={block} onPatchScene={onPatchScene} />
         <label className="field">
-          <span>Text</span>
+          <span>Текст</span>
           <input
             type="text"
             value={block.text}
@@ -26,7 +26,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
         </label>
         {activeLocale ? (
           <label className="field">
-            <span>Text ({activeLocale})</span>
+            <span>Текст ({activeLocale})</span>
             <input
               type="text"
               value={block.textByLocale?.[activeLocale] ?? ''}
@@ -43,7 +43,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
           </label>
         ) : null}
         <label className="field">
-          <span>Font size — {block.fontSize.toFixed(1)}%</span>
+          <span>Размер шрифта - {block.fontSize.toFixed(1)}%</span>
           <input
             type="range"
             min={2}
@@ -62,7 +62,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
           />
         </label>
         <label className="field">
-          <span>Max lines — {block.maxLines}</span>
+          <span>Макс. строк - {block.maxLines}</span>
           <input
             type="range"
             min={1}
@@ -86,7 +86,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
           }
         />
         <label className="field field--inline">
-          <span>Color</span>
+          <span>Цвет</span>
           <input
             type="color"
             value={block.fill}
@@ -134,7 +134,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
       <div className="el-editor">
         <PositionPanel kind="cta" block={block} onPatchScene={onPatchScene} />
         <label className="field">
-          <span>Text</span>
+          <span>Текст</span>
           <input
             type="text"
             value={block.text}
@@ -145,7 +145,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
         </label>
         {activeLocale ? (
           <label className="field">
-            <span>Text ({activeLocale})</span>
+            <span>Текст ({activeLocale})</span>
             <input
               type="text"
               value={block.textByLocale?.[activeLocale] ?? ''}
@@ -162,7 +162,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
           </label>
         ) : null}
         <label className="field">
-          <span>Font size — {block.fontSize.toFixed(1)}%</span>
+          <span>Размер шрифта - {block.fontSize.toFixed(1)}%</span>
           <input
             type="range"
             min={1.5}
@@ -181,7 +181,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
           }
         />
         <label className="field field--inline">
-          <span>Background</span>
+          <span>Фон</span>
           <input
             type="color"
             value={block.bg}
@@ -191,7 +191,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
           />
         </label>
         <label className="field field--inline">
-          <span>Text color</span>
+          <span>Цвет текста</span>
           <input
             type="color"
             value={block.fill}
@@ -217,7 +217,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
       <div className="el-editor">
         <PositionPanel kind="image" block={block} onPatchScene={onPatchScene} />
         <label className="field field--inline">
-          <span>Fit</span>
+          <span>Заполнение</span>
           <select
             value={block.fit}
             onChange={(e) =>
@@ -227,12 +227,13 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
               }))
             }
           >
-            <option value="cover">Cover</option>
-            <option value="contain">Contain</option>
+            <option value="cover">Обрезать</option>
+            <option value="contain">Вместить</option>
           </select>
         </label>
+        <ImageCropControls block={block} onPatchScene={onPatchScene} />
         <label className="field">
-          <span>Corner radius — {block.rx}px</span>
+          <span>Скругление - {block.rx}px</span>
           <input
             type="range"
             min={0}
@@ -254,7 +255,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
       <div className="el-editor">
         <PositionPanel kind="logo" block={block} onPatchScene={onPatchScene} />
         <div className="el-editor--note">
-          Upload a logo image in the Assets tab.
+          Загрузите логотип во вкладке "Медиа".
         </div>
       </div>
     )
@@ -287,6 +288,95 @@ function patchBlock(
   })
 }
 
+function ImageCropControls({
+  block,
+  onPatchScene,
+}: {
+  block: ImageBlock
+  onPatchScene: (patch: (master: Scene) => Scene) => void
+}) {
+  const update = (patch: Partial<ImageBlock>) => {
+    onPatchScene((s) => ({ ...s, image: s.image ? { ...s.image, ...patch } : s.image }))
+  }
+  const fx = block.focalX ?? 0.5
+  const fy = block.focalY ?? 0.5
+  const zoom = block.cropZoom ?? 1
+  const cropX = block.cropX ?? 0
+  const cropY = block.cropY ?? 0
+
+  return (
+    <div className="crop-panel">
+      <div className="crop-panel__head">Кадрирование</div>
+      <label className="field">
+        <span>Масштаб - {zoom.toFixed(2)}x</span>
+        <input
+          type="range"
+          min={1}
+          max={3}
+          step={0.05}
+          value={zoom}
+          onChange={(e) => update({ cropZoom: Number(e.target.value) })}
+        />
+      </label>
+      <div className="crop-grid">
+        <label className="field">
+          <span>Сдвиг X - {cropX.toFixed(0)}%</span>
+          <input
+            type="range"
+            min={-50}
+            max={50}
+            step={1}
+            value={cropX}
+            onChange={(e) => update({ cropX: Number(e.target.value) })}
+          />
+        </label>
+        <label className="field">
+          <span>Сдвиг Y - {cropY.toFixed(0)}%</span>
+          <input
+            type="range"
+            min={-50}
+            max={50}
+            step={1}
+            value={cropY}
+            onChange={(e) => update({ cropY: Number(e.target.value) })}
+          />
+        </label>
+      </div>
+      <div className="crop-grid">
+        <label className="field">
+          <span>Фокус X - {Math.round(fx * 100)}%</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={fx}
+            onChange={(e) => update({ focalX: Number(e.target.value) })}
+          />
+        </label>
+        <label className="field">
+          <span>Фокус Y - {Math.round(fy * 100)}%</span>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={fy}
+            onChange={(e) => update({ focalY: Number(e.target.value) })}
+          />
+        </label>
+      </div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs"
+        onClick={() => update({ cropZoom: 1, cropX: 0, cropY: 0, focalX: 0.5, focalY: 0.5 })}
+      >
+        Сбросить кадр
+      </button>
+    </div>
+  )
+}
+
 function PositionPanel({
   kind,
   block,
@@ -304,7 +394,7 @@ function PositionPanel({
   return (
     <div className="position-panel">
       <div className="position-panel__head">
-        <span>Position</span>
+        <span>Позиция</span>
         <QuickPositionControls block={{ ...block, h }} onChange={set} />
       </div>
       <div className="position-grid">
@@ -353,13 +443,13 @@ function QuickPositionControls({
   onChange: (patch: Partial<{ x: number; y: number }>) => void
 }) {
   return (
-    <div className="position-quick" aria-label="Quick position">
-      <button type="button" onClick={() => onChange({ x: 0 })} title="Align left" aria-label="Align left">L</button>
-      <button type="button" onClick={() => onChange({ x: (100 - block.w) / 2 })} title="Align center" aria-label="Align center">C</button>
-      <button type="button" onClick={() => onChange({ x: 100 - block.w })} title="Align right" aria-label="Align right">R</button>
-      <button type="button" onClick={() => onChange({ y: 0 })} title="Align top" aria-label="Align top">T</button>
-      <button type="button" onClick={() => onChange({ y: (100 - block.h) / 2 })} title="Align middle" aria-label="Align middle">M</button>
-      <button type="button" onClick={() => onChange({ y: 100 - block.h })} title="Align bottom" aria-label="Align bottom">B</button>
+    <div className="position-quick" aria-label="Быстрое позиционирование">
+      <button type="button" onClick={() => onChange({ x: 0 })} title="Влево" aria-label="Влево">Л</button>
+      <button type="button" onClick={() => onChange({ x: (100 - block.w) / 2 })} title="По центру" aria-label="По центру">Ц</button>
+      <button type="button" onClick={() => onChange({ x: 100 - block.w })} title="Вправо" aria-label="Вправо">П</button>
+      <button type="button" onClick={() => onChange({ y: 0 })} title="Вверх" aria-label="Вверх">В</button>
+      <button type="button" onClick={() => onChange({ y: (100 - block.h) / 2 })} title="По середине" aria-label="По середине">С</button>
+      <button type="button" onClick={() => onChange({ y: 100 - block.h })} title="Вниз" aria-label="Вниз">Н</button>
     </div>
   )
 }
@@ -389,12 +479,12 @@ function CaseField({
 }) {
   return (
     <label className="field field--inline">
-      <span>Case</span>
+      <span>Регистр</span>
       <select value={value} onChange={(e) => onChange(e.target.value as 'none' | 'uppercase' | 'title-case' | 'sentence-case')}>
-        <option value="none">Aa</option>
-        <option value="uppercase">AA</option>
-        <option value="title-case">Title</option>
-        <option value="sentence-case">sentence</option>
+        <option value="none">Как есть</option>
+        <option value="uppercase">ВЕРХНИЙ</option>
+        <option value="title-case">С Заглавных</option>
+        <option value="sentence-case">Как предложение</option>
       </select>
     </label>
   )
@@ -409,12 +499,12 @@ function FitModeField({
 }) {
   return (
     <label className="field field--inline">
-      <span>Text fit</span>
+      <span>Подгонка текста</span>
       <select value={value} onChange={(e) => onChange(e.target.value as TextFitMode)}>
-        <option value="auto">Auto shrink</option>
-        <option value="clamp">Clamp lines</option>
-        <option value="ellipsis">Ellipsis</option>
-        <option value="overflow">Allow overflow</option>
+        <option value="auto">Автоуменьшение</option>
+        <option value="clamp">Ограничить строки</option>
+        <option value="ellipsis">Многоточие</option>
+        <option value="overflow">Разрешить выход</option>
       </select>
     </label>
   )
@@ -431,14 +521,14 @@ function AlignField({
   onChange: (next: TextAlign) => void
 }) {
   const options: { v: TextAlign; label: string; glyph: string }[] = [
-    { v: 'left', label: 'Align left', glyph: '⇤' },
-    { v: 'center', label: 'Align center', glyph: '↔' },
-    { v: 'right', label: 'Align right', glyph: '⇥' },
+    { v: 'left', label: 'По левому краю', glyph: '⇤' },
+    { v: 'center', label: 'По центру', glyph: '↔' },
+    { v: 'right', label: 'По правому краю', glyph: '⇥' },
   ]
   return (
     <div className="field field--inline">
-      <span>Align</span>
-      <div className="align-seg" role="group" aria-label="Text alignment">
+      <span>Выравнивание</span>
+      <div className="align-seg" role="group" aria-label="Выравнивание текста">
         {options.map((o) => (
           <button
             key={o.v}

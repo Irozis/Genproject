@@ -16,10 +16,10 @@ export function applyLayoutDensity(rules: FormatRuleSet, density: LayoutDensity 
 export function densityLabel(density: LayoutDensity): string {
   switch (density) {
     case 'compact':
-      return 'Compact'
+      return 'Компактно'
     case 'spacious':
-      return 'Spacious'
+      return 'Свободно'
     default:
-      return 'Balanced'
+      return 'Баланс'
   }
 }

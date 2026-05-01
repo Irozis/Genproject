@@ -13,11 +13,7 @@ type Props = {
   onRedo: () => void
   canUndo: boolean
   canRedo: boolean
-  /** Timestamp (Date.now()) of the most recent successful autosave. null
-   *  when the project hasn't been saved yet this session. Drives the
-   *  "Saved Xs ago" indicator. */
   lastSavedAt: number | null
-  /** True while a save is in flight (debounce pending) — shows "Saving…". */
   isSaving: boolean
   activeLocale?: string
   availableLocales?: string[]
@@ -45,7 +41,7 @@ export function EditorHeader({
 
   return (
     <header className="editor-header">
-      <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
+      <button className="btn btn-ghost btn-sm" onClick={onBack}>← Назад</button>
       <input
         className="editor-header__name"
         value={projectName}
@@ -57,8 +53,8 @@ export function EditorHeader({
           className="btn btn-ghost btn-sm btn-icon"
           onClick={onUndo}
           disabled={!canUndo}
-          title="Undo (Ctrl+Z)"
-          aria-label="Undo"
+          title="Отменить (Ctrl+Z)"
+          aria-label="Отменить"
         >
           ↶
         </button>
@@ -66,8 +62,8 @@ export function EditorHeader({
           className="btn btn-ghost btn-sm btn-icon"
           onClick={onRedo}
           disabled={!canRedo}
-          title="Redo (Ctrl+Shift+Z)"
-          aria-label="Redo"
+          title="Повторить (Ctrl+Shift+Z)"
+          aria-label="Повторить"
         >
           ↷
         </button>
@@ -77,16 +73,16 @@ export function EditorHeader({
             className="btn btn-ghost btn-sm"
             value={activeLocale ?? ''}
             onChange={(e) => onSetLocale?.(e.target.value || undefined)}
-            title="Active locale"
+            title="Активная локаль"
           >
-            <option value="">default</option>
+            <option value="">по умолчанию</option>
             {availableLocales.map((l) => (
               <option key={l} value={l}>{l}</option>
             ))}
           </select>
         ) : null}
         <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
-          Import .json
+          Импорт .json
         </button>
         <input
           ref={fileRef}
@@ -106,36 +102,34 @@ export function EditorHeader({
           onClick={() => onExport('png')}
           disabled={exporting !== null}
         >
-          {exporting === 'png' ? '…' : 'PNG zip'}
+          {exporting === 'png' ? '...' : 'PNG zip'}
         </button>
         <button
           className="btn btn-sm"
           onClick={() => onExport('svg')}
           disabled={exporting !== null}
         >
-          {exporting === 'svg' ? '…' : 'SVG zip'}
+          {exporting === 'svg' ? '...' : 'SVG zip'}
         </button>
         <button
           className="btn btn-sm"
           onClick={() => onExport('pdf')}
           disabled={exporting !== null}
         >
-          {exporting === 'pdf' ? '…' : 'PDF'}
+          {exporting === 'pdf' ? '...' : 'PDF'}
         </button>
         <button
           className="btn btn-primary btn-sm"
           onClick={() => onExport('json')}
           disabled={exporting !== null}
         >
-          {exporting === 'json' ? '…' : 'JSON'}
+          {exporting === 'json' ? '...' : 'JSON'}
         </button>
       </div>
     </header>
   )
 }
 
-// Autosave indicator. Re-renders once every 10 s via a tick state so the
-// "Saved Xs ago" label stays honest without a useEffect on every keystroke.
 function SaveStatus({
   lastSavedAt,
   isSaving,
@@ -150,21 +144,21 @@ function SaveStatus({
   }, [])
 
   if (isSaving) {
-    return <span className="save-status save-status--pending">Saving…</span>
+    return <span className="save-status save-status--pending">Сохраняем...</span>
   }
   if (lastSavedAt === null) {
-    return <span className="save-status save-status--muted">Not saved</span>
+    return <span className="save-status save-status--muted">Еще не сохранено</span>
   }
   return (
     <span className="save-status" title={new Date(lastSavedAt).toLocaleString()}>
-      Saved {formatAgo(Date.now() - lastSavedAt)}
+      Сохранено {formatAgo(Date.now() - lastSavedAt)}
     </span>
   )
 }
 
 function formatAgo(ms: number): string {
-  if (ms < 5_000) return 'just now'
-  if (ms < 60_000) return `${Math.floor(ms / 1000)}s ago`
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`
-  return `${Math.floor(ms / 3_600_000)}h ago`
+  if (ms < 5_000) return 'только что'
+  if (ms < 60_000) return `${Math.floor(ms / 1000)} с назад`
+  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)} мин назад`
+  return `${Math.floor(ms / 3_600_000)} ч назад`
 }
