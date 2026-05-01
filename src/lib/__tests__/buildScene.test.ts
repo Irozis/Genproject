@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { buildScene } from '../buildScene'
 import { DEFAULT_MASTER, DEFAULT_BRAND_KIT, DEFAULT_ENABLED } from '../defaults'
+import { checkOverflow } from '../fixLayout'
 import { getFormat } from '../formats'
-import type { EnabledMap } from '../types'
+import type { BlockKind, EnabledMap, Scene } from '../types'
 
 const ALL_FORMATS = ['marketplace-card', 'marketplace-highlight', 'social-square', 'story-vertical'] as const
 
@@ -101,6 +102,86 @@ describe('buildScene — block overrides', () => {
     })
     expect(scene.title?.x).toBe(11)
     expect(scene.title?.y).toBe(22)
+  })
+})
+
+describe('buildScene — text fitting', () => {
+  const longRussianMaster: Scene = {
+    ...DEFAULT_MASTER,
+    title: DEFAULT_MASTER.title
+      ? {
+          ...DEFAULT_MASTER.title,
+          text: 'Покупки к лету лучше делать сильно заранее',
+          fontSize: 14,
+          maxLines: 2,
+        }
+      : undefined,
+    subtitle: DEFAULT_MASTER.subtitle
+      ? { ...DEFAULT_MASTER.subtitle, text: 'Самый качественный продукт с первых рук' }
+      : undefined,
+    cta: DEFAULT_MASTER.cta ? { ...DEFAULT_MASTER.cta, text: 'Купить сейчас' } : undefined,
+    image: DEFAULT_MASTER.image
+      ? { ...DEFAULT_MASTER.image, src: 'data:image/png;base64,abc' }
+      : undefined,
+  }
+
+  it('honors title maxLines while capping an oversized manual font', () => {
+    const scene = buildScene(longRussianMaster, 'avito-listing', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+
+    expect(scene.title?.maxLines).toBe(2)
+    expect(scene.title?.fontSize).toBeLessThan(14)
+  })
+
+  it('keeps text blocks from overlapping in compact split layouts', () => {
+    const format = getFormat('avito-listing')
+    const scene = buildScene(longRussianMaster, 'avito-listing', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+    const textIssues = checkOverflow(scene, format).filter((issue) => {
+      const block = issue.block as BlockKind | null
+      return block === 'title' || block === 'subtitle' || block === 'cta' || block === 'badge'
+    })
+
+    expect(textIssues).toEqual([])
+  })
+
+  it('leaves readable vertical gaps in horizontal split layouts', () => {
+    const format = getFormat('avito-listing')
+    const scene = buildScene(longRussianMaster, 'avito-listing', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+    const title = scene.title!
+    const subtitle = scene.subtitle!
+    const cta = scene.cta!
+    const titleBottom = title.y + title.fontSize * (title.lineHeight ?? 1.2) * title.maxLines * format.aspectRatio
+    const subtitleBottom = subtitle.y + subtitle.fontSize * (subtitle.lineHeight ?? 1.2) * subtitle.maxLines * format.aspectRatio
+
+    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
+    expect(cta.y - subtitleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
+  })
+
+  it('reserves enough height for three-line titles in horizontal split layouts', () => {
+    const format = getFormat('avito-listing')
+    const master: Scene = {
+      ...longRussianMaster,
+      title: longRussianMaster.title ? { ...longRussianMaster.title, maxLines: 3 } : undefined,
+    }
+    const scene = buildScene(master, 'avito-listing', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+    const title = scene.title!
+    const subtitle = scene.subtitle!
+    const titleBottom = title.y + title.fontSize * (title.lineHeight ?? 1.2) * title.maxLines * format.aspectRatio
+
+    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
+  })
+
+  it('reserves enough height for three-line titles in story layouts', () => {
+    const format = getFormat('story-vertical')
+    const master: Scene = {
+      ...longRussianMaster,
+      title: longRussianMaster.title ? { ...longRussianMaster.title, maxLines: 3 } : undefined,
+    }
+    const scene = buildScene(master, 'story-vertical', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+    const title = scene.title!
+    const subtitle = scene.subtitle!
+    const titleBottom = title.y + title.fontSize * (title.lineHeight ?? 1.2) * title.maxLines * format.aspectRatio
+
+    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter * 0.5)
   })
 })
 

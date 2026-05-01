@@ -14,15 +14,17 @@ import { SceneRenderer } from '../renderers/SceneRenderer'
 import { buildScene } from '../lib/buildScene'
 import { checkOverflow, type LayoutIssue } from '../lib/fixLayout'
 import { getFormat } from '../lib/formats'
+import { applyLayoutDensity } from '../lib/layoutDensity'
 import type {
   AssetHint,
-  Block,
   BlockKind,
+  BlockOverride,
   BrandKit,
   CompositionModel,
   EnabledMap,
   FormatKey,
   FormatRuleSet,
+  LayoutDensity,
   Scene,
 } from '../lib/types'
 
@@ -44,8 +46,12 @@ type Props = {
   onSetFocal?: (formatKey: FormatKey, focal: { x: number; y: number } | null) => void
   /** Double-click on a text hotspot → open inline editor, commit via this. */
   onSetBlockText?: (kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => void
-  blockOverride?: Partial<Record<BlockKind, Block>>
-  onCopyLayout?: (layout: Partial<Record<BlockKind, Block>>) => void
+  blockOverride?: Partial<Record<BlockKind, BlockOverride>>
+  density?: LayoutDensity
+  isCustom?: boolean
+  onEnableCustom?: (formatKey: FormatKey, scene: Scene) => void
+  onDisableCustom?: (formatKey: FormatKey) => void
+  onCopyLayout?: (layout: Partial<Record<BlockKind, BlockOverride>>) => void
   onPasteLayout?: () => void
   canPaste?: boolean
   locale?: string
@@ -72,6 +78,10 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     onSetFocal,
     onSetBlockText,
     blockOverride,
+    density,
+    isCustom,
+    onEnableCustom,
+    onDisableCustom,
     onCopyLayout,
     onPasteLayout,
     canPaste,
@@ -203,7 +213,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     },
   }))
 
-  const rules = getFormat(formatKey, customFormats)
+  const rules = applyLayoutDensity(getFormat(formatKey, customFormats), density)
   // Apply per-format focal override onto master.image before building the scene
   // so the override flows through layout + SVG rendering identically to master.
   const effectiveMaster = useMemo<Scene>(() => {
@@ -221,8 +231,9 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
         blockOverrides: blockOverride,
         locale,
         customFormats,
+        density,
       }),
-    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, blockOverride, locale, customFormats],
+    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, blockOverride, locale, customFormats, density],
   )
   const issues = useMemo(() => checkOverflow(scene, rules), [scene, rules])
 
@@ -235,6 +246,15 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
         </div>
         <div className="preview__head-actions">
           <IssuesBadge issues={issues} />
+          <button
+            type="button"
+            className={`btn btn-ghost btn-xs preview__mode${isCustom ? ' is-on' : ''}`}
+            onClick={() => isCustom ? onDisableCustom?.(formatKey) : onEnableCustom?.(formatKey, scene)}
+            title={isCustom ? 'Use master settings for this format' : 'Customize this format separately'}
+            aria-pressed={!!isCustom}
+          >
+            {isCustom ? 'Custom' : 'Separate'}
+          </button>
           {zoomed ? (
             <button
               type="button"
@@ -272,6 +292,14 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
               ⋯
             </summary>
             <div className="kebab__menu" role="menu">
+              <button
+                type="button"
+                className="kebab__item"
+                role="menuitem"
+                onClick={() => isCustom ? onDisableCustom?.(formatKey) : onEnableCustom?.(formatKey, scene)}
+              >
+                {isCustom ? 'Inherit master' : 'Customize format'}
+              </button>
               <button
                 type="button"
                 className="kebab__item"
@@ -357,6 +385,10 @@ export const FormatPreview = memo(
     prev.focal === next.focal &&
     prev.assetHint === next.assetHint &&
     prev.blockOverride === next.blockOverride &&
+    prev.density === next.density &&
+    prev.isCustom === next.isCustom &&
+    prev.onEnableCustom === next.onEnableCustom &&
+    prev.onDisableCustom === next.onDisableCustom &&
     prev.onPickElement === next.onPickElement &&
     prev.onFix === next.onFix &&
     prev.onSetFocal === next.onSetFocal &&
@@ -368,14 +400,48 @@ export const FormatPreview = memo(
     prev.customFormats === next.customFormats,
 )
 
-function extractLayout(scene: Scene): Partial<Record<BlockKind, Block>> {
-  const out: Partial<Record<BlockKind, Block>> = {}
+function extractLayout(scene: Scene): Partial<Record<BlockKind, BlockOverride>> {
+  const out: Partial<Record<BlockKind, BlockOverride>> = {}
   for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
     const b = scene[k]
     if (!b) continue
-    out[k] = { x: b.x, y: b.y, w: b.w, h: b.h }
+    out[k] = blockToOverride(b)
   }
   return out
+}
+
+function blockToOverride(block: NonNullable<Scene[BlockKind]>): BlockOverride {
+  const keys = [
+    'x',
+    'y',
+    'w',
+    'h',
+    'text',
+    'textByLocale',
+    'fontSize',
+    'charsPerLine',
+    'maxLines',
+    'fitMode',
+    'weight',
+    'fill',
+    'opacity',
+    'letterSpacing',
+    'lineHeight',
+    'align',
+    'transform',
+    'bg',
+    'rx',
+    'fit',
+    'focalX',
+    'focalY',
+    'bgOpacity',
+  ] as const
+  const out: Record<string, unknown> = {}
+  const source = block as Record<string, unknown>
+  for (const key of keys) {
+    if (source[key] !== undefined) out[key] = source[key]
+  }
+  return out as BlockOverride
 }
 
 function clampNum(v: number, lo: number, hi: number): number {

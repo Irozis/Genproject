@@ -5,17 +5,19 @@
 import { luminance } from './color'
 import { LAYOUTS, chooseModel, profile } from './composition'
 import { getFormat } from './formats'
+import { applyLayoutDensity } from './layoutDensity'
 import type {
   AssetHint,
   BlockKind,
   Background,
   BrandKit,
-  Block,
+  BlockOverride,
   CompositionModel,
   EnabledMap,
   FormatKey,
   Scene,
   FormatRuleSet,
+  LayoutDensity,
   TextAlign,
 } from './types'
 
@@ -27,7 +29,8 @@ export type BuildOptions = {
    *  things like scrim opacity under overlaid text. */
   assetHint?: AssetHint | null
   /** Optional per-block geometry override for this format. */
-  blockOverrides?: Partial<Record<BlockKind, Block>>
+  blockOverrides?: Partial<Record<BlockKind, BlockOverride>>
+  density?: LayoutDensity
   locale?: string
   customFormats?: FormatRuleSet[]
 }
@@ -47,7 +50,7 @@ export function buildScene(
   enabled: EnabledMap,
   options: BuildOptions = {},
 ): Scene {
-  const rules = getFormat(formatKey, options.customFormats)
+  const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
 
   // 1. apply brand kit to master before layout (so layouts can override fills if needed)
   const branded = applyBrandKit(master, brandKit)
@@ -91,16 +94,20 @@ function applyLocale(scene: Scene, locale: string | undefined): Scene {
   return out
 }
 
-function applyBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind, Block>>): Scene {
+function applyBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind, BlockOverride>>): Scene {
   if (!overrides) return scene
   const out: Scene = { ...scene }
   for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
     const o = overrides[k]
     const b = out[k]
     if (!o || !b) continue
-    ;(out as Record<string, unknown>)[k] = { ...b, x: o.x ?? b.x, y: o.y ?? b.y, w: o.w ?? b.w, h: o.h ?? b.h }
+    ;(out as Record<string, unknown>)[k] = { ...b, ...dropUndefined(o) }
   }
   return out
+}
+
+function dropUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as Partial<T>
 }
 
 // If the scene has a placed image with off-centre focal AND a linear gradient

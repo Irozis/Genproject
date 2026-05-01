@@ -4,8 +4,9 @@ import { ElementRow } from './ElementRow'
 import { FilePicker } from './FilePicker'
 import { SidebarTabs, type SidebarTab } from './SidebarTabs'
 import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
+import { densityLabel } from '../lib/layoutDensity'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
-import type { BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, Project, Scene } from '../lib/types'
+import type { BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, LayoutDensity, Project, Scene } from '../lib/types'
 
 const ELEMENT_ROWS: { kind: BlockKind; label: string }[] = [
   { kind: 'title', label: 'Title' },
@@ -19,7 +20,11 @@ const ELEMENT_ROWS: { kind: BlockKind; label: string }[] = [
 type Props = {
   project: Project
   selectedKind: BlockKind | null
+  editingFormatKey?: FormatKey | null
   onPatchScene: (patch: (master: Scene) => Scene) => void
+  onResetFormatCustom: (key: FormatKey) => void
+  onResetFormatBlock: (key: FormatKey, kind: BlockKind) => void
+  onSetLayoutDensity: (density: LayoutDensity, formatKey?: FormatKey | null) => void
   onToggleEnabled: (kind: BlockKind, next: boolean) => void
   onBrandChange: (next: BrandKit) => void
   onSetImage: (dataUrl: string) => void
@@ -43,7 +48,11 @@ type Props = {
 export function Sidebar({
   project,
   selectedKind,
+  editingFormatKey,
   onPatchScene,
+  onResetFormatCustom,
+  onResetFormatBlock,
+  onSetLayoutDensity,
   onToggleEnabled,
   onBrandChange,
   onSetImage,
@@ -88,6 +97,34 @@ export function Sidebar({
                 />
               ))}
             </div>
+
+            {editingFormatKey ? (
+              <>
+                <OverridePanel
+                  formatKey={editingFormatKey}
+                  project={project}
+                  onResetFormatCustom={onResetFormatCustom}
+                  onResetFormatBlock={onResetFormatBlock}
+                />
+                <DensityPanel
+                  density={project.formatDensities?.[editingFormatKey] ?? project.layoutDensity ?? 'balanced'}
+                  scopeLabel={getFormat(editingFormatKey, project.customFormats).label}
+                  onChange={(density) => onSetLayoutDensity(density, editingFormatKey)}
+                />
+                <SpacingPanel
+                  scene={project.master}
+                  formatKey={editingFormatKey}
+                  customFormats={project.customFormats}
+                  onPatchScene={onPatchScene}
+                />
+              </>
+            ) : (
+              <DensityPanel
+                density={project.layoutDensity ?? 'balanced'}
+                scopeLabel="All formats"
+                onChange={(density) => onSetLayoutDensity(density, null)}
+              />
+            )}
 
             <SectionHeader>Formats</SectionHeader>
             <div className="format-list">
@@ -301,6 +338,223 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 // 3×3 focal-point picker. Nine deterministic anchors — enough to keep the
 // subject (face, legs, logo) in frame when cover-cropping an off-centre photo,
 // without pretending we can solve it automatically without ML.
+function OverridePanel({
+  formatKey,
+  project,
+  onResetFormatCustom,
+  onResetFormatBlock,
+}: {
+  formatKey: FormatKey
+  project: Project
+  onResetFormatCustom: (key: FormatKey) => void
+  onResetFormatBlock: (key: FormatKey, kind: BlockKind) => void
+}) {
+  const overrides = project.blockOverrides?.[formatKey] ?? {}
+  const kinds = ELEMENT_ROWS.map((row) => row.kind).filter((kind) => !!overrides[kind])
+  const label = getFormat(formatKey, project.customFormats).label
+
+  return (
+    <>
+      <SectionHeader>Custom format</SectionHeader>
+      <div className="override-panel">
+        <div className="override-panel__head">
+          <div>
+            <div className="override-panel__title">{label}</div>
+            <div className="override-panel__meta">{kinds.length} block{kinds.length === 1 ? '' : 's'} overridden</div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={() => onResetFormatCustom(formatKey)}
+          >
+            Reset all
+          </button>
+        </div>
+        {kinds.length > 0 ? (
+          <div className="override-panel__rows">
+            {kinds.map((kind) => (
+              <div key={kind} className="override-panel__row">
+                <span>{labelForKind(kind)}</span>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => onResetFormatBlock(formatKey, kind)}
+                >
+                  Reset
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="override-panel__empty">This format is inheriting all blocks.</div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function labelForKind(kind: BlockKind): string {
+  return ELEMENT_ROWS.find((row) => row.kind === kind)?.label ?? kind
+}
+
+function DensityPanel({
+  density,
+  scopeLabel,
+  onChange,
+}: {
+  density: LayoutDensity
+  scopeLabel: string
+  onChange: (density: LayoutDensity) => void
+}) {
+  const options: LayoutDensity[] = ['compact', 'balanced', 'spacious']
+  return (
+    <>
+      <SectionHeader>Layout density</SectionHeader>
+      <div className="density-panel">
+        <div className="density-panel__meta">{scopeLabel}</div>
+        <div className="density-seg" role="group" aria-label="Layout density">
+          {options.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={`density-seg__btn${density === option ? ' is-on' : ''}`}
+              onClick={() => onChange(option)}
+              aria-pressed={density === option}
+            >
+              {densityLabel(option)}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function SpacingPanel({
+  scene,
+  formatKey,
+  customFormats,
+  onPatchScene,
+}: {
+  scene: Scene
+  formatKey: FormatKey
+  customFormats?: FormatRuleSet[]
+  onPatchScene: (patch: (master: Scene) => Scene) => void
+}) {
+  const rules = getFormat(formatKey, customFormats)
+  const titleSubtitleGap = blockGap(scene, 'title', 'subtitle', rules.aspectRatio)
+  const subtitleCtaGap = blockGap(scene, 'subtitle', 'cta', rules.aspectRatio)
+  const titleCtaGap = !scene.subtitle ? blockGap(scene, 'title', 'cta', rules.aspectRatio) : null
+  const cta = scene.cta
+
+  if (titleSubtitleGap === null && subtitleCtaGap === null && titleCtaGap === null && !cta) return null
+
+  return (
+    <>
+      <SectionHeader>Spacing</SectionHeader>
+      <div className="spacing-panel">
+        {titleSubtitleGap !== null ? (
+          <GapField
+            label="Title to subtitle"
+            value={titleSubtitleGap}
+            onChange={(next) => setGap(onPatchScene, 'title', 'subtitle', next, rules.aspectRatio, ['subtitle', 'cta'])}
+          />
+        ) : null}
+        {subtitleCtaGap !== null ? (
+          <GapField
+            label="Subtitle to CTA"
+            value={subtitleCtaGap}
+            onChange={(next) => setGap(onPatchScene, 'subtitle', 'cta', next, rules.aspectRatio, ['cta'])}
+          />
+        ) : null}
+        {titleCtaGap !== null ? (
+          <GapField
+            label="Title to CTA"
+            value={titleCtaGap}
+            onChange={(next) => setGap(onPatchScene, 'title', 'cta', next, rules.aspectRatio, ['cta'])}
+          />
+        ) : null}
+        {cta ? (
+          <label className="field">
+            <span>CTA height - {(cta.h ?? 5).toFixed(1)}%</span>
+            <input
+              type="range"
+              min={2}
+              max={18}
+              step={0.25}
+              value={cta.h ?? 5}
+              onChange={(e) => {
+                const h = Number(e.target.value)
+                onPatchScene((s) => ({ ...s, cta: s.cta ? { ...s.cta, h } : s.cta }))
+              }}
+            />
+          </label>
+        ) : null}
+      </div>
+    </>
+  )
+}
+
+function GapField({ label, value, onChange }: { label: string; value: number; onChange: (next: number) => void }) {
+  return (
+    <label className="field">
+      <span>{label} - {value.toFixed(1)}%</span>
+      <input
+        type="range"
+        min={0}
+        max={22}
+        step={0.25}
+        value={clamp(value, 0, 22)}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </label>
+  )
+}
+
+function setGap(
+  onPatchScene: (patch: (master: Scene) => Scene) => void,
+  from: BlockKind,
+  to: BlockKind,
+  nextGap: number,
+  aspectRatio: number,
+  moveKinds: BlockKind[],
+) {
+  onPatchScene((s) => {
+    const current = blockGap(s, from, to, aspectRatio)
+    if (current === null) return s
+    const dy = nextGap - current
+    if (Math.abs(dy) < 0.001) return s
+    const out: Scene = { ...s }
+    for (const kind of moveKinds) {
+      const block = out[kind]
+      if (!block) continue
+      ;(out as Record<string, unknown>)[kind] = { ...block, y: clamp(block.y + dy, -20, 120) }
+    }
+    return out
+  })
+}
+
+function blockGap(scene: Scene, from: BlockKind, to: BlockKind, aspectRatio: number): number | null {
+  const a = scene[from]
+  const b = scene[to]
+  if (!a || !b) return null
+  return b.y - (a.y + blockVisualHeight(a, aspectRatio))
+}
+
+function blockVisualHeight(block: NonNullable<Scene[BlockKind]>, aspectRatio: number): number {
+  if (typeof block.h === 'number') return block.h
+  if ('fontSize' in block) {
+    const lines = block.maxLines ?? 1
+    const lineHeight = block.lineHeight ?? 1.2
+    return block.fontSize * lineHeight * lines * aspectRatio
+  }
+  return 0
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
 function FocalGrid({
   fx,
   fy,

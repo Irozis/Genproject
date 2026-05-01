@@ -23,6 +23,7 @@ const textBlockSchema = z.object({
   fontSize: z.number(),
   charsPerLine: z.number(),
   maxLines: z.number(),
+  fitMode: z.enum(['auto', 'clamp', 'ellipsis', 'overflow']).optional(),
   weight: z.number(),
   fill: z.string(),
   opacity: z.number().optional(),
@@ -138,11 +139,29 @@ const sceneSchema = z.object({
 })
 
 const blockKindEnum = z.enum(['title', 'subtitle', 'cta', 'badge', 'logo', 'image'])
-const blockGeomSchema = z.object({
-  x: z.number(),
-  y: z.number(),
-  w: z.number(),
-  h: z.number().optional(),
+const blockOverrideSchema = z.object({
+  ...blockBase,
+  text: z.string().optional(),
+  textByLocale: z.record(z.string(), z.string()).optional(),
+  fontSize: z.number().optional(),
+  charsPerLine: z.number().optional(),
+  maxLines: z.number().optional(),
+  fitMode: z.enum(['auto', 'clamp', 'ellipsis', 'overflow']).optional(),
+  weight: z.number().optional(),
+  fill: z.string().optional(),
+  opacity: z.number().optional(),
+  letterSpacing: z.number().optional(),
+  lineHeight: z.number().optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
+  transform: z.enum(['none', 'uppercase', 'title-case', 'sentence-case']).optional(),
+  halo: z.object({ color: z.string(), opacity: z.number(), blurPx: z.number() }).optional(),
+  bg: z.string().optional(),
+  rx: z.number().optional(),
+  src: z.string().nullable().optional(),
+  fit: z.enum(['cover', 'contain']).optional(),
+  focalX: z.number().optional(),
+  focalY: z.number().optional(),
+  bgOpacity: z.number().optional(),
 })
 
 const enabledMapSchema = z.record(blockKindEnum, z.boolean())
@@ -224,7 +243,8 @@ const formatRuleSetSchema = z.object({
   requiredElements: z.array(blockKindEnum),
 })
 
-const blockOverridesSchema = z.record(anyFormatKeySchema, z.record(blockKindEnum, blockGeomSchema).optional())
+const blockOverridesSchema = z.record(anyFormatKeySchema, z.record(blockKindEnum, blockOverrideSchema).optional())
+const layoutDensitySchema = z.enum(['compact', 'balanced', 'spacious'])
 
 export const projectSchema = z.object({
   id: z.string(),
@@ -243,6 +263,8 @@ export const projectSchema = z.object({
     .record(anyFormatKeySchema, z.object({ x: z.number(), y: z.number() }))
     .optional(),
   blockOverrides: blockOverridesSchema.optional(),
+  layoutDensity: layoutDensitySchema.optional(),
+  formatDensities: z.record(anyFormatKeySchema, layoutDensitySchema).optional(),
   paletteLocked: z.boolean().optional(),
   activeLocale: z.string().optional(),
   availableLocales: z.array(z.string()).optional(),

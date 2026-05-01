@@ -127,11 +127,11 @@ function pct(v: number, total: number): number {
   return (v / 100) * total
 }
 
-function resolveFontSizePx(fontSize: number, frameHeight: number): number {
+function resolveFontSizePx(fontSize: number, frameWidth: number): number {
   if (!Number.isFinite(fontSize) || fontSize <= 0) return 0
   // Scene stores typography as percentage (0..100). Larger values are treated
   // as already-pixel font sizes for compatibility with direct px overrides.
-  if (fontSize <= 100) return (fontSize / 100) * frameHeight
+  if (fontSize <= 100) return (fontSize / 100) * frameWidth
   return fontSize
 }
 
@@ -608,7 +608,7 @@ function TextNode({
   fontFamily: string
   accent: string
 }) {
-  const fontSizePx = resolveFontSizePx(block.fontSize, H)
+  const fontSizePx = resolveFontSizePx(block.fontSize, W)
   const xLeft = pct(block.x, W)
   const yTop = pct(block.y, H)
   const wPx = pct(block.w, W)
@@ -625,35 +625,25 @@ function TextNode({
   const rawText = applyCase(block.text, block.transform)
   const hasHighlight = rawText.includes('**')
   const plain = hasHighlight ? stripMarkers(rawText) : rawText
+  const fitMode = block.fitMode ?? 'auto'
+  const wrapMaxLines = fitMode === 'overflow' ? 99 : block.maxLines
+  const clipId = block.h && fitMode !== 'overflow'
+    ? `text-clip-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(wPx)}-${Math.round(pct(block.h, H))}`
+    : undefined
   const lines = wrapText({
     text: plain,
     fontSizePx,
     fontWeight: block.weight,
     fontFamily,
     maxWidthPx: wPx,
-    maxLines: block.maxLines,
+    maxLines: wrapMaxLines,
+    overflow: fitMode === 'clamp' || fitMode === 'overflow' ? 'clip' : 'ellipsis',
   })
   const lineHeight = fontSizePx * (block.lineHeight ?? 1.12)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0)
 
   const allTokens = hasHighlight ? parseHighlightTokens(rawText) : null
-
-  return (
-    <>
-      {block.halo && haloId ? (
-        <defs>
-          <filter id={haloId} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation={block.halo.blurPx} />
-            <feComponentTransfer>
-              <feFuncA type="linear" slope={block.halo.opacity * 1.8} />
-            </feComponentTransfer>
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-      ) : null}
+  const textNode = (
     <text
       x={anchorX}
       y={yTop + fontSizePx}
@@ -691,6 +681,32 @@ function TextNode({
         )
       })}
     </text>
+  )
+
+  return (
+    <>
+      {clipId ? (
+        <defs>
+          <clipPath id={clipId}>
+            <rect x={xLeft} y={yTop} width={wPx} height={pct(block.h ?? 0, H)} />
+          </clipPath>
+        </defs>
+      ) : null}
+      {block.halo && haloId ? (
+        <defs>
+          <filter id={haloId} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation={block.halo.blurPx} />
+            <feComponentTransfer>
+              <feFuncA type="linear" slope={block.halo.opacity * 1.8} />
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      ) : null}
+      {clipId ? <g clipPath={`url(#${clipId})`}>{textNode}</g> : textNode}
     </>
   )
 }
@@ -726,7 +742,7 @@ function BadgeNode({
   H: number
   fontFamily: string
 }) {
-  const fontSizePx = resolveFontSizePx(block.fontSize, H)
+  const fontSizePx = resolveFontSizePx(block.fontSize, W)
   const padX = fontSizePx * 0.7
   const padY = fontSizePx * 0.4
   const x = pct(block.x, W)
@@ -779,7 +795,7 @@ function CtaNode({
   const y = pct(block.y, H)
   const w = pct(block.w, W)
   const h = pct(block.h ?? 7, H)
-  const fontSizePx = resolveFontSizePx(block.fontSize, H)
+  const fontSizePx = resolveFontSizePx(block.fontSize, W)
   const rx = Math.min(block.rx, h / 2)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
   return (

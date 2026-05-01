@@ -31,6 +31,7 @@ export type WrapInput = {
   fontFamily: string
   maxWidthPx: number
   maxLines: number
+  overflow?: 'ellipsis' | 'clip'
   /**
    * When true (default), avoid orphans — a last line that is a single short
    * word. Rebalances by pulling the last word of the previous line down so
@@ -59,6 +60,7 @@ export type FontFitInput = {
 
 export function wrapText(input: WrapInput): string[] {
   const { text, fontSizePx, fontWeight, fontFamily, maxWidthPx, maxLines } = input
+  const overflow = input.overflow ?? 'ellipsis'
   const avoidOrphans = input.avoidOrphans !== false
   const balance = input.balance !== false
   if (!text || maxLines <= 0 || maxWidthPx <= 0) return []
@@ -86,6 +88,7 @@ export function wrapText(input: WrapInput): string[] {
       lines.push(current)
       current = word
       if (lines.length === maxLines) {
+        if (overflow === 'clip') return lines
         // no room for `current` — fold remaining words into ellipsis on last line
         const lastIdx = lines.length - 1
         const remaining = [word, ...words.slice(i + 1)].join(' ')
@@ -94,10 +97,15 @@ export function wrapText(input: WrapInput): string[] {
         return lines
       }
     } else {
-      // single word too wide — truncate it with ellipsis
-      lines.push(fitSingleWord(word, measure, maxWidthPx))
-      current = ''
-      ellipsisApplied = true
+      if (overflow === 'clip') {
+        lines.push(word)
+        current = ''
+      } else {
+        // single word too wide — truncate it with ellipsis
+        lines.push(fitSingleWord(word, measure, maxWidthPx))
+        current = ''
+        ellipsisApplied = true
+      }
       if (lines.length === maxLines) return lines
     }
   }

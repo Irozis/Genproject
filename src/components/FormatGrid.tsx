@@ -2,12 +2,13 @@ import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { FormatPreview, type FormatPreviewHandle } from './FormatPreview'
 import type {
   AssetHint,
-  Block,
   BlockKind,
+  BlockOverride,
   BrandKit,
   CompositionModel,
   EnabledMap,
   FormatKey,
+  LayoutDensity,
   Scene,
   FormatRuleSet,
 } from '../lib/types'
@@ -23,17 +24,21 @@ type Props = {
   imageFocals?: Partial<Record<FormatKey, { x: number; y: number }>>
   /** Analyzed image stats. Forwarded to every preview so layouts can adapt. */
   assetHint?: AssetHint | null
-  onPickElement: (kind: BlockKind) => void
+  onPickElement: (kind: BlockKind, formatKey: FormatKey) => void
   onFix: (formatKey: FormatKey) => void
   /** Shift-click on image hotspot in a preview sets per-format focal. */
   onSetFocal?: (formatKey: FormatKey, focal: { x: number; y: number } | null) => void
   /** Double-click on a text hotspot opens an inline editor; committing
    *  calls this to patch master.<kind>.text. */
-  onSetBlockText?: (kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => void
-  blockOverrides?: Partial<Record<FormatKey, Partial<Record<BlockKind, Block>>>>
-  layoutClipboard?: Partial<Record<BlockKind, Block>> | null
-  onCopyLayout?: (layout: Partial<Record<BlockKind, Block>>) => void
+  onSetBlockText?: (formatKey: FormatKey, kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => void
+  blockOverrides?: Partial<Record<FormatKey, Partial<Record<BlockKind, BlockOverride>>>>
+  layoutDensity?: LayoutDensity
+  formatDensities?: Partial<Record<FormatKey, LayoutDensity>>
+  layoutClipboard?: Partial<Record<BlockKind, BlockOverride>> | null
+  onCopyLayout?: (layout: Partial<Record<BlockKind, BlockOverride>>) => void
   onPasteLayout?: (formatKey: FormatKey) => void
+  onEnableCustom?: (formatKey: FormatKey, scene: Scene) => void
+  onDisableCustom?: (formatKey: FormatKey) => void
   locale?: string
   customFormats?: FormatRuleSet[]
 }
@@ -56,9 +61,13 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     onSetFocal,
     onSetBlockText,
     blockOverrides,
+    layoutDensity,
+    formatDensities,
     layoutClipboard,
     onCopyLayout,
     onPasteLayout,
+    onEnableCustom,
+    onDisableCustom,
     locale,
     customFormats,
   },
@@ -104,12 +113,16 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
           enabled={enabled}
           override={overrides?.[k]}
           blockOverride={blockOverrides?.[k]}
+          density={formatDensities?.[k] ?? layoutDensity}
           focal={imageFocals?.[k]}
           assetHint={assetHint}
-          onPickElement={onPickElement}
+          isCustom={!!blockOverrides?.[k]}
+          onEnableCustom={onEnableCustom}
+          onDisableCustom={onDisableCustom}
+          onPickElement={(kind) => onPickElement(kind, k)}
           onFix={onFix}
           onSetFocal={onSetFocal}
-          onSetBlockText={onSetBlockText}
+          onSetBlockText={onSetBlockText ? (kind, text) => onSetBlockText(k, kind, text) : undefined}
           onCopyLayout={onCopyLayout}
           onPasteLayout={layoutClipboard ? () => onPasteLayout?.(k) : undefined}
           canPaste={!!layoutClipboard}

@@ -15,17 +15,19 @@ import { paletteAlternatives, type DerivedBrandColors } from './lib/paletteFromI
 import { buildScene } from './lib/buildScene'
 import { fixLayout } from './lib/fixLayout'
 import { getFormat } from './lib/formats'
+import { applyLayoutDensity } from './lib/layoutDensity'
 import { useHistory } from './lib/useHistory'
 import { applyImageHint } from './lib/applyImageHint'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
-  Block,
+  BlockOverride,
   BlockKind,
   BrandKit,
   BrandSnapshot,
   FormatKey,
   FormatRuleSet,
+  LayoutDensity,
   OnboardingMode,
   Project,
   Scene,
@@ -39,11 +41,12 @@ export default function App() {
     350,
   )
   const [selectedKind, setSelectedKind] = useState<BlockKind | null>(null)
+  const [selectedFormat, setSelectedFormat] = useState<FormatKey | null>(null)
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
-  const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, Block>> | null>(null)
+  const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, BlockOverride>> | null>(null)
   const [snapshots, setSnapshots] = useState<BrandSnapshot[]>(() => listSnapshots())
   const gridRef = useRef<FormatGridHandle>(null)
   // Monotonic counter for image-analysis results. The user may replace the image
@@ -130,6 +133,15 @@ export default function App() {
     }
   }, [project.master, project.imageSrc, project.logoSrc])
 
+  const selectedFormatScene = useMemo<Scene | null>(() => {
+    if (!selectedFormat || !project.blockOverrides?.[selectedFormat]) return null
+    return buildSceneForProject(project, selectedFormat)
+  }, [project, selectedFormat])
+
+  const sidebarProject = useMemo<Project>(() => (
+    selectedFormatScene ? { ...project, master: selectedFormatScene } : { ...project, master: masterWithAssets }
+  ), [project, masterWithAssets, selectedFormatScene])
+
   const patchScene = useCallback((patch: (s: Scene) => Scene) => {
     setProject((p) => {
       const nextMaster = patch(p.master)
@@ -137,9 +149,52 @@ export default function App() {
     })
   }, [setProject])
 
+  const patchEditableScene = useCallback((patch: (s: Scene) => Scene) => {
+    if (!selectedFormat || !project.blockOverrides?.[selectedFormat]) {
+      patchScene(patch)
+      return
+    }
+    setProject((p) => {
+      const current = buildSceneForProject(p, selectedFormat)
+      const next = patch(current)
+      const previous = p.blockOverrides?.[selectedFormat] ?? {}
+      return {
+        ...p,
+        blockOverrides: {
+          ...(p.blockOverrides ?? {}),
+          [selectedFormat]: mergeChangedOverrides(previous, current, next),
+        },
+      }
+    })
+  }, [patchScene, project.blockOverrides, selectedFormat, setProject])
+
   // Inline-edit callback — invoked by FormatPreview on dbl-click + blur/Enter.
   // Writes the new text back onto master.<kind> so every format rerenders.
-  const setBlockText = useCallback((kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => {
+  const setBlockText = useCallback((formatKey: FormatKey, kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => {
+    if (project.blockOverrides?.[formatKey]) {
+      const activeLocale = project.activeLocale
+      setProject((p) => ({
+        ...p,
+        blockOverrides: {
+          ...(p.blockOverrides ?? {}),
+          [formatKey]: {
+            ...(p.blockOverrides?.[formatKey] ?? {}),
+            [kind]: {
+              ...(p.blockOverrides?.[formatKey]?.[kind] ?? {}),
+              ...(activeLocale
+                ? {
+                    textByLocale: {
+                      ...(p.blockOverrides?.[formatKey]?.[kind]?.textByLocale ?? {}),
+                      [activeLocale]: text,
+                    },
+                  }
+                : { text }),
+            },
+          },
+        },
+      }))
+      return
+    }
     const activeLocale = project.activeLocale
     patchScene((m) => {
       const b = m[kind]
@@ -155,7 +210,7 @@ export default function App() {
       }
       return { ...m, [kind]: { ...b, text } }
     })
-  }, [patchScene, project.activeLocale])
+  }, [patchScene, project.activeLocale, project.blockOverrides, setProject])
 
   function toggleEnabled(kind: BlockKind, next: boolean) {
     setProject((p) => ({ ...p, enabled: { ...p.enabled, [kind]: next } }))
@@ -252,6 +307,7 @@ export default function App() {
   }, [setProject])
 
   function toggleFormat(key: FormatKey) {
+    setSelectedFormat((current) => current === key ? null : current)
     setProject((p) => {
       const has = p.selectedFormats.includes(key)
       const next = has ? p.selectedFormats.filter((k) => k !== key) : [...p.selectedFormats, key]
@@ -300,6 +356,7 @@ export default function App() {
 
   function deleteCustomFormat(key: FormatKey) {
     if (!key.startsWith('custom:')) return
+    setSelectedFormat((current) => current === key ? null : current)
     setProject((p) => {
       const customFormats = (p.customFormats ?? []).filter((f) => f.key !== key)
       const selectedFormats = p.selectedFormats.filter((k) => k !== key)
@@ -312,11 +369,28 @@ export default function App() {
       const blockOverrides = p.blockOverrides
         ? Object.fromEntries(Object.entries(p.blockOverrides).filter(([k]) => k !== key))
         : undefined
-      return { ...p, customFormats, selectedFormats, formatOverrides, imageFocals, blockOverrides }
+      const formatDensities = p.formatDensities
+        ? Object.fromEntries(Object.entries(p.formatDensities).filter(([k]) => k !== key))
+        : undefined
+      return { ...p, customFormats, selectedFormats, formatOverrides, imageFocals, blockOverrides, formatDensities }
     })
   }
 
-  const copyLayout = useCallback((layout: Partial<Record<BlockKind, Block>>) => {
+  const setLayoutDensity = useCallback((density: LayoutDensity, formatKey?: FormatKey | null) => {
+    if (!formatKey) {
+      setProject((p) => ({ ...p, layoutDensity: density }))
+      return
+    }
+    setProject((p) => ({
+      ...p,
+      formatDensities: {
+        ...(p.formatDensities ?? {}),
+        [formatKey]: density,
+      },
+    }))
+  }, [setProject])
+
+  const copyLayout = useCallback((layout: Partial<Record<BlockKind, BlockOverride>>) => {
     setLayoutClipboard(layout)
   }, [])
 
@@ -333,7 +407,8 @@ export default function App() {
 
   const handleFix = useCallback((formatKey: FormatKey) => {
     setProject((p) => {
-      const rules = getFormat(formatKey, p.customFormats)
+      const density = p.formatDensities?.[formatKey] ?? p.layoutDensity
+      const rules = applyLayoutDensity(getFormat(formatKey, p.customFormats), density)
       const override = p.formatOverrides?.[formatKey]
       const focal = p.imageFocals?.[formatKey]
       const masterForFormat: Scene = focal && p.master.image
@@ -353,6 +428,7 @@ export default function App() {
           blockOverrides: p.blockOverrides?.[formatKey],
           locale: p.activeLocale,
           customFormats: p.customFormats,
+          density,
         },
       )
       const fixed = fixLayout(positioned, rules)
@@ -374,7 +450,50 @@ export default function App() {
     })
   }, [setProject])
 
-  const handlePickElement = useCallback((k: BlockKind) => setSelectedKind(k), [])
+  const enableFormatCustom = useCallback((formatKey: FormatKey, scene: Scene) => {
+    setSelectedFormat(formatKey)
+    setProject((p) => ({
+      ...p,
+      blockOverrides: {
+        ...(p.blockOverrides ?? {}),
+        [formatKey]: extractOverrides(scene),
+      },
+    }))
+  }, [setProject])
+
+  const disableFormatCustom = useCallback((formatKey: FormatKey) => {
+    setSelectedFormat((current) => current === formatKey ? null : current)
+    setProject((p) => {
+      if (!p.blockOverrides?.[formatKey]) return p
+      const next = { ...p.blockOverrides }
+      delete next[formatKey]
+      return { ...p, blockOverrides: Object.keys(next).length > 0 ? next : undefined }
+    })
+  }, [setProject])
+
+  const resetFormatBlock = useCallback((formatKey: FormatKey, kind: BlockKind) => {
+    setProject((p) => {
+      const current = p.blockOverrides?.[formatKey]
+      if (!current?.[kind]) return p
+      const nextForFormat = { ...current }
+      delete nextForFormat[kind]
+      const nextBlockOverrides = { ...(p.blockOverrides ?? {}) }
+      if (Object.keys(nextForFormat).length > 0) {
+        nextBlockOverrides[formatKey] = nextForFormat
+      } else {
+        delete nextBlockOverrides[formatKey]
+      }
+      return {
+        ...p,
+        blockOverrides: Object.keys(nextBlockOverrides).length > 0 ? nextBlockOverrides : undefined,
+      }
+    })
+  }, [setProject])
+
+  const handlePickElement = useCallback((k: BlockKind, formatKey: FormatKey) => {
+    setSelectedKind(k)
+    setSelectedFormat(project.blockOverrides?.[formatKey] ? formatKey : null)
+  }, [project.blockOverrides])
 
   async function handleExport(kind: ExportFormat) {
     setExporting(kind)
@@ -483,9 +602,13 @@ export default function App() {
         )}
         >
           <Sidebar
-            project={{ ...project, master: masterWithAssets }}
+            project={sidebarProject}
             selectedKind={selectedKind}
-            onPatchScene={patchScene}
+            editingFormatKey={selectedFormatScene ? selectedFormat : null}
+            onPatchScene={patchEditableScene}
+            onResetFormatCustom={disableFormatCustom}
+            onResetFormatBlock={resetFormatBlock}
+            onSetLayoutDensity={setLayoutDensity}
             onToggleEnabled={toggleEnabled}
             onBrandChange={setBrand}
             onSetImage={setImage}
@@ -529,6 +652,8 @@ export default function App() {
               enabled={project.enabled}
               overrides={project.formatOverrides}
               blockOverrides={project.blockOverrides}
+              layoutDensity={project.layoutDensity}
+              formatDensities={project.formatDensities}
               layoutClipboard={layoutClipboard}
               imageFocals={project.imageFocals}
               assetHint={project.assetHint}
@@ -538,6 +663,8 @@ export default function App() {
               onSetBlockText={setBlockText}
               onCopyLayout={copyLayout}
               onPasteLayout={pasteLayout}
+              onEnableCustom={enableFormatCustom}
+              onDisableCustom={disableFormatCustom}
               locale={project.activeLocale}
               customFormats={project.customFormats}
             />
@@ -558,12 +685,108 @@ function Toast({ text, onDismiss }: { text: string; onDismiss: () => void }) {
   )
 }
 
-function extractLayout(scene: Scene): Partial<Record<BlockKind, Block>> {
-  const out: Partial<Record<BlockKind, Block>> = {}
+function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
+  const focal = project.imageFocals?.[formatKey]
+  const master = sceneWithAssets(project)
+  const masterForFormat: Scene = focal && master.image
+    ? {
+        ...master,
+        image: { ...master.image, focalX: focal.x, focalY: focal.y },
+      }
+    : master
+  return buildScene(
+    masterForFormat,
+    formatKey,
+    project.brandKit,
+    project.enabled,
+    {
+      ...(project.formatOverrides?.[formatKey] ? { override: project.formatOverrides[formatKey] } : {}),
+      assetHint: project.assetHint,
+      blockOverrides: project.blockOverrides?.[formatKey],
+      locale: project.activeLocale,
+      customFormats: project.customFormats,
+      density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+    },
+  )
+}
+
+function sceneWithAssets(project: Project): Scene {
+  const m = project.master
+  return {
+    ...m,
+    image: m.image ? { ...m.image, src: project.imageSrc } : m.image,
+    logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
+  }
+}
+
+function extractLayout(scene: Scene): Partial<Record<BlockKind, BlockOverride>> {
+  return extractOverrides(scene)
+}
+
+function extractOverrides(scene: Scene): Partial<Record<BlockKind, BlockOverride>> {
+  const out: Partial<Record<BlockKind, BlockOverride>> = {}
   for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
     const b = scene[k]
     if (!b) continue
-    out[k] = { x: b.x, y: b.y, w: b.w, h: b.h }
+    out[k] = blockToOverride(b)
   }
   return out
+}
+
+function mergeChangedOverrides(
+  previous: Partial<Record<BlockKind, BlockOverride>>,
+  current: Scene,
+  next: Scene,
+): Partial<Record<BlockKind, BlockOverride>> {
+  const out: Partial<Record<BlockKind, BlockOverride>> = { ...previous }
+  for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
+    const before = current[k]
+    const after = next[k]
+    if (!after) {
+      delete out[k]
+      continue
+    }
+    if (!before || !sameOverride(blockToOverride(before), blockToOverride(after))) {
+      out[k] = blockToOverride(after)
+    }
+  }
+  return out
+}
+
+function sameOverride(a: BlockOverride, b: BlockOverride): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
+function blockToOverride(block: NonNullable<Scene[BlockKind]>): BlockOverride {
+  const keys = [
+    'x',
+    'y',
+    'w',
+    'h',
+    'text',
+    'textByLocale',
+    'fontSize',
+    'charsPerLine',
+    'maxLines',
+    'fitMode',
+    'weight',
+    'fill',
+    'opacity',
+    'letterSpacing',
+    'lineHeight',
+    'align',
+    'transform',
+    'bg',
+    'rx',
+    'fit',
+    'focalX',
+    'focalY',
+    'bgOpacity',
+  ] as const
+  const out: Record<string, unknown> = {}
+  const source = block as Record<string, unknown>
+  for (const key of keys) {
+    if (source[key] !== undefined) out[key] = source[key]
+  }
+  return out as BlockOverride
 }

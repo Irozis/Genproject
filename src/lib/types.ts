@@ -39,9 +39,11 @@ export type Block = {
   h?: number
 }
 
-export type BlockOverrides = Partial<Record<FormatKey, Partial<Record<BlockKind, Block>>>>
-
 export type TextAlign = 'left' | 'center' | 'right'
+
+export type TextFitMode = 'auto' | 'clamp' | 'ellipsis' | 'overflow'
+
+export type LayoutDensity = 'compact' | 'balanced' | 'spacious'
 
 export type TextBlock = Block & {
   text: string
@@ -49,6 +51,7 @@ export type TextBlock = Block & {
   fontSize: number        // % of format width
   charsPerLine: number    // legacy heuristic, retained for compatibility
   maxLines: number
+  fitMode?: TextFitMode
   weight: number          // 400, 600, 800, 900
   fill: string
   opacity?: number
@@ -83,6 +86,10 @@ export type LogoBlock = Block & {
   src: string | null
   bgOpacity: number
 }
+
+export type BlockOverride = Partial<Block & TextBlock & CtaBlock & ImageBlock & LogoBlock>
+
+export type BlockOverrides = Partial<Record<FormatKey, Partial<Record<BlockKind, BlockOverride>>>>
 
 export type Scrim = {
   y: number          // top of scrim band, % of height
@@ -213,6 +220,8 @@ export type Project = {
   // Per-format block geometry overrides copied/pasted between previews.
   // Only x/y/w/h are overridden; text + style still come from the layout.
   blockOverrides?: BlockOverrides
+  layoutDensity?: LayoutDensity
+  formatDensities?: Partial<Record<FormatKey, LayoutDensity>>
   // Prevent image analysis from rewriting brand palette + gradient.
   paletteLocked?: boolean
   activeLocale?: string

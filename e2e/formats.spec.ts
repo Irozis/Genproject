@@ -31,10 +31,11 @@ test.describe('Editor — entry', () => {
   })
 
   test('shows all four format previews by default', async ({ page }) => {
-    await expect(page.getByText('Marketplace Card')).toBeVisible()
-    await expect(page.getByText('Product Highlight')).toBeVisible()
-    await expect(page.getByText('Social Square')).toBeVisible()
-    await expect(page.getByText('Story')).toBeVisible()
+    const previewTitles = page.locator('.preview__title')
+    await expect(previewTitles.filter({ hasText: /^Marketplace Card$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^Product Highlight$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^Social Square$/ })).toBeVisible()
+    await expect(previewTitles.filter({ hasText: /^Story$/ })).toBeVisible()
   })
 
   test('page itself does not scroll (editor is 100vh)', async ({ page }) => {
@@ -51,8 +52,7 @@ test.describe('Editor — live update', () => {
   })
 
   test('toggling title off removes it from all previews', async ({ page }) => {
-    // Enable the title row toggle (first checkbox in element list)
-    const titleCheckbox = page.locator('.el-row').filter({ hasText: 'Title' }).locator('input[type=checkbox]')
+    const titleCheckbox = page.getByRole('checkbox', { name: 'Title', exact: true })
     await titleCheckbox.uncheck()
 
     // The SVG should no longer contain the title text

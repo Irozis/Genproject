@@ -1,4 +1,4 @@
-import type { BlockKind, Scene, TextAlign } from '../lib/types'
+import type { BlockKind, Scene, TextAlign, TextFitMode } from '../lib/types'
 
 type Props = {
   kind: BlockKind
@@ -13,6 +13,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
     if (!block) return null
     return (
       <div className="el-editor">
+        <PositionPanel kind={kind} block={block} onPatchScene={onPatchScene} />
         <label className="field">
           <span>Text</span>
           <input
@@ -78,6 +79,12 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
             }}
           />
         </label>
+        <FitModeField
+          value={block.fitMode ?? 'auto'}
+          onChange={(next) =>
+            patchTextBlock(onPatchScene, kind, (current) => ({ ...current, fitMode: next }))
+          }
+        />
         <label className="field field--inline">
           <span>Color</span>
           <input
@@ -125,6 +132,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
     if (!block) return null
     return (
       <div className="el-editor">
+        <PositionPanel kind="cta" block={block} onPatchScene={onPatchScene} />
         <label className="field">
           <span>Text</span>
           <input
@@ -166,6 +174,12 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
             }
           />
         </label>
+        <FitModeField
+          value={block.fitMode ?? 'auto'}
+          onChange={(next) =>
+            patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, fitMode: next }))
+          }
+        />
         <label className="field field--inline">
           <span>Background</span>
           <input
@@ -201,6 +215,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
     if (!block) return null
     return (
       <div className="el-editor">
+        <PositionPanel kind="image" block={block} onPatchScene={onPatchScene} />
         <label className="field field--inline">
           <span>Fit</span>
           <select
@@ -233,9 +248,14 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
   }
 
   if (kind === 'logo') {
+    const block = scene.logo
+    if (!block) return null
     return (
-      <div className="el-editor el-editor--note">
-        Logo size and position are computed per-format. Upload a logo image in the Assets tab.
+      <div className="el-editor">
+        <PositionPanel kind="logo" block={block} onPatchScene={onPatchScene} />
+        <div className="el-editor--note">
+          Upload a logo image in the Assets tab.
+        </div>
       </div>
     )
   }
@@ -255,6 +275,111 @@ function patchTextBlock(
   })
 }
 
+function patchBlock(
+  onPatchScene: (patch: (master: Scene) => Scene) => void,
+  kind: BlockKind,
+  update: (current: NonNullable<Scene[BlockKind]>) => NonNullable<Scene[BlockKind]>,
+) {
+  onPatchScene((s) => {
+    const current = s[kind]
+    if (!current) return s
+    return { ...s, [kind]: update(current) }
+  })
+}
+
+function PositionPanel({
+  kind,
+  block,
+  onPatchScene,
+}: {
+  kind: BlockKind
+  block: NonNullable<Scene[BlockKind]>
+  onPatchScene: (patch: (master: Scene) => Scene) => void
+}) {
+  const h = block.h ?? defaultBlockHeight(kind)
+  const set = (patch: Partial<{ x: number; y: number; w: number; h: number }>) => {
+    patchBlock(onPatchScene, kind, (current) => ({ ...current, ...patch }))
+  }
+
+  return (
+    <div className="position-panel">
+      <div className="position-panel__head">
+        <span>Position</span>
+        <QuickPositionControls block={{ ...block, h }} onChange={set} />
+      </div>
+      <div className="position-grid">
+        <PositionField label="X" value={block.x} min={-20} max={120} onChange={(x) => set({ x })} />
+        <PositionField label="Y" value={block.y} min={-20} max={120} onChange={(y) => set({ y })} />
+        <PositionField label="W" value={block.w} min={2} max={120} onChange={(w) => set({ w })} />
+        <PositionField label="H" value={h} min={2} max={120} onChange={(nextH) => set({ h: nextH })} />
+      </div>
+    </div>
+  )
+}
+
+function PositionField({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  onChange: (next: number) => void
+}) {
+  return (
+    <label className="position-field">
+      <span>{label}</span>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        step={0.25}
+        value={round(value)}
+        onChange={(e) => onChange(clamp(Number(e.target.value), min, max))}
+      />
+    </label>
+  )
+}
+
+function QuickPositionControls({
+  block,
+  onChange,
+}: {
+  block: { x: number; y: number; w: number; h: number }
+  onChange: (patch: Partial<{ x: number; y: number }>) => void
+}) {
+  return (
+    <div className="position-quick" aria-label="Quick position">
+      <button type="button" onClick={() => onChange({ x: 0 })} title="Align left" aria-label="Align left">L</button>
+      <button type="button" onClick={() => onChange({ x: (100 - block.w) / 2 })} title="Align center" aria-label="Align center">C</button>
+      <button type="button" onClick={() => onChange({ x: 100 - block.w })} title="Align right" aria-label="Align right">R</button>
+      <button type="button" onClick={() => onChange({ y: 0 })} title="Align top" aria-label="Align top">T</button>
+      <button type="button" onClick={() => onChange({ y: (100 - block.h) / 2 })} title="Align middle" aria-label="Align middle">M</button>
+      <button type="button" onClick={() => onChange({ y: 100 - block.h })} title="Align bottom" aria-label="Align bottom">B</button>
+    </div>
+  )
+}
+
+function defaultBlockHeight(kind: BlockKind): number {
+  if (kind === 'image') return 50
+  if (kind === 'logo') return 6
+  if (kind === 'cta') return 7
+  return 12
+}
+
+function round(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min
+  return Math.max(min, Math.min(max, value))
+}
+
 function CaseField({
   value,
   onChange,
@@ -270,6 +395,26 @@ function CaseField({
         <option value="uppercase">AA</option>
         <option value="title-case">Title</option>
         <option value="sentence-case">sentence</option>
+      </select>
+    </label>
+  )
+}
+
+function FitModeField({
+  value,
+  onChange,
+}: {
+  value: TextFitMode
+  onChange: (next: TextFitMode) => void
+}) {
+  return (
+    <label className="field field--inline">
+      <span>Text fit</span>
+      <select value={value} onChange={(e) => onChange(e.target.value as TextFitMode)}>
+        <option value="auto">Auto shrink</option>
+        <option value="clamp">Clamp lines</option>
+        <option value="ellipsis">Ellipsis</option>
+        <option value="overflow">Allow overflow</option>
       </select>
     </label>
   )

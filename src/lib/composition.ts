@@ -91,8 +91,27 @@ function estimateLines(text: string, fontSizePct: number, widthPct: number, maxL
 }
 
 // Height of a text block in % of width, given actual line count.
-function textBlockHeight(fontSizePct: number, lines: number, lineHeight: number): number {
-  return fontSizePct * lines * lineHeight
+function textBlockHeight(fontSizePct: number, lines: number, lineHeight: number, rules: FormatRuleSet): number {
+  return fontSizePct * lines * lineHeight * rules.aspectRatio
+}
+
+function measuredLines(
+  text: string,
+  fontSizePct: number,
+  widthPct: number,
+  maxLines: number,
+  rules: FormatRuleSet,
+  weight: number | undefined,
+): number {
+  const lines = wrapText({
+    text,
+    fontSizePx: (fontSizePct / 100) * rules.width,
+    fontWeight: weight ?? 400,
+    fontFamily: 'Inter, system-ui, sans-serif',
+    maxWidthPx: (widthPct / 100) * rules.width,
+    maxLines,
+  })
+  return Math.max(1, lines.length, estimateLines(text, fontSizePct, widthPct, maxLines))
 }
 
 // Step a font size down from `base` (in %) toward `min` until the text wraps
@@ -128,6 +147,15 @@ const MIN_SUBTITLE_SIZE = 2.0
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
+}
+
+function capFontSize(block: TextBlock | undefined, fittedSize: number): number {
+  if (block?.fontSize === undefined) return fittedSize
+  return (block.fitMode ?? 'auto') === 'auto' ? Math.min(block.fontSize, fittedSize) : block.fontSize
+}
+
+function maxLinesFor(block: TextBlock | undefined, fallback: number, cap = fallback): number {
+  return Math.max(1, Math.min(block?.maxLines ?? fallback, cap))
 }
 
 function pxToHeightPct(px: number, rules: FormatRuleSet): number {
@@ -218,10 +246,11 @@ const layoutTextDominant: Layout = (scene, rules, enabled) => {
 
   const ts = tscale(rules)
   const baseTitle = (rules.aspectRatio < 0.7 ? 8 : 7) * ts
-  const targetLines = Math.min(2, rules.maxTitleLines)
+  const targetLines = maxLinesFor(scene.title, Math.min(2, rules.maxTitleLines), rules.maxTitleLines)
   const titleFontSize = scene.title
     ? fitFontSize(scene.title.text, innerW, targetLines, baseTitle, rules.minTitleSize)
     : baseTitle
+  const actualTitleFontSize = capFontSize(scene.title, titleFontSize)
   if (enabled.title && scene.title) {
     out.title = apply(
       {
@@ -229,8 +258,8 @@ const layoutTextDominant: Layout = (scene, rules, enabled) => {
         x: left,
         y: r.titleY,
         w: innerW,
-        fontSize: titleFontSize,
-        maxLines: rules.maxTitleLines,
+        fontSize: actualTitleFontSize,
+        maxLines: targetLines,
       },
       TITLE_TOKENS,
     )
@@ -238,24 +267,26 @@ const layoutTextDominant: Layout = (scene, rules, enabled) => {
 
   if (enabled.subtitle && scene.subtitle) {
     const titleLines = scene.title
-      ? estimateLines(scene.title.text, titleFontSize, innerW, rules.maxTitleLines)
+      ? measuredLines(scene.title.text, actualTitleFontSize, innerW, targetLines, rules, TITLE_TOKENS.weight)
       : 1
-    const titleH = textBlockHeight(titleFontSize, titleLines, 1.02)
+    const titleH = textBlockHeight(actualTitleFontSize, titleLines, 1.02, rules)
     const subW = innerW * 0.85
     const subFont = fitFontSize(scene.subtitle.text, subW, 2, 3.2 * ts, MIN_SUBTITLE_SIZE)
+    const actualSubFont = capFontSize(scene.subtitle, subFont)
     out.subtitle = apply(
       {
         ...scene.subtitle,
         x: left,
         y: r.titleY + titleH + r.afterTitleGap,
         w: subW,
-        fontSize: subFont,
+        fontSize: actualSubFont,
       },
       SUBTITLE_TOKENS,
     )
   }
 
   if (enabled.cta && scene.cta) {
+    const ctaFont = 2.6
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
@@ -263,7 +294,7 @@ const layoutTextDominant: Layout = (scene, rules, enabled) => {
       y: r.ctaY - 6,
       w: 32,
       h: 7,
-      fontSize: 2.6,
+        fontSize: capFontSize(scene.cta, ctaFont),
     }
   }
 
@@ -317,7 +348,7 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
 
   const ts = tscale(rules)
   const baseSplitTitle = 6.5 * ts
-  const splitTarget = Math.min(3, rules.maxTitleLines)
+  const splitTarget = maxLinesFor(scene.title, Math.min(3, rules.maxTitleLines), Math.min(rules.maxTitleLines, 4))
   const baseSplitTitlePx = (baseSplitTitle / 100) * rules.width
   const minTitlePx = 14
   const titleFontSize = scene.title
@@ -339,6 +370,7 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
         rules.width) *
       100
     : baseSplitTitle
+  const actualTitleFontSize = capFontSize(scene.title, titleFontSize)
   if (enabled.title && scene.title) {
     out.title = apply(
       {
@@ -346,8 +378,8 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
         x: left,
         y: r.titleY,
         w: textW,
-        fontSize: titleFontSize,
-        maxLines: Math.min(rules.maxTitleLines, 4),
+        fontSize: actualTitleFontSize,
+        maxLines: splitTarget,
       },
       TITLE_TOKENS,
     )
@@ -355,32 +387,34 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
 
   if (enabled.subtitle && scene.subtitle) {
     const titleLines = scene.title
-      ? estimateLines(scene.title.text, titleFontSize, textW, Math.min(rules.maxTitleLines, 4))
+      ? measuredLines(scene.title.text, actualTitleFontSize, textW, splitTarget, rules, TITLE_TOKENS.weight)
       : 1
-    const titleH = textBlockHeight(titleFontSize, titleLines, 1.02)
-    const titleSubtitleGap = pxToHeightPct(12, rules)
+    const titleH = textBlockHeight(actualTitleFontSize, titleLines, 1.02, rules)
+    const titleSubtitleGap = Math.max(pxToHeightPct(12, rules), rules.gutter)
     const subW = textW * 0.95
     const subFont = fitFontSize(scene.subtitle.text, subW, 3, 2.8 * ts, MIN_SUBTITLE_SIZE)
-    const subtitleLines = estimateLines(scene.subtitle.text, subFont, subW, 3)
-    const subtitleH = textBlockHeight(subFont, subtitleLines, 1.35)
+    const actualSubFont = capFontSize(scene.subtitle, subFont)
+    const subtitleLines = measuredLines(scene.subtitle.text, actualSubFont, subW, 3, rules, SUBTITLE_TOKENS.weight)
+    const subtitleH = textBlockHeight(actualSubFont, subtitleLines, 1.35, rules)
     out.subtitle = apply(
       {
         ...scene.subtitle,
         x: left,
         y: r.titleY + titleH + titleSubtitleGap,
         w: subW,
-        fontSize: subFont,
+        fontSize: actualSubFont,
       },
       SUBTITLE_TOKENS,
     )
 
     if (enabled.cta && scene.cta) {
-      const subtitleCtaGap = pxToHeightPct(16, rules)
+      const subtitleCtaGap = Math.max(pxToHeightPct(16, rules), rules.gutter)
       const ctaFont = 2.6
       const ctaTextW = Math.max(24, textW * 0.62)
-      const ctaLines = estimateLines(scene.cta.text, ctaFont, ctaTextW, 2)
-      const ctaTextH = textBlockHeight(ctaFont, ctaLines, 1.0)
-      const ctaPadV = pxToHeightPct(20, rules)
+      const actualCtaFont = capFontSize(scene.cta, ctaFont)
+      const ctaLines = measuredLines(scene.cta.text, actualCtaFont, ctaTextW, 2, rules, CTA_TOKENS.weight)
+      const ctaTextH = textBlockHeight(actualCtaFont, ctaLines, 1.0, rules)
+      const ctaPadV = Math.max(pxToHeightPct(20, rules), rules.gutter * 0.9)
       out.cta = {
         ...scene.cta,
         ...CTA_TOKENS,
@@ -388,12 +422,13 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
         y: r.titleY + titleH + titleSubtitleGap + subtitleH + subtitleCtaGap,
         w: ctaTextW,
         h: ctaTextH + ctaPadV,
-        fontSize: ctaFont,
+        fontSize: actualCtaFont,
       }
     }
   }
 
   if (enabled.cta && scene.cta && !out.cta) {
+    const ctaFont = 2.6
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
@@ -401,7 +436,7 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
       y: r.titleY + pxToHeightPct(16, rules),
       w: 30,
       h: pxToHeightPct(48, rules),
-      fontSize: 2.6,
+      fontSize: capFontSize(scene.cta, ctaFont),
     }
   }
 
@@ -445,20 +480,23 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   const ts = tscale(rules)
   const ctaH = 7
   const baseHeroTitle = 6.5 * ts
+  const titleMaxLines = maxLinesFor(scene.title, 2, 2)
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, innerW, 2, baseHeroTitle, rules.minTitleSize)
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, baseHeroTitle, rules.minTitleSize)
     : baseHeroTitle
   const subFont = scene.subtitle
     ? fitFontSize(scene.subtitle.text, innerW * 0.9, 2, 2.6 * ts, MIN_SUBTITLE_SIZE)
     : 2.6 * ts
+  const actualTitleFont = capFontSize(scene.title, titleFont)
+  const actualSubFont = capFontSize(scene.subtitle, subFont)
   const titleLines = scene.title
-    ? estimateLines(scene.title.text, titleFont, innerW, 2)
+    ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
     : 0
   const subLines = scene.subtitle
-    ? estimateLines(scene.subtitle.text, subFont, innerW * 0.9, 2)
+    ? measuredLines(scene.subtitle.text, actualSubFont, innerW * 0.9, 2, rules, SUBTITLE_TOKENS.weight)
     : 0
-  const titleH = textBlockHeight(titleFont, titleLines || 1, 1.02)
-  const subH = textBlockHeight(subFont, subLines || 1, 1.35)
+  const titleH = textBlockHeight(actualTitleFont, titleLines || 1, 1.02, rules)
+  const subH = textBlockHeight(actualSubFont, subLines || 1, 1.35, rules)
 
   const bottom = 100 - sz.bottom
   let cursorY = bottom
@@ -516,8 +554,8 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
         x: left,
         y: titleY,
         w: innerW,
-        fontSize: titleFont,
-        maxLines: 2,
+        fontSize: actualTitleFont,
+        maxLines: titleMaxLines,
         fill: '#FFFFFF',
         ...(titleHalo ? { halo: titleHalo } : {}),
       },
@@ -532,7 +570,7 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
         x: left,
         y: subY,
         w: innerW * 0.9,
-        fontSize: subFont,
+        fontSize: actualSubFont,
         fill: '#FFFFFF',
         maxLines: 2,
         ...(subHalo ? { halo: subHalo } : {}),
@@ -542,6 +580,7 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   }
 
   if (enabled.cta && scene.cta) {
+    const ctaFont = 2.6
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
@@ -549,7 +588,7 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
       y: ctaY,
       w: 32,
       h: ctaH,
-      fontSize: 2.6,
+      fontSize: capFontSize(scene.cta, ctaFont),
     }
   }
 
@@ -584,13 +623,16 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
 
   const ts = tscale(rules)
   const baseTitleSize = (isStoryish ? 6.5 : 6) * ts
+  const titleMaxLines = maxLinesFor(scene.title, Math.min(2, rules.maxTitleLines), rules.maxTitleLines)
   const titleFontSize = scene.title
-    ? fitFontSize(scene.title.text, innerW, 2, baseTitleSize, rules.minTitleSize)
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, baseTitleSize, rules.minTitleSize)
     : baseTitleSize
   const baseSubSize = (isStoryish ? 3 : 2.8) * ts
   const subFontSize = scene.subtitle
     ? fitFontSize(scene.subtitle.text, innerW * 0.95, 2, baseSubSize, MIN_SUBTITLE_SIZE)
     : baseSubSize
+  const actualTitleFontSize = capFontSize(scene.title, titleFontSize)
+  const actualSubFontSize = capFontSize(scene.subtitle, subFontSize)
   const ctaH = 6
 
   const out: Scene = { background: scene.background, accent: scene.accent }
@@ -609,13 +651,13 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
 
   // Measure actual heights ---------------------------------------------------
   const titleLines = scene.title
-    ? estimateLines(scene.title.text, titleFontSize, innerW, 3)
+    ? measuredLines(scene.title.text, actualTitleFontSize, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
     : 0
   const subLines = scene.subtitle
-    ? estimateLines(scene.subtitle.text, subFontSize, innerW * 0.95, 2)
+    ? measuredLines(scene.subtitle.text, actualSubFontSize, innerW * 0.95, 2, rules, SUBTITLE_TOKENS.weight)
     : 0
-  const titleH = titleLines ? textBlockHeight(titleFontSize, titleLines, 1.02) : 0
-  const subH = subLines ? textBlockHeight(subFontSize, subLines, 1.35) : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFontSize, titleLines, 1.02, rules) : 0
+  const subH = subLines ? textBlockHeight(actualSubFontSize, subLines, 1.35, rules) : 0
 
   // Text stack: top-align under the image. Flow CTA right after the subtitle
   // so the bottom doesn't grow a vertical void on tall formats (story). On
@@ -636,8 +678,8 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
         x: left,
         y: titleY,
         w: innerW,
-        fontSize: titleFontSize,
-        maxLines: 3,
+        fontSize: actualTitleFontSize,
+        maxLines: titleMaxLines,
       },
       TITLE_TOKENS,
     )
@@ -650,7 +692,7 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
         x: left,
         y: subY,
         w: innerW * 0.95,
-        fontSize: subFontSize,
+        fontSize: actualSubFontSize,
         maxLines: 2,
       },
       SUBTITLE_TOKENS,
@@ -665,6 +707,7 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   }
 
   if (hasCta && scene.cta) {
+    const ctaFont = 2.4
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
@@ -672,7 +715,7 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
       y: ctaY,
       w: 34,
       h: ctaH,
-      fontSize: 2.4,
+      fontSize: capFontSize(scene.cta, ctaFont),
     }
   }
 
