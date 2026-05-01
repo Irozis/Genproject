@@ -336,7 +336,7 @@ export default function App() {
       const key: FormatKey = `custom:${slug}-${Date.now()}`
       const rule: FormatRuleSet = {
         key,
-        label: input.name.trim() || 'Custom',
+        label: input.name.trim() || 'Свой формат',
         width: input.width,
         height: input.height,
         aspectRatio: input.width / input.height,
@@ -554,6 +554,9 @@ export default function App() {
     const fresh = newProject(t.id)
     fresh.brandKit = t.brandKit
     fresh.master = t.master
+    fresh.enabled = { ...fresh.enabled, ...t.enabled }
+    fresh.imageSrc = t.master.image?.src ?? null
+    fresh.logoSrc = t.master.logo?.src ?? null
     if (t.preferredModels) fresh.formatOverrides = { ...t.preferredModels }
     history.reset(fresh)
     setView('editor')
@@ -781,6 +784,9 @@ function blockToOverride(block: NonNullable<Scene[BlockKind]>): BlockOverride {
     'fit',
     'focalX',
     'focalY',
+    'cropZoom',
+    'cropX',
+    'cropY',
     'bgOpacity',
   ] as const
   const out: Record<string, unknown> = {}

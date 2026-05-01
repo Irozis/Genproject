@@ -10,24 +10,25 @@ type Props = {
 }
 
 export function TemplatePicker({ onPick, onBack }: Props) {
-  const previewFormat = getFormat('marketplace-card')
+  const previewFormat = getFormat('vk-square')
 
   return (
     <div className="template-picker">
       <header className="template-picker__head">
-        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Back</button>
-        <h1>Choose a brand template</h1>
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>← Назад</button>
+        <h1>Выберите бренд-шаблон</h1>
         <span />
       </header>
 
       <div className="template-grid">
         {TEMPLATES.map((t) => {
-          const override = t.preferredModels?.['marketplace-card']
+          const override = t.preferredModels?.['vk-square']
+          const enabled = { ...DEFAULT_ENABLED, ...t.enabled }
           const scene = buildScene(
             t.master,
-            'marketplace-card',
+            'vk-square',
             t.brandKit,
-            DEFAULT_ENABLED,
+            enabled,
             override ? { override } : {},
           )
           return (

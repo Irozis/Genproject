@@ -56,7 +56,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
             <stop offset="100%" stopColor={scene.scrim.color} stopOpacity={scene.scrim.opacity} />
           </linearGradient>
         ) : null}
-        {scene.image && scene.image.src && scene.image.rx > 0 ? (
+        {scene.image && scene.image.src && shouldClipImage(scene.image) ? (
           <clipPath id={imgClipId}>
             <rect
               x={pct(scene.image.x, W)}
@@ -125,6 +125,10 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
 
 function pct(v: number, total: number): number {
   return (v / 100) * total
+}
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v))
 }
 
 function resolveFontSizePx(fontSize: number, frameWidth: number): number {
@@ -409,7 +413,14 @@ function ImageNode({
       />
     )
   }
-  const isRounded = block.rx > 0
+  const isClipped = shouldClipImage(block)
+  const zoom = Math.max(1, block.cropZoom ?? 1)
+  const cropX = clamp(block.cropX ?? 0, -50, 50)
+  const cropY = clamp(block.cropY ?? 0, -50, 50)
+  const imageX = block.x - ((zoom - 1) * block.w) / 2 + (cropX / 100) * block.w
+  const imageY = block.y - ((zoom - 1) * (block.h ?? 50)) / 2 + (cropY / 100) * (block.h ?? 50)
+  const imageW = block.w * zoom
+  const imageH = (block.h ?? 50) * zoom
   const par =
     block.fit === 'contain'
       ? 'xMidYMid meet'
@@ -417,15 +428,20 @@ function ImageNode({
   return (
     <image
       href={block.src}
-      x={pct(block.x, W)}
-      y={pct(block.y, H)}
-      width={pct(block.w, W)}
-      height={pct(block.h ?? 50, H)}
+      crossOrigin="anonymous"
+      x={pct(imageX, W)}
+      y={pct(imageY, H)}
+      width={pct(imageW, W)}
+      height={pct(imageH, H)}
       preserveAspectRatio={par}
-      clipPath={isRounded ? `url(#${clipId})` : undefined}
-      filter={isRounded ? `url(#${shadowId})` : undefined}
+      clipPath={isClipped ? `url(#${clipId})` : undefined}
+      filter={block.rx > 0 ? `url(#${shadowId})` : undefined}
     />
   )
+}
+
+function shouldClipImage(block: ImageBlock): boolean {
+  return block.rx > 0 || (block.cropZoom ?? 1) > 1 || !!block.cropX || !!block.cropY
 }
 
 // Map a normalized focal [0..1] coord to the SVG preserveAspectRatio alignment
@@ -486,6 +502,7 @@ function LogoNode({
     return (
       <image
         href={block.src}
+        crossOrigin="anonymous"
         x={x}
         y={y}
         width={w}
