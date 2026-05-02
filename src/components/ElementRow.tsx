@@ -7,20 +7,21 @@ type Props = {
   label: string
   enabled: boolean
   forceOpen: boolean
+  isSelected?: boolean
   scene: Scene
   onToggle: (next: boolean) => void
   onPatchScene: (patch: (master: Scene) => Scene) => void
   activeLocale?: string
 }
 
-export function ElementRow({ kind, label, enabled, forceOpen, scene, onToggle, onPatchScene, activeLocale }: Props) {
+export function ElementRow({ kind, label, enabled, forceOpen, isSelected, scene, onToggle, onPatchScene, activeLocale }: Props) {
   const [open, setOpen] = useState(false)
   const isOpen = open || forceOpen
   const isInlineEditable = kind === 'title' || kind === 'subtitle' || kind === 'cta' || kind === 'badge'
   const inlineText = getInlineText(scene, kind, activeLocale)
 
   return (
-    <div className={`el-row${isOpen ? ' is-open' : ''}${enabled ? '' : ' is-disabled'}`}>
+    <div className={`el-row${isOpen ? ' is-open' : ''}${isSelected ? ' is-selected' : ''}${enabled ? '' : ' is-disabled'}`}>
       <div className="el-row__head">
         <label className="el-row__check">
           <input

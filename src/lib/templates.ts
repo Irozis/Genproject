@@ -12,11 +12,19 @@ import type {
   Palette,
   Scene,
   TextBlock,
+  BlockOverrides,
   CtaBlock,
   EnabledMap,
+  LayoutDensity,
   LogoBlock,
   ImageBlock,
 } from './types'
+import {
+  compactCopyOverrides,
+  marketplaceCopyOverrides,
+  type CompactCopy,
+  type MarketplaceCopy,
+} from './formatCopy'
 
 export type Template = {
   id: string
@@ -30,6 +38,12 @@ export type Template = {
   // profile-based chooser.
   preferredModels?: Partial<Record<FormatKey, CompositionModel>>
   enabled?: Partial<EnabledMap>
+  blockOverrides?: BlockOverrides
+  formatDensities?: Partial<Record<FormatKey, LayoutDensity>>
+  compactCopy?: CompactCopy
+  /** Marketplace-specific copy contract: 1 product trait line + benefit pill +
+   *  verb CTA. Applied only to card-family formats and overrides compactCopy. */
+  marketplaceCopy?: MarketplaceCopy
 }
 
 type BaseArgs = {
@@ -121,16 +135,146 @@ const make = ({ bg, decor, palette, text, ctaFill, imageSrc, image: imageOverrid
   return scene
 }
 
-export const TEMPLATES: Template[] = [
+const FORMAT_BLOCK_OVERRIDES: BlockOverrides = {
+  // Wide formats need a deliberately compact horizontal rhythm. Keeping title,
+  // subtitle and CTA in the same reduced scale preserves one style inside the
+  // format instead of letting only the overflowing block shrink.
+  'vk-landscape': {
+    title: { fontSize: 4.6, maxLines: 3, w: 46 },
+    subtitle: { fontSize: 2.1, maxLines: 2, w: 42 },
+    cta: { fontSize: 1.9, w: 28, h: 8 },
+    badge: { fontSize: 1.55 },
+  },
+  'wb-card': {
+    image: { x: 5, y: 5, w: 90, h: 54, rx: 18, fit: 'contain' },
+    title: { y: 63, fontSize: 5.8, maxLines: 2, w: 88, charsPerLine: 20 },
+    subtitle: { y: 74.5, fontSize: 2.05, maxLines: 1, w: 76, charsPerLine: 28 },
+    cta: { y: 84, fontSize: 2.45, w: 50, h: 7.2, charsPerLine: 12 },
+    badge: { y: 59.5, fontSize: 1.7, w: 30, charsPerLine: 12 },
+  },
+  'wb-infographic': {
+    image: { x: 5, y: 5, w: 90, h: 53, rx: 18, fit: 'contain' },
+    title: { y: 63, fontSize: 5.7, maxLines: 2, w: 88, charsPerLine: 20 },
+    subtitle: { y: 74.3, fontSize: 2.1, maxLines: 1, w: 78, charsPerLine: 26 },
+    cta: { y: 84, fontSize: 2.45, w: 50, h: 7.2, charsPerLine: 12 },
+    badge: { y: 59, fontSize: 1.75, w: 34, charsPerLine: 12 },
+  },
+  'ozon-card': {
+    image: { x: 5, y: 5, w: 90, h: 54, rx: 18, fit: 'contain' },
+    title: { y: 63, fontSize: 5.8, maxLines: 2, w: 88, charsPerLine: 20 },
+    subtitle: { y: 74.5, fontSize: 2.05, maxLines: 1, w: 76, charsPerLine: 28 },
+    cta: { y: 84, fontSize: 2.45, w: 50, h: 7.2, charsPerLine: 12 },
+    badge: { y: 59.5, fontSize: 1.7, w: 30, charsPerLine: 12 },
+  },
+  'yandex-market-vertical': {
+    image: { x: 6, y: 6, w: 88, h: 54, rx: 18, fit: 'contain' },
+    title: { y: 64, fontSize: 5.9, maxLines: 2, w: 86, charsPerLine: 20 },
+    subtitle: { y: 75.5, fontSize: 2.05, maxLines: 1, w: 78, charsPerLine: 28 },
+    cta: { y: 84.5, fontSize: 2.4, w: 50, h: 7, charsPerLine: 12 },
+    badge: { y: 60.2, fontSize: 1.7, w: 30, charsPerLine: 12 },
+  },
+  'yandex-market-banner': {
+    title: { fontSize: 3.1, maxLines: 2, w: 48, charsPerLine: 28 },
+    subtitle: { fontSize: 1.55, maxLines: 1, w: 42, charsPerLine: 42 },
+    cta: { fontSize: 1.45, w: 22, h: 9, charsPerLine: 18 },
+    badge: { fontSize: 1.2, charsPerLine: 12 },
+  },
+  'yandex-market-stretch': {
+    title: { fontSize: 1.8, maxLines: 1, w: 34, charsPerLine: 28 },
+    subtitle: { fontSize: 0.98, maxLines: 1, w: 26, charsPerLine: 30 },
+    cta: { fontSize: 1.1, w: 18, h: 42, charsPerLine: 12 },
+  },
+  'yandex-rsy-728x90': {
+    title: { fontSize: 2.0, maxLines: 1, w: 34, charsPerLine: 28 },
+    subtitle: { fontSize: 1.08, maxLines: 1, w: 26, charsPerLine: 30 },
+    cta: { fontSize: 1.18, w: 18, h: 42, charsPerLine: 12 },
+  },
+  'yandex-rsy-300x250': {
+    title: { fontSize: 4.6, maxLines: 2, w: 52, charsPerLine: 16 },
+    subtitle: { fontSize: 2.0, maxLines: 1, w: 46, charsPerLine: 20 },
+    cta: { fontSize: 2.15, w: 42, h: 11, charsPerLine: 12 },
+    badge: { fontSize: 1.35 },
+  },
+  'yandex-rsy-240x400': {
+    title: { fontSize: 5.8, maxLines: 2, charsPerLine: 16 },
+    subtitle: { fontSize: 2.2, maxLines: 1, charsPerLine: 20 },
+    cta: { fontSize: 2.45, w: 64, h: 8.2, charsPerLine: 12 },
+    badge: { fontSize: 1.55 },
+  },
+  'avito-skyscraper': {
+    title: { fontSize: 6.5, maxLines: 2, charsPerLine: 16 },
+    subtitle: { fontSize: 2.35, maxLines: 1, charsPerLine: 20 },
+    cta: { fontSize: 2.65, w: 76, h: 7.6, charsPerLine: 12 },
+    badge: { fontSize: 1.5 },
+  },
+}
+
+const FORMAT_DENSITIES: Partial<Record<FormatKey, LayoutDensity>> = {
+  'vk-landscape': 'compact',
+  'yandex-market-banner': 'compact',
+  'yandex-market-stretch': 'compact',
+  'yandex-rsy-728x90': 'compact',
+  'yandex-rsy-300x250': 'compact',
+  'yandex-rsy-240x400': 'compact',
+  'avito-skyscraper': 'compact',
+}
+
+function withFormatSettings(template: Template): Template {
+  // Layered merge order: format defaults → compactCopy (smallAd + banner +
+  // card families) → marketplaceCopy (card-only voice) → template-author
+  // overrides. Later layers win, so authors can still tweak anything.
+  const compact = template.compactCopy ? compactCopyOverrides(template.compactCopy) : undefined
+  const market = template.marketplaceCopy ? marketplaceCopyOverrides(template.marketplaceCopy) : undefined
+  return {
+    ...template,
+    blockOverrides: mergeBlockOverrides(
+      mergeBlockOverrides(
+        mergeBlockOverrides(FORMAT_BLOCK_OVERRIDES, compact),
+        market,
+      ),
+      template.blockOverrides,
+    ),
+    formatDensities: { ...FORMAT_DENSITIES, ...(template.formatDensities ?? {}) },
+  }
+}
+
+function mergeBlockOverrides(base: BlockOverrides, local?: BlockOverrides): BlockOverrides {
+  const out: BlockOverrides = { ...base }
+  if (!local) return out
+  for (const [formatKey, blocks] of Object.entries(local) as Array<[FormatKey, NonNullable<BlockOverrides[FormatKey]>]>) {
+    const current = out[formatKey] ?? {}
+    out[formatKey] = { ...current }
+    for (const [blockKind, override] of Object.entries(blocks) as Array<[keyof typeof blocks, NonNullable<typeof blocks[keyof typeof blocks]>]>) {
+      out[formatKey]![blockKind] = {
+        ...(current[blockKind] ?? {}),
+        ...override,
+      }
+    }
+  }
+  return out
+}
+
+const RAW_TEMPLATES: Template[] = [
   {
     id: 'coffee-roastery',
     name: 'Кофейня и обжарка',
     description: 'Теплая кофейная айдентика с атмосферным фото и спокойной премиальной подачей.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Свежая обжарка',
+      subtitle: 'Зерно и фильтр-паки к выходным',
+      cta: 'Выбрать кофе',
+    },
+    marketplaceCopy: {
+      trait: '250 г · средняя обжарка',
+      benefit: 'Свежая обжарка',
+      cta: 'В корзину',
+      infographicSubtitle: 'Зерно · Фильтр · Эспрессо',
+    },
     brandKit: {
       brandName: 'Nord Beans',
-      displayFont: '"Fraunces", "Playfair Display", Georgia, serif',
-      textFont: '"Inter", system-ui, sans-serif',
+      displayFont: 'Fraunces, "Playfair Display", Georgia, serif',
+      textFont: 'Manrope, Inter, system-ui, sans-serif',
       palette: {
         ink: '#FFF5E6',
         inkMuted: '#E7CFAF',
@@ -139,7 +283,7 @@ export const TEMPLATES: Template[] = [
         accentSoft: '#F1D1A9',
       },
       gradient: ['#1B1008', '#4D2B16', '#D89B54'],
-      toneOfVoice: 'editorial',
+      toneOfVoice: 'neutral',
       ctaStyle: 'rounded',
     },
     master: make({
@@ -153,18 +297,81 @@ export const TEMPLATES: Template[] = [
         accentSoft: '#F1D1A9',
       },
       imageSrc: photo('photo-1495474472287-4d71bcdd2085'),
-      image: { focalX: 0.44, focalY: 0.52, cropZoom: 1.08 },
+      image: { focalX: 0.52, focalY: 0.5, cropZoom: 1.0 },
       text: {
-        title: 'Свежая **обжарка** для спокойного утра',
+        title: 'Свежая **обжарка** к утру',
         subtitle: 'Моносорта, фильтр-паки и зерно с доставкой к выходным.',
         cta: 'Выбрать кофе',
-        badge: 'Roastery',
+        badge: 'Обжарка',
       },
     }),
+    blockOverrides: {
+      'vk-square': {
+        title: { fontSize: 6.2, maxLines: 3, w: 48 },
+        subtitle: { fontSize: 2.45, maxLines: 2, w: 42 },
+        cta: { fontSize: 2.25, w: 28, h: 6.4 },
+        badge: { fontSize: 1.45 },
+        image: { x: 58, y: 8, w: 34, h: 84, rx: 18, fit: 'cover' },
+      },
+      'vk-vertical': {
+        title: { fontSize: 6.2, maxLines: 3, w: 48 },
+        subtitle: { fontSize: 2.35, maxLines: 2, w: 42 },
+        cta: { fontSize: 2.2, w: 30, h: 5.8 },
+        badge: { fontSize: 1.45 },
+        image: { x: 58, y: 8, w: 34, h: 84, rx: 18, fit: 'cover' },
+      },
+      'wb-card': {
+        title: { y: 64, fontSize: 5.5, maxLines: 2 },
+        subtitle: { y: 75.5, fontSize: 2.25, maxLines: 2 },
+        cta: { y: 85, fontSize: 2.2, w: 34, h: 6.2 },
+      },
+      'wb-infographic': {
+        title: { y: 64, fontSize: 5.5, maxLines: 2 },
+        subtitle: { y: 75.5, fontSize: 2.25, maxLines: 2 },
+        cta: { y: 85, fontSize: 2.2, w: 34, h: 6.2 },
+      },
+      'ozon-card': {
+        title: { y: 64, fontSize: 5.5, maxLines: 2 },
+        subtitle: { y: 75.5, fontSize: 2.25, maxLines: 2 },
+        cta: { y: 85, fontSize: 2.2, w: 34, h: 6.2 },
+      },
+      'yandex-market-vertical': {
+        title: { fontSize: 6.0, maxLines: 2 },
+        subtitle: { fontSize: 2.25, maxLines: 2 },
+        cta: { fontSize: 2.15, w: 36, h: 6.2 },
+      },
+      'instagram-story': {
+        title: { y: 57, fontSize: 6.6, maxLines: 2 },
+        subtitle: { y: 67.5, fontSize: 2.45, maxLines: 2 },
+        cta: { y: 72.8, w: 32, h: 6.4 },
+      },
+      'telegram-story': {
+        title: { y: 58, fontSize: 6.6, maxLines: 2 },
+        subtitle: { y: 69, fontSize: 2.45, maxLines: 2 },
+        cta: { y: 76, w: 32, h: 6.4 },
+      },
+      'vk-stories': {
+        title: { y: 58, fontSize: 6.6, maxLines: 2 },
+        subtitle: { y: 69, fontSize: 2.45, maxLines: 2 },
+        cta: { y: 76, w: 32, h: 6.4 },
+      },
+      'avito-fullscreen': {
+        title: { y: 58, fontSize: 6.6, maxLines: 2 },
+        subtitle: { y: 69, fontSize: 2.45, maxLines: 2 },
+        cta: { y: 76, w: 32, h: 6.4 },
+      },
+    },
     preferredModels: {
-      'vk-square': 'hero-overlay',
+      'vk-square': 'split-right-image',
+      'vk-vertical': 'split-right-image',
+      'vk-stories': 'hero-overlay',
       'instagram-story': 'hero-overlay',
       'telegram-story': 'hero-overlay',
+      'wb-card': 'image-top-text-bottom',
+      'wb-infographic': 'image-top-text-bottom',
+      'ozon-card': 'image-top-text-bottom',
+      'yandex-market-vertical': 'image-top-text-bottom',
+      'avito-fullscreen': 'hero-overlay',
     },
   },
   {
@@ -172,10 +379,21 @@ export const TEMPLATES: Template[] = [
     name: 'Косметика и уход',
     description: 'Чистая beauty-композиция с мягкой палитрой, продуктовым фото и аккуратным CTA.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Уход без шума',
+      subtitle: 'Ниацинамид и керамиды',
+      cta: 'К набору',
+    },
+    marketplaceCopy: {
+      trait: 'Ниацинамид 4% · 30 мл',
+      benefit: 'Бестселлер',
+      cta: 'В корзину',
+      infographicSubtitle: 'Без отдушки · pH 5.5 · Веган',
+    },
     brandKit: {
       brandName: 'Luma Skin',
       displayFont: '"DM Serif Display", "Playfair Display", Georgia, serif',
-      textFont: 'Inter, system-ui, sans-serif',
+      textFont: 'Manrope, Inter, system-ui, sans-serif',
       palette: {
         ink: '#2B1E26',
         inkMuted: '#7A5E68',
@@ -201,9 +419,9 @@ export const TEMPLATES: Template[] = [
       image: { focalX: 0.5, focalY: 0.5, rx: 22 },
       text: {
         title: 'Уход, который **работает** без шума',
-        subtitle: 'Сыворотка с ниацинамидом, керамидами и честной концентрацией активов.',
+        subtitle: 'Ниацинамид, керамиды и честная дозировка.',
         cta: 'К набору',
-        badge: 'Skin lab',
+        badge: 'Уход',
       },
     }),
     preferredModels: {
@@ -214,13 +432,24 @@ export const TEMPLATES: Template[] = [
   },
   {
     id: 'fashion-drop',
-    name: 'Fashion drop',
+    name: 'Модный дроп',
     description: 'Контрастный fashion-шаблон для капсулы, дропа или лимитированной коллекции.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Urban Run онлайн',
+      subtitle: 'Лимитированный дроп',
+      cta: 'Смотреть',
+    },
+    marketplaceCopy: {
+      trait: 'Лимитированная капсула',
+      benefit: '−15% по подписке',
+      cta: 'Купить',
+      infographicSubtitle: 'Капсула · Лимит · Доставка',
+    },
     brandKit: {
       brandName: 'Line Dept',
-      displayFont: '"Archivo Black", "Inter Display", Inter, system-ui, sans-serif',
-      textFont: 'Inter, system-ui, sans-serif',
+      displayFont: '"Bebas Neue", Impact, "Arial Black", sans-serif',
+      textFont: 'Montserrat, Inter, system-ui, sans-serif',
       palette: {
         ink: '#FFFFFF',
         inkMuted: '#D7D7D7',
@@ -246,15 +475,16 @@ export const TEMPLATES: Template[] = [
       image: { focalX: 0.52, focalY: 0.58, cropZoom: 1.05 },
       text: {
         title: 'Капсула **Urban Run** уже онлайн',
-        subtitle: 'Кроссовки, худи и аксессуары в коротком дропе без повторов.',
+        subtitle: 'Кроссовки, худи и аксессуары в лимитированном дропе.',
         cta: 'Смотреть дроп',
-        badge: 'Limited',
+        badge: 'Дроп',
       },
     }),
     preferredModels: {
       'vk-stories': 'hero-overlay',
       'telegram-story': 'hero-overlay',
       'instagram-story': 'hero-overlay',
+      'avito-fullscreen': 'hero-overlay',
     },
   },
   {
@@ -262,10 +492,21 @@ export const TEMPLATES: Template[] = [
     name: 'SaaS платформа',
     description: 'Современный B2B-шаблон для продукта, аналитики, кабинета или команды продаж.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Воронка продаж',
+      subtitle: 'Демо за 15 минут',
+      cta: 'Запросить',
+    },
+    marketplaceCopy: {
+      trait: 'Облако · 30 дней триала',
+      benefit: 'B2B SaaS',
+      cta: 'Открыть товар',
+      infographicSubtitle: 'CRM · Воронка · Отчёты',
+    },
     brandKit: {
       brandName: 'MetricFlow',
-      displayFont: '"Inter Display", Inter, system-ui, sans-serif',
-      textFont: '"Inter", system-ui, sans-serif',
+      displayFont: '"Space Grotesk", "Inter Display", Inter, system-ui, sans-serif',
+      textFont: 'Inter, system-ui, sans-serif',
       palette: {
         ink: '#FFFFFF',
         inkMuted: '#B9C8E8',
@@ -290,10 +531,10 @@ export const TEMPLATES: Template[] = [
       imageSrc: photo('photo-1497366754035-f200968a6e72'),
       image: { focalX: 0.52, focalY: 0.46, rx: 18 },
       text: {
-        title: 'Вся **воронка** продаж на одном экране',
-        subtitle: 'Прогноз, задачи и отчетность без ручных таблиц и потерянных лидов.',
-        cta: 'Запросить демо',
-        badge: 'B2B SaaS',
+        title: '**Воронка** продаж на одном экране',
+        subtitle: 'Прогноз, задачи и отчеты в одном кабинете.',
+        cta: 'Получить демо',
+        badge: 'B2B',
       },
     }),
     preferredModels: {
@@ -307,10 +548,21 @@ export const TEMPLATES: Template[] = [
     name: 'Фермерская лавка',
     description: 'Свежий продуктовый шаблон с натуральным фото, зеленым акцентом и понятной офертой.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Овощи к ужину',
+      subtitle: 'Наборы с доставкой',
+      cta: 'Заказать',
+    },
+    marketplaceCopy: {
+      trait: 'Набор 2.4 кг · Россия',
+      benefit: 'Свежее сегодня',
+      cta: 'В корзину',
+      infographicSubtitle: 'Доставка · Сезон · Возврат',
+    },
     brandKit: {
       brandName: 'Fresh Field',
-      displayFont: '"Fraunces", "Playfair Display", Georgia, serif',
-      textFont: 'Inter, system-ui, sans-serif',
+      displayFont: 'Fraunces, "Playfair Display", Georgia, serif',
+      textFont: 'Manrope, Inter, system-ui, sans-serif',
       palette: {
         ink: '#173B2F',
         inkMuted: '#536B5D',
@@ -335,10 +587,10 @@ export const TEMPLATES: Template[] = [
       imageSrc: photo('photo-1542838132-92c53300491e'),
       image: { focalX: 0.48, focalY: 0.52, rx: 20 },
       text: {
-        title: 'Овощи с грядки — **сегодня** к ужину',
-        subtitle: 'Сезонные наборы от локальных фермеров с доставкой по городу.',
+        title: 'Овощи с грядки **к ужину**',
+        subtitle: 'Сезонные наборы от локальных фермеров.',
         cta: 'Собрать корзину',
-        badge: 'Fresh',
+        badge: 'Ферма',
       },
     }),
     preferredModels: {
@@ -352,9 +604,20 @@ export const TEMPLATES: Template[] = [
     name: 'Фитнес клуб',
     description: 'Энергичная спортивная подача с сильным фото, темным фоном и кислотным акцентом.',
     enabled: { badge: true },
+    compactCopy: {
+      title: '8 недель силы',
+      subtitle: 'Тренер и питание в группе',
+      cta: 'В челлендж',
+    },
+    marketplaceCopy: {
+      trait: '8 недель · 24 тренировки',
+      benefit: '−20% подписка',
+      cta: 'Купить',
+      infographicSubtitle: 'Тренер · Питание · Замер',
+    },
     brandKit: {
       brandName: 'Pulse Club',
-      displayFont: '"Archivo Black", "Inter Display", Inter, system-ui, sans-serif',
+      displayFont: 'Oswald, "Arial Narrow", Arial, sans-serif',
       textFont: 'Inter, system-ui, sans-serif',
       palette: {
         ink: '#F7FFE8',
@@ -381,15 +644,18 @@ export const TEMPLATES: Template[] = [
       image: { focalX: 0.5, focalY: 0.42, cropZoom: 1.05 },
       text: {
         title: '8 недель до **сильной** формы',
-        subtitle: 'Тренер, питание и группа поддержки. Первый замер уже в субботу.',
-        cta: 'Занять место',
-        badge: 'Challenge',
+        subtitle: 'Тренер, питание и поддержка. Первый замер в субботу.',
+        cta: 'Войти в челлендж',
+        badge: 'Челлендж',
       },
     }),
     preferredModels: {
       'vk-square': 'hero-overlay',
+      'vk-vertical': 'hero-overlay',
       'vk-stories': 'hero-overlay',
       'instagram-story': 'hero-overlay',
+      'telegram-story': 'hero-overlay',
+      'avito-fullscreen': 'hero-overlay',
     },
   },
   {
@@ -397,10 +663,21 @@ export const TEMPLATES: Template[] = [
     name: 'Премиум недвижимость',
     description: 'Дорогая журнальная эстетика для объекта, агентства или закрытого показа.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Дом у парка',
+      subtitle: '186 м², готовый интерьер',
+      cta: 'Записаться',
+    },
+    marketplaceCopy: {
+      trait: '186 м² · 4 спальни · парк',
+      benefit: 'Закрытый показ',
+      cta: 'Открыть товар',
+      infographicSubtitle: 'Терраса · Парк · 4 спальни',
+    },
     brandKit: {
       brandName: 'Aurum Estate',
       displayFont: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
-      textFont: '"Inter", system-ui, sans-serif',
+      textFont: 'Inter, system-ui, sans-serif',
       palette: {
         ink: '#F8F1E4',
         inkMuted: '#D9CAB0',
@@ -426,9 +703,9 @@ export const TEMPLATES: Template[] = [
       image: { focalX: 0.52, focalY: 0.52, rx: 18 },
       text: {
         title: 'Дом у парка с **панорамой** города',
-        subtitle: 'Приватная терраса, 186 м² и готовый интерьер для жизни без ремонта.',
-        cta: 'Назначить показ',
-        badge: 'Private sale',
+        subtitle: 'Терраса, 186 м² и готовый интерьер.',
+        cta: 'На показ',
+        badge: 'Закрыто',
       },
     }),
     preferredModels: {
@@ -442,10 +719,21 @@ export const TEMPLATES: Template[] = [
     name: 'Детская школа',
     description: 'Светлый дружелюбный шаблон для курсов, кружков и семейных сервисов.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Английский через игру',
+      subtitle: 'Мини-группы 7-10 лет',
+      cta: 'Пробный',
+    },
+    marketplaceCopy: {
+      trait: 'Мини-группы 7-10 лет',
+      benefit: 'Пробный бесплатно',
+      cta: 'Купить',
+      infographicSubtitle: 'Игра · Проекты · Друзья',
+    },
     brandKit: {
       brandName: 'Bright Kids',
-      displayFont: '"Nunito", "Inter Display", Inter, system-ui, sans-serif',
-      textFont: '"Nunito", Inter, system-ui, sans-serif',
+      displayFont: 'Nunito, "Inter Display", Inter, system-ui, sans-serif',
+      textFont: 'Nunito, Inter, system-ui, sans-serif',
       palette: {
         ink: '#18324A',
         inkMuted: '#51677A',
@@ -471,9 +759,9 @@ export const TEMPLATES: Template[] = [
       image: { focalX: 0.46, focalY: 0.42, rx: 22 },
       text: {
         title: 'Английский через **игру** и проекты',
-        subtitle: 'Мини-группы 7-10 лет: говорим, снимаем видео и собираем свои истории.',
-        cta: 'На пробный урок',
-        badge: 'Kids',
+        subtitle: 'Мини-группы 7-10 лет: говорим, играем и делаем проекты.',
+        cta: 'Пробный урок',
+        badge: 'Дети',
       },
     }),
     preferredModels: {
@@ -484,13 +772,24 @@ export const TEMPLATES: Template[] = [
   },
   {
     id: 'travel-retreat',
-    name: 'Travel retreat',
+    name: 'Загородный ретрит',
     description: 'Атмосферный шаблон для тура, отеля, глэмпинга или уикенда за городом.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Тишина у озера',
+      subtitle: 'Домики и тихие маршруты',
+      cta: 'Даты',
+    },
+    marketplaceCopy: {
+      trait: '3 дня · 2 ночи · полупансион',
+      benefit: 'Раннее бронирование',
+      cta: 'Купить',
+      infographicSubtitle: 'Озеро · Завтрак · Маршрут',
+    },
     brandKit: {
       brandName: 'Slow North',
-      displayFont: '"Playfair Display", Georgia, serif',
-      textFont: '"Inter", system-ui, sans-serif',
+      displayFont: '"Libre Baskerville", Georgia, "Times New Roman", serif',
+      textFont: 'Inter, system-ui, sans-serif',
       palette: {
         ink: '#FFFFFF',
         inkMuted: '#DDE9E3',
@@ -516,15 +815,18 @@ export const TEMPLATES: Template[] = [
       image: { focalX: 0.5, focalY: 0.54, cropZoom: 1.03 },
       text: {
         title: 'Три дня **тишины** у озера',
-        subtitle: 'Домики с камином, завтраки на террасе и маршруты без толп.',
+        subtitle: 'Домики с камином, завтраки на террасе и тихие маршруты.',
         cta: 'Выбрать даты',
-        badge: 'Retreat',
+        badge: 'Ретрит',
       },
     }),
     preferredModels: {
       'vk-square': 'hero-overlay',
+      'vk-vertical': 'hero-overlay',
       'vk-stories': 'hero-overlay',
+      'telegram-story': 'hero-overlay',
       'instagram-story': 'hero-overlay',
+      'avito-fullscreen': 'hero-overlay',
     },
   },
   {
@@ -532,10 +834,21 @@ export const TEMPLATES: Template[] = [
     name: 'Финтех и банк',
     description: 'Уверенный финансовый шаблон для карты, приложения, рассрочки или B2B-сервиса.',
     enabled: { badge: true },
+    compactCopy: {
+      title: 'Счет для бизнеса',
+      subtitle: 'Карты и лимиты',
+      cta: 'Открыть',
+    },
+    marketplaceCopy: {
+      trait: 'Расчётный счёт · 0 ₽ открытие',
+      benefit: '0 ₽ обслуживание',
+      cta: 'Открыть товар',
+      infographicSubtitle: 'Карты · Лимиты · API',
+    },
     brandKit: {
       brandName: 'North Pay',
-      displayFont: '"Inter Display", Inter, system-ui, sans-serif',
-      textFont: 'Inter, system-ui, sans-serif',
+      displayFont: '"IBM Plex Sans", Inter, system-ui, sans-serif',
+      textFont: '"IBM Plex Sans", Inter, system-ui, sans-serif',
       palette: {
         ink: '#FFFFFF',
         inkMuted: '#C9D7FF',
@@ -560,10 +873,10 @@ export const TEMPLATES: Template[] = [
       imageSrc: photo('photo-1554224155-6726b3ff858f'),
       image: { focalX: 0.52, focalY: 0.5, rx: 18 },
       text: {
-        title: 'Деньги бизнеса — **под контролем**',
-        subtitle: 'Карты, лимиты и платежный календарь для команд, которые растут.',
-        cta: 'Открыть счет',
-        badge: 'Finance',
+        title: 'Финансы бизнеса **под контролем**',
+        subtitle: 'Карты, лимиты и платежный календарь.',
+        cta: 'Открыть счёт',
+        badge: 'Финансы',
       },
     }),
     preferredModels: {
@@ -573,6 +886,8 @@ export const TEMPLATES: Template[] = [
     },
   },
 ]
+
+export const TEMPLATES: Template[] = RAW_TEMPLATES.map(withFormatSettings)
 
 export function getTemplate(id: string): Template | null {
   return TEMPLATES.find((t) => t.id === id) ?? null

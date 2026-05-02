@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { FilePicker } from './FilePicker'
+import { Icon } from './Icon'
 import type { OnboardingMode } from '../lib/types'
 
 type Props = {
@@ -19,7 +20,9 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
       </p>
 
       <section className="onboarding__primary card">
-        <div className="card__icon" aria-hidden>↑</div>
+        <div className="card__icon" aria-hidden="true">
+          <Icon name="upload" size={24} />
+        </div>
         <div className="card__body">
           <div className="card__title">Загрузить референс</div>
           <div className="card__desc">Добавьте фото товара - мы подберем палитру и композицию.</div>
@@ -28,6 +31,33 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
             hint="или перетащите изображение сюда"
             onFile={(dataUrl) => onChoose('reference', { imageDataUrl: dataUrl })}
           />
+          <div className="onboarding-preview" aria-hidden="true">
+            <div className="onboarding-preview__item onboarding-preview__item--square">
+              <div className="onboarding-preview__media" />
+              <div className="onboarding-preview__copy">
+                <span />
+                <span />
+              </div>
+              <b>VK 1:1</b>
+            </div>
+            <div className="onboarding-preview__item onboarding-preview__item--story">
+              <div className="onboarding-preview__media" />
+              <div className="onboarding-preview__copy">
+                <span />
+                <span />
+                <span />
+              </div>
+              <b>Stories</b>
+            </div>
+            <div className="onboarding-preview__item onboarding-preview__item--banner">
+              <div className="onboarding-preview__copy">
+                <span />
+                <span />
+              </div>
+              <div className="onboarding-preview__media" />
+              <b>Banner</b>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -44,8 +74,8 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
         </button>
       </section>
 
-      <ol className="onboarding__steps">
-        <li><span>1</span> Выберите сценарий</li>
+      <ol className="onboarding__steps" aria-label="Этапы работы">
+        <li className="is-current" aria-current="step"><span>1</span> Выберите сценарий</li>
         <li><span>2</span> Настройте форматы</li>
         <li><span>3</span> Доведите макеты</li>
         <li><span>4</span> Экспортируйте результат</li>

@@ -2,7 +2,7 @@
 // from (master scene + format key + brand kit + enabled map).
 // No randomness. No side effects.
 
-import { luminance } from './color'
+import { contrastRatio, luminance } from './color'
 import { LAYOUTS, chooseModel, profile } from './composition'
 import { getFormat } from './formats'
 import { applyLayoutDensity } from './layoutDensity'
@@ -183,10 +183,10 @@ function applyBrandKit(master: Scene, brand: BrandKit): Scene {
     out.subtitle = { ...master.subtitle, fill: inkMuted }
   }
   if (master.cta) {
-    // CTA text color adapts to the luminance of its background so the label
-    // always reads. Dark accent → white text; light accent → near-black.
+    // CTA text color adapts to the actual contrast of its background so the
+    // label always reads, including saturated mid-tone brand accents.
     const ctaBg = palette.accent
-    const autoFill = luminance(ctaBg) < 0.5 ? '#FFFFFF' : '#0E1014'
+    const autoFill = contrastRatio('#FFFFFF', ctaBg) >= contrastRatio('#0E1014', ctaBg) ? '#FFFFFF' : '#0E1014'
     out.cta = {
       ...master.cta,
       bg: ctaBg,

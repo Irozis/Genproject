@@ -70,17 +70,31 @@ export function Sidebar({
   onAddCustomFormat,
   onDeleteCustomFormat,
 }: Props) {
-  const [tab, setTab] = useState<SidebarTab>('setup')
+  const [tab, setTab] = useState<SidebarTab>('content')
   const [customName, setCustomName] = useState('')
   const [customWidth, setCustomWidth] = useState('300')
   const [customHeight, setCustomHeight] = useState('300')
+  const [customSafe, setCustomSafe] = useState('8')
+  const [customGutter, setCustomGutter] = useState('4')
+  const selectedLabel = selectedKind ? labelForKind(selectedKind) : null
+  const selectedFormatLabel = editingFormatKey ? getFormat(editingFormatKey, project.customFormats).label : null
 
   return (
     <aside className="sidebar">
       <SidebarTabs active={tab} onChange={setTab} />
-      <div className="sidebar__scroll">
-        {tab === 'setup' ? (
+      <div
+        className="sidebar__scroll"
+        role="tabpanel"
+        id={`sidebar-panel-${tab}`}
+        aria-labelledby={`sidebar-tab-${tab}`}
+      >
+        {tab === 'content' ? (
           <>
+            <EditContextCard
+              selectedLabel={selectedLabel}
+              selectedFormatLabel={selectedFormatLabel}
+              activeLocale={project.activeLocale}
+            />
             <SectionHeader>Элементы</SectionHeader>
             <div className="el-list">
               {ELEMENT_ROWS.map((row) => (
@@ -90,6 +104,7 @@ export function Sidebar({
                   label={row.label}
                   enabled={project.enabled[row.kind]}
                   forceOpen={selectedKind === row.kind}
+                  isSelected={selectedKind === row.kind}
                   scene={project.master}
                   onToggle={(n) => onToggleEnabled(row.kind, n)}
                   onPatchScene={onPatchScene}
@@ -118,13 +133,15 @@ export function Sidebar({
                   onPatchScene={onPatchScene}
                 />
               </>
-            ) : (
-              <DensityPanel
-                density={project.layoutDensity ?? 'balanced'}
-                scopeLabel="Все форматы"
-                onChange={(density) => onSetLayoutDensity(density, null)}
-              />
-            )}
+            ) : null}
+          </>
+        ) : tab === 'formats' ? (
+          <>
+            <DensityPanel
+              density={project.layoutDensity ?? 'balanced'}
+              scopeLabel="Все форматы"
+              onChange={(density) => onSetLayoutDensity(density, null)}
+            />
 
             <SectionHeader>Форматы</SectionHeader>
             <div className="format-list">
@@ -213,25 +230,60 @@ export function Sidebar({
                     placeholder="В"
                     aria-label="Высота"
                   />
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-xs btn-icon"
-                    aria-label="Добавить формат"
-                    title="Добавить формат"
-                    onClick={() => {
-                      const width = Number(customWidth)
-                      const height = Number(customHeight)
-                      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return
-                      onAddCustomFormat({ name: customName || 'Свой формат', width, height, safePct: 8, gutterPct: 4 })
-                      setCustomName('')
-                    }}
-                  >
-                    +
-                  </button>
                 </div>
+                <div className="custom-format__advanced">
+                  <label className="custom-format__advanced-row">
+                    <span>Безопасная зона</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={20}
+                      step={0.5}
+                      value={customSafe}
+                      onChange={(e) => setCustomSafe(e.target.value)}
+                      aria-label="Безопасная зона, %"
+                    />
+                    <small>%</small>
+                  </label>
+                  <label className="custom-format__advanced-row">
+                    <span>Внутренний отступ</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={12}
+                      step={0.5}
+                      value={customGutter}
+                      onChange={(e) => setCustomGutter(e.target.value)}
+                      aria-label="Внутренний отступ, %"
+                    />
+                    <small>%</small>
+                  </label>
+                  <p className="custom-format__hint">
+                    Отступ от краёв и шаг между блоками. По умолчанию 8% и 4%
+                    — подходит для большинства баннеров.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-xs custom-format__submit"
+                  onClick={() => {
+                    const width = Number(customWidth)
+                    const height = Number(customHeight)
+                    const safePct = clampNumber(Number(customSafe), 0, 20, 8)
+                    const gutterPct = clampNumber(Number(customGutter), 0, 12, 4)
+                    if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return
+                    onAddCustomFormat({ name: customName || 'Свой формат', width, height, safePct, gutterPct })
+                    setCustomName('')
+                  }}
+                >
+                  Добавить формат
+                </button>
               </div>
             </details>
 
+          </>
+        ) : tab === 'brand' ? (
+          <>
             <SectionHeader>Локали</SectionHeader>
             <label className="field">
               <span>Доступные локали через запятую</span>
@@ -311,19 +363,6 @@ export function Sidebar({
                 <img className="asset-thumb asset-thumb--logo" src={project.logoSrc} alt="" />
               ) : null}
             </div>
-
-            <BrandSystemPanel
-              brandKit={project.brandKit}
-              onChange={onBrandChange}
-              alternatives={paletteAlternatives}
-              onApplyAlternative={onApplyPaletteAlt}
-              paletteLocked={project.paletteLocked}
-              onTogglePaletteLock={onTogglePaletteLock}
-              snapshots={snapshots}
-              onSaveSnapshot={onSaveSnapshot}
-              onApplySnapshot={onApplySnapshot}
-              onDeleteSnapshot={onDeleteSnapshot}
-            />
           </>
         )}
       </div>
@@ -333,6 +372,33 @@ export function Sidebar({
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return <div className="section-header">{children}</div>
+}
+
+function EditContextCard({
+  selectedLabel,
+  selectedFormatLabel,
+  activeLocale,
+}: {
+  selectedLabel: string | null
+  selectedFormatLabel: string | null
+  activeLocale?: string
+}) {
+  return (
+    <div className={`edit-context${selectedLabel ? ' is-active' : ''}`}>
+      <div className="edit-context__eyebrow">
+        {selectedLabel ? 'Редактируете' : 'Режим редактирования'}
+      </div>
+      <div className="edit-context__title">
+        {selectedLabel ?? 'Выберите элемент на макете'}
+      </div>
+      <div className="edit-context__meta">
+        {selectedFormatLabel
+          ? `Только для формата: ${selectedFormatLabel}`
+          : 'Изменения применяются ко всем форматам'}
+      </div>
+      {activeLocale ? <div className="edit-context__locale">Локаль: {activeLocale}</div> : null}
+    </div>
+  )
 }
 
 function OverridePanel({
@@ -425,6 +491,11 @@ function DensityPanel({
       </div>
     </>
   )
+}
+
+function clampNumber(value: number, lo: number, hi: number, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback
+  return Math.max(lo, Math.min(hi, value))
 }
 
 function SpacingPanel({

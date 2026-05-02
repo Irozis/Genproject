@@ -102,6 +102,9 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   // Space held → drag-to-pan mode. Tracked at the component level so the
   // cursor + pointer-events hint update globally for this preview.
   const [panReady, setPanReady] = useState(false)
+  // isPanning mirrors panState !== null for re-renders; coords stay in the
+  // ref so we don't re-render on every mousemove.
+  const [isPanning, setIsPanning] = useState(false)
   const panState = useRef<{ x: number; y: number; tx: number; ty: number } | null>(null)
   const zoomed = view.zoom !== 1 || view.tx !== 0 || view.ty !== 0
 
@@ -174,6 +177,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
         tx: view.tx,
         ty: view.ty,
       }
+      setIsPanning(true)
     },
     [panReady, view.tx, view.ty],
   )
@@ -198,6 +202,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     }
     function up() {
       panState.current = null
+      setIsPanning(false)
     }
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
@@ -252,7 +257,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
           <div className="preview__dim">{rules.width}×{rules.height}</div>
         </div>
         <div className="preview__head-actions">
-          <IssuesBadge issues={issues} />
+          <IssuesBadge issues={issues} onFix={() => onFix(formatKey)} />
           <button
             type="button"
             className={`btn btn-ghost btn-xs preview__mode${isCustom ? ' is-on' : ''}`}
@@ -261,34 +266,6 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             aria-pressed={!!isCustom}
           >
             {isCustom ? 'Отдельно' : 'Настроить'}
-          </button>
-          {zoomed ? (
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs"
-              onClick={resetView}
-              title={`Сбросить масштаб и сдвиг (${Math.round(view.zoom * 100)}%)`}
-            >
-              {Math.round(view.zoom * 100)}%✕
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className={`btn btn-ghost btn-xs btn-icon${showGuides ? ' is-on' : ''}`}
-            onClick={() => setShowGuides((v) => !v)}
-            title="Показать/скрыть safe-area"
-            aria-pressed={showGuides}
-            aria-label="Показать/скрыть safe-area"
-          >
-            ⌗
-          </button>
-          <button
-            className="btn btn-ghost btn-xs btn-icon"
-            onClick={() => onFix(formatKey)}
-            title="Исправить макет"
-            aria-label="Исправить макет"
-          >
-            ↻
           </button>
           <details className="kebab">
             <summary
@@ -299,6 +276,33 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
               ⋯
             </summary>
             <div className="kebab__menu" role="menu">
+              {zoomed ? (
+                <button
+                  type="button"
+                  className="kebab__item"
+                  role="menuitem"
+                  onClick={resetView}
+                >
+                  Сбросить масштаб ({Math.round(view.zoom * 100)}%)
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="kebab__item"
+                role="menuitem"
+                onClick={() => setShowGuides((v) => !v)}
+                aria-pressed={showGuides}
+              >
+                {showGuides ? 'Скрыть safe-area' : 'Показать safe-area'}
+              </button>
+              <button
+                type="button"
+                className="kebab__item"
+                role="menuitem"
+                onClick={() => onFix(formatKey)}
+              >
+                Исправить макет
+              </button>
               <button
                 type="button"
                 className="kebab__item"
@@ -331,7 +335,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
       </header>
       <div
         ref={stageRef}
-        className={`preview__stage${panReady ? ' preview__stage--pan-ready' : ''}${panState.current ? ' preview__stage--panning' : ''}`}
+        className={`preview__stage${panReady ? ' preview__stage--pan-ready' : ''}${isPanning ? ' preview__stage--panning' : ''}`}
         style={{ aspectRatio: `${rules.width} / ${rules.height}` }}
         onWheel={onWheel}
         onMouseDown={onMouseDown}
@@ -355,6 +359,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
           />
           <PreviewHotspots
             scene={scene}
+            rules={rules}
             onPick={onPickElement}
             onImageShiftClick={
               onSetFocal
@@ -484,36 +489,95 @@ function SafeAreaOverlay({
 // Pill showing the count of layout issues with a tooltip listing them.
 // Click toggles a popover (native <details>) so the user can actually read
 // each warning without hover. Hidden entirely when there are zero issues.
-function IssuesBadge({ issues }: { issues: LayoutIssue[] }) {
+function IssuesBadge({ issues, onFix }: { issues: LayoutIssue[]; onFix: () => void }) {
+  const [open, setOpen] = useState(false)
   if (issues.length === 0) return null
   const warnCount = issues.filter((i) => i.level === 'warn').length
   const cls = warnCount > 0 ? 'issues-badge issues-badge--warn' : 'issues-badge issues-badge--info'
+  const label = warnCount > 0 ? `Проверить ${issues.length}` : `Подсказки ${issues.length}`
+  const title = warnCount > 0 ? 'Есть что поправить' : 'Полезные подсказки'
+  const body = warnCount > 0
+    ? 'Макет может выглядеть неаккуратно в этом формате. Можно исправить автоматически или открыть детали.'
+    : 'Это не критично, но стоит проверить текст и отступы перед экспортом.'
   return (
-    <details className="issues">
+    <details
+      className="issues"
+      open={open}
+      onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}
+    >
       <summary
         className={cls}
-        title={issues.map((i) => `• ${i.message}`).join('\n')}
+        aria-expanded={open}
+        title={issues.map((i) => `• ${humanIssue(i)}`).join('\n')}
       >
-        ⚠ {issues.length}
+        {label}
       </summary>
-      <ul className="issues__list" role="list">
-        {issues.map((i, idx) => (
-          <li key={idx} className={`issues__item issues__item--${i.level}`}>
-            {i.message}
-          </li>
-        ))}
-      </ul>
+      <div className="issues__list" role="region" aria-label={title}>
+        <div className="issues__title">{title}</div>
+        <div className="issues__body">{body}</div>
+        <ul className="issues__items" role="list">
+          {issues.map((i, idx) => (
+            <li key={idx} className={`issues__item issues__item--${i.level}`}>
+              {humanIssue(i)}
+            </li>
+          ))}
+        </ul>
+        {warnCount > 0 ? (
+          <button type="button" className="issues__fix" onClick={onFix}>
+            Исправить автоматически
+          </button>
+        ) : null}
+      </div>
     </details>
   )
 }
 
+function humanIssue(issue: LayoutIssue): string {
+  const block = humanBlock(issue.block)
+  const message = issue.message
+  if (message.includes('crosses left safe area')) return `${block} слишком близко к левому краю.`
+  if (message.includes('crosses right safe area')) return `${block} слишком близко к правому краю.`
+  if (message.includes('crosses top safe area')) return `${block} слишком близко к верхнему краю.`
+  if (message.includes('below fold')) return `${block} выходит за нижнюю безопасную область.`
+  if (message.includes('text likely truncated')) return `${block}: текст может обрезаться.`
+  if (message.includes('overlaps')) return `${block} пересекается с другим элементом.`
+  if (message.includes('low contrast')) return `${block}: низкий контраст с фоном.`
+  if (message.includes('Cta too small')) return 'Кнопка слишком мелкая для рекламного формата.'
+  if (message.includes('too long for small ad format')) return `${block}: текст длинный для малого баннера.`
+  if (message.includes('too long for banner format')) return `${block}: текст длинный для широкого баннера.`
+  if (message.includes('Cta weak hierarchy')) return 'Кнопка теряется рядом с заголовком.'
+  if (message.includes('sits on image without scrim')) return `${block} лежит на фото без защитной подложки.`
+  return message
+}
+
+function humanBlock(block: LayoutIssue['block']): string {
+  switch (block) {
+    case 'title':
+      return 'Заголовок'
+    case 'subtitle':
+      return 'Подзаголовок'
+    case 'cta':
+      return 'Кнопка'
+    case 'badge':
+      return 'Бейдж'
+    case 'logo':
+      return 'Логотип'
+    case 'image':
+      return 'Изображение'
+    default:
+      return 'Элемент'
+  }
+}
+
 function PreviewHotspots({
   scene,
+  rules,
   onPick,
   onImageShiftClick,
   onTextDoubleClick,
 }: {
   scene: Scene
+  rules: FormatRuleSet
   onPick: (kind: BlockKind) => void
   onImageShiftClick?: (
     ev: MouseEvent<HTMLButtonElement>,
@@ -521,7 +585,9 @@ function PreviewHotspots({
   ) => void
   onTextDoubleClick?: (kind: EditableTextKind) => void
 }) {
-  const targets: BlockKind[] = ['title', 'subtitle', 'cta', 'badge', 'logo', 'image']
+  // Image often covers the whole canvas, so it stays behind the text targets.
+  // The click boxes below are intentionally larger than the exact visual bbox.
+  const targets: BlockKind[] = ['image', 'logo', 'badge', 'subtitle', 'title', 'cta']
   const editable = new Set<BlockKind>(['title', 'subtitle', 'cta', 'badge'])
   return (
     <div className="preview__hotspots">
@@ -530,6 +596,7 @@ function PreviewHotspots({
         if (!b) return null
         const isImage = k === 'image'
         const isEditable = editable.has(k) && !!onTextDoubleClick
+        const box = hotspotBox(k, b, rules)
         const hint = isImage && onImageShiftClick
           ? `${labelForHotspot(k)} (Shift-click: задать фокус, Shift+Alt: сбросить)`
           : isEditable
@@ -539,8 +606,9 @@ function PreviewHotspots({
           <button
             key={k}
             type="button"
-            className="hotspot"
+            className={`hotspot hotspot--${k}${isEditable ? ' hotspot--editable' : ''}`}
             title={hint}
+            aria-label={hint}
             onClick={(ev) => {
               if (isImage && ev.shiftKey && onImageShiftClick) {
                 onImageShiftClick(ev, b)
@@ -552,16 +620,76 @@ function PreviewHotspots({
               if (isEditable) onTextDoubleClick!(k as EditableTextKind)
             }}
             style={{
-              left: `${b.x}%`,
-              top: `${b.y}%`,
-              width: `${b.w}%`,
-              height: `${b.h ?? 6}%`,
+              left: `${box.x}%`,
+              top: `${box.y}%`,
+              width: `${box.w}%`,
+              height: `${box.h}%`,
+              zIndex: hotspotZ(k),
             }}
           />
         )
       })}
     </div>
   )
+}
+
+function hotspotBox(kind: BlockKind, block: NonNullable<Scene[BlockKind]>, rules: FormatRuleSet) {
+  if (kind === 'image') {
+    return clampBox({ x: block.x, y: block.y, w: block.w, h: block.h ?? 50 })
+  }
+
+  const source = block as Record<string, unknown>
+  const text = typeof source.text === 'string' ? source.text : ''
+  const fontSize = typeof source.fontSize === 'number' ? source.fontSize : 2.4
+  const lineHeight = typeof source.lineHeight === 'number' ? source.lineHeight : 1.15
+  const maxLines = typeof source.maxLines === 'number' ? source.maxLines : 1
+  const charsPerLine = typeof source.charsPerLine === 'number' ? source.charsPerLine : 14
+  const lines = text ? Math.max(1, Math.min(maxLines, Math.ceil(text.length / Math.max(1, charsPerLine)))) : 1
+  const textHeight = fontSize * lineHeight * lines * rules.aspectRatio
+  const visualH = typeof source.h === 'number' ? source.h : textHeight
+
+  const minClickPx = kind === 'badge' || kind === 'logo' ? 22 : 30
+  const minH = (minClickPx / rules.height) * 100
+  const minW = ((kind === 'badge' || kind === 'logo') ? 42 : 64) / rules.width * 100
+  const padX = kind === 'cta' ? 1.2 : 1.6
+  const padY = kind === 'cta' ? 1.0 : 1.35
+
+  return clampBox({
+    x: block.x - padX,
+    y: block.y - padY,
+    w: Math.max(block.w + padX * 2, minW),
+    h: Math.max(visualH + padY * 2, minH),
+  })
+}
+
+function clampBox(box: { x: number; y: number; w: number; h: number }) {
+  const x = Math.max(0, Math.min(100, box.x))
+  const y = Math.max(0, Math.min(100, box.y))
+  return {
+    x,
+    y,
+    w: Math.max(0, Math.min(box.w, 100 - x)),
+    h: Math.max(0, Math.min(box.h, 100 - y)),
+  }
+}
+
+function hotspotZ(kind: BlockKind): number {
+  switch (kind) {
+    case 'image':
+      return 1
+    case 'logo':
+      return 3
+    case 'badge':
+      return 6
+    case 'subtitle':
+      return 7
+    case 'title':
+      return 8
+    case 'cta':
+      return 9
+    default:
+      return 5
+  }
 }
 
 function labelForHotspot(kind: BlockKind | EditableTextKind): string {

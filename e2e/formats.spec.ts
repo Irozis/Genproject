@@ -61,7 +61,7 @@ test.describe('Editor — live update', () => {
   })
 
   test('switching sidebar to Assets tab shows image upload', async ({ page }) => {
-    await page.getByRole('button', { name: 'Медиа' }).click()
+    await page.getByRole('tab', { name: 'Медиа' }).click()
     await expect(page.getByText('Основное изображение')).toBeVisible()
     await expect(page.getByText('Логотип')).toBeVisible()
   })

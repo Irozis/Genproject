@@ -278,7 +278,7 @@ describe('checkOverflow', () => {
     // fontSize 30 × lineHeight 1.2 × 3 lines = 108% — definitely below fold.
     const scene: Scene = {
       background: cleanBg, accent: '#000',
-      title: { ...textDefaults, x: 10, y: 10, w: 60, text: 'x', fontSize: 30 },
+      title: { ...textDefaults, x: 10, y: 10, w: 60, text: 'a b c', fontSize: 30, charsPerLine: 1 },
     }
     const issues = checkOverflow(scene, rules)
     expect(issues.some((i) => /below fold/.test(i.message))).toBe(true)
@@ -294,5 +294,39 @@ describe('checkOverflow', () => {
     const fixed = fixLayout(scene, rules)
     const after = checkOverflow(fixed, rules).length
     expect(after).toBeLessThan(before)
+  })
+
+  it('flags tiny CTA hierarchy in small ad formats', () => {
+    const smallRules = getFormat('yandex-rsy-300x250')
+    const scene: Scene = {
+      background: cleanBg, accent: '#000',
+      title: { ...textDefaults, x: 8, y: 12, w: 58, h: 18, text: 'Offer', fontSize: 6 },
+      cta: { ...ctaDefaults, x: 8, y: 76, w: 20, h: 6, text: 'Buy', fontSize: 1.5, fill: '#FFFFFF', bg: '#111111' },
+    }
+    const issues = checkOverflow(scene, smallRules)
+    expect(issues.some((i) => /Cta too small/.test(i.message))).toBe(true)
+    expect(issues.some((i) => /weak hierarchy/.test(i.message))).toBe(true)
+  })
+
+  it('flags long copy in small ad formats', () => {
+    const smallRules = getFormat('yandex-rsy-728x90')
+    const scene: Scene = {
+      background: cleanBg, accent: '#000',
+      title: { ...textDefaults, x: 5, y: 10, w: 40, h: 25, text: 'A very long headline that belongs in a post, not a banner' },
+    }
+    const issues = checkOverflow(scene, smallRules)
+    expect(issues.some((i) => /too long for small ad format/.test(i.message))).toBe(true)
+  })
+
+  it('flags long copy in banner family formats', () => {
+    const bannerRules = getFormat('yandex-market-banner')
+    const longTitle = 'Огромный длинный заголовок который точно не уместится в широкий баннер красиво'
+    const scene: Scene = {
+      background: cleanBg, accent: '#000',
+      title: { ...textDefaults, x: 5, y: 10, w: 60, h: 25, text: longTitle, charsPerLine: 32, maxLines: 2 },
+    }
+    const issues = checkOverflow(scene, bannerRules)
+    expect(issues.some((i) => /too long for banner format/.test(i.message))).toBe(true)
+    expect(issues.some((i) => /too long for small ad format/.test(i.message))).toBe(false)
   })
 })

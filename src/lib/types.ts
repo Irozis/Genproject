@@ -108,8 +108,14 @@ export type BlockOverrides = Partial<Record<FormatKey, Partial<Record<BlockKind,
 export type Scrim = {
   y: number          // top of scrim band, % of height
   h: number          // height of scrim band, %
-  color: string      // base color (hex), peak opacity at the bottom edge
+  color: string      // base color (hex)
   opacity: number    // 0..1
+  // Gradient direction. 'down' (default) = transparent at the top of the
+  // band, opaque at the bottom — matches text anchored to the canvas
+  // bottom (default hero-overlay). 'up' = opaque at the top, transparent
+  // at the bottom — used when the text stack is anchored to the canvas
+  // top instead.
+  direction?: 'down' | 'up'
 }
 
 // -------- Background ----------------------------------------------------

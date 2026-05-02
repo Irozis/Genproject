@@ -43,7 +43,8 @@ export default function App() {
   const [selectedKind, setSelectedKind] = useState<BlockKind | null>(null)
   const [selectedFormat, setSelectedFormat] = useState<FormatKey | null>(null)
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<ToastEntry[]>([])
+  const [theme, setTheme] = useState<ThemeMode>(() => readStoredTheme())
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, BlockOverride>> | null>(null)
@@ -53,12 +54,49 @@ export default function App() {
   // before the previous analysis resolves — we drop any hint that isn't from the
   // most recent upload so a stale palette can't clobber the current one.
   const imageGenRef = useRef(0)
+  const toastIdRef = useRef(0)
+
+  const dismissToast = useCallback((id: number) => {
+    setToasts((list) => list.filter((t) => t.id !== id))
+  }, [])
+
+  const pushToast = useCallback((text: string, tone: ToastEntry['tone'] = 'error') => {
+    const id = ++toastIdRef.current
+    setToasts((list) => {
+      const next = [...list, { id, text, tone }]
+      // Cap the visible stack at 3 entries — older toasts get evicted.
+      return next.length > 3 ? next.slice(next.length - 3) : next
+    })
+  }, [])
 
   // hydrate view if a saved project exists
   useEffect(() => {
     const saved = loadProject()
     if (saved) setView('editor')
   }, [])
+
+  // Theme propagation: apply data-theme to <html> and persist user choice.
+  // The editor chrome uses [data-theme="dark"] overrides; rendered scenes
+  // are untouched (they keep template brand kits regardless of UI theme).
+  useEffect(() => {
+    const root = document.documentElement
+    const resolved = resolveTheme(theme)
+    root.setAttribute('data-theme', resolved)
+    if (theme === 'system') {
+      window.localStorage.removeItem('ag.theme')
+    } else {
+      window.localStorage.setItem('ag.theme', theme)
+    }
+  }, [theme])
+
+  // React to OS-level preference flips when user is on system mode.
+  useEffect(() => {
+    if (theme !== 'system') return
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = () => setTheme((current) => (current === 'system' ? 'system' : current))
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [theme])
 
   // Debounced persist. The "isSaving" flag flips true on every change and
   // flips back false once the debounced write lands — this is what drives the
@@ -73,12 +111,14 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [project])
 
-  // auto-clear error toast
+  // auto-clear toasts after 4s. Each entry is removed independently so the
+  // user can see a stack of recent messages.
   useEffect(() => {
-    if (!error) return
-    const t = window.setTimeout(() => setError(null), 4000)
+    if (toasts.length === 0) return
+    const earliest = toasts[0]!
+    const t = window.setTimeout(() => dismissToast(earliest.id), 4000)
     return () => window.clearTimeout(t)
-  }, [error])
+  }, [toasts, dismissToast])
 
   // Ctrl+Z / Cmd+Z = undo, Ctrl+Shift+Z / Cmd+Shift+Z = redo.
   // Plain T/S/C/B/L/I (no modifier) = toggle enabled for title/subtitle/cta/
@@ -515,7 +555,7 @@ export default function App() {
         await exportPdf(svgs, project.selectedFormats, project.name || 'project', project.customFormats)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Export failed')
+      pushToast(e instanceof Error ? e.message : 'Не удалось выполнить экспорт.')
     } finally {
       setExporting(null)
     }
@@ -529,7 +569,7 @@ export default function App() {
       history.reset(imported)
       setView('editor')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Import failed')
+      pushToast(e instanceof Error ? e.message : 'Не удалось импортировать проект.')
     }
   }
 
@@ -557,7 +597,11 @@ export default function App() {
     fresh.enabled = { ...fresh.enabled, ...t.enabled }
     fresh.imageSrc = t.master.image?.src ?? null
     fresh.logoSrc = t.master.logo?.src ?? null
-    if (t.preferredModels) fresh.formatOverrides = { ...t.preferredModels }
+    if (t.preferredModels) {
+      fresh.formatOverrides = { ...(fresh.formatOverrides ?? {}), ...t.preferredModels }
+    }
+    if (t.blockOverrides) fresh.blockOverrides = { ...t.blockOverrides }
+    if (t.formatDensities) fresh.formatDensities = { ...t.formatDensities }
     history.reset(fresh)
     setView('editor')
   }
@@ -566,7 +610,7 @@ export default function App() {
     return (
       <>
         <Onboarding onChoose={handleOnboard} onImportJson={handleImportJson} />
-        {error ? <Toast text={error} onDismiss={() => setError(null)} /> : null}
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
     )
   }
@@ -593,13 +637,15 @@ export default function App() {
         activeLocale={project.activeLocale}
         availableLocales={project.availableLocales}
         onSetLocale={setActiveLocale}
+        theme={theme}
+        onSetTheme={setTheme}
       />
       <div className="editor__body">
         <ErrorBoundary fallback={(_, reset) => (
-          <aside className="sidebar">
+          <aside className="sidebar" role="alert" aria-live="assertive">
             <div className="sidebar__scroll" style={{ padding: 12 }}>
-              <div style={{ marginBottom: 8, fontWeight: 600 }}>Sidebar failed.</div>
-              <button className="btn btn-ghost btn-xs" onClick={reset}>Reset</button>
+              <div style={{ marginBottom: 8, fontWeight: 600 }}>Боковая панель сломалась.</div>
+              <button className="btn btn-ghost btn-xs" onClick={reset}>Перезапустить</button>
             </div>
           </aside>
         )}
@@ -632,18 +678,25 @@ export default function App() {
         </ErrorBoundary>
         <main className="editor__main">
           <ErrorBoundary fallback={(err, reset) => (
-            <div style={{ padding: 12 }}>
-              <div style={{ marginBottom: 8, fontWeight: 600 }}>Preview failed.</div>
+            <div style={{ padding: 12 }} role="alert" aria-live="assertive">
+              <div style={{ marginBottom: 8, fontWeight: 600 }}>Превью сломалось.</div>
               <div style={{ marginBottom: 8, color: '#4E5155' }}>{err.message}</div>
-              <div style={{ marginBottom: 6 }}>Copy project JSON to recover:</div>
-              <textarea
-                readOnly
-                value={JSON.stringify(project, null, 2)}
-                style={{ width: '100%', minHeight: 180 }}
-              />
-              <div style={{ marginTop: 8 }}>
-                <button className="btn btn-ghost btn-xs" onClick={reset}>Reset</button>
+              <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                <button className="btn btn-ghost btn-xs" onClick={reset}>Перезапустить</button>
               </div>
+              <details style={{ marginTop: 12 }}>
+                <summary style={{ cursor: 'pointer', color: '#4E5155', fontSize: 12 }}>
+                  Показать данные проекта (для отладки)
+                </summary>
+                <div style={{ marginTop: 6, marginBottom: 4, fontSize: 12, color: '#4E5155' }}>
+                  Скопируйте JSON, чтобы восстановить проект:
+                </div>
+                <textarea
+                  readOnly
+                  value={JSON.stringify(project, null, 2)}
+                  style={{ width: '100%', minHeight: 180 }}
+                />
+              </details>
             </div>
           )}
           >
@@ -674,16 +727,51 @@ export default function App() {
           </ErrorBoundary>
         </main>
       </div>
-      {error ? <Toast text={error} onDismiss={() => setError(null)} /> : null}
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
 
-function Toast({ text, onDismiss }: { text: string; onDismiss: () => void }) {
+type ToastEntry = { id: number; text: string; tone: 'error' | 'info' }
+type ThemeMode = 'light' | 'dark' | 'system'
+
+function readStoredTheme(): ThemeMode {
+  try {
+    const raw = window.localStorage.getItem('ag.theme')
+    if (raw === 'light' || raw === 'dark') return raw
+  } catch {
+    // localStorage may be unavailable (private mode / SSR-style).
+  }
+  return 'system'
+}
+
+function resolveTheme(mode: ThemeMode): 'light' | 'dark' {
+  if (mode !== 'system') return mode
+  if (typeof window === 'undefined') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function ToastStack({ toasts, onDismiss }: { toasts: ToastEntry[]; onDismiss: (id: number) => void }) {
+  if (toasts.length === 0) return null
   return (
-    <div className="toast" role="status">
-      <span>{text}</span>
-      <button className="toast__close" onClick={onDismiss}>×</button>
+    <div className="toast-stack" aria-live="polite" aria-relevant="additions">
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          className={`toast toast--${t.tone}`}
+          role={t.tone === 'error' ? 'alert' : 'status'}
+        >
+          <span>{t.text}</span>
+          <button
+            type="button"
+            className="toast__close"
+            aria-label="Закрыть уведомление"
+            onClick={() => onDismiss(t.id)}
+          >
+            ×
+          </button>
+        </div>
+      ))}
     </div>
   )
 }

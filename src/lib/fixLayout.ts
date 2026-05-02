@@ -2,6 +2,7 @@
 // Does NOT change composition model. Only nudges sizes/colors to fix readability.
 
 import { luminance } from './color'
+import { isBannerCopyFormat } from './formatCopy'
 import { fitFontSize, wrapText } from './textMeasure'
 import type { Background, BlockKind, FormatRuleSet, Scene, TextBlock } from './types'
 
@@ -20,13 +21,16 @@ export function fixLayout(scene: Scene, rules: FormatRuleSet): Scene {
   if (scene.scrim) out.scrim = scene.scrim
   if (scene.decor) out.decor = scene.decor
 
+  // Same 0.5% tolerance as checkOverflow so the two never disagree on edge
+  // cases (a freshly clamped block must not flag a "crosses safe area" warning).
+  const SAFE_TOLERANCE = 0.5
   for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
     const b = scene[k]
     if (!b) continue
-    const x = clamp(b.x, sz.left, 100 - sz.right - 1)
-    const w = clamp(Math.min(b.w, 100 - sz.right - x), 1, 100)
+    const x = clamp(b.x, sz.left, 100 - sz.right - SAFE_TOLERANCE)
+    const w = clamp(Math.min(b.w, 100 - sz.right - x), SAFE_TOLERANCE, 100)
     // Keep the full block (including implicit text height) inside the safe zone.
-    const h = b.h ?? estimateTextHeight(b as TextBlock)
+    const h = b.h ?? estimateTextHeight(b as TextBlock, rules)
     const maxY = Math.max(sz.top, 100 - sz.bottom - h)
     const y = clamp(b.y, sz.top, maxY)
     const clamped = { ...b, x, y, w }
@@ -128,20 +132,21 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
   for (const k of kinds) {
     const b = scene[k]
     if (!b) continue
-    const h = b.h ?? estimateTextHeight(b as TextBlock)
+    const imageIsIntentionalBleed = k === 'image' && isIntentionalImageBleed(scene, rules)
+    const h = b.h ?? estimateTextHeight(b as TextBlock, rules)
     const right = b.x + b.w
     const bottom = b.y + h
 
-    if (b.x < sz.left - 0.5) {
+    if (!imageIsIntentionalBleed && b.x < sz.left - 0.5) {
       issues.push({ block: k, message: `${label(k)} crosses left safe area`, level: 'warn' })
     }
-    if (right > 100 - sz.right + 0.5) {
+    if (!imageIsIntentionalBleed && right > 100 - sz.right + 0.5) {
       issues.push({ block: k, message: `${label(k)} crosses right safe area`, level: 'warn' })
     }
-    if (b.y < sz.top - 0.5) {
+    if (!imageIsIntentionalBleed && b.y < sz.top - 0.5) {
       issues.push({ block: k, message: `${label(k)} crosses top safe area`, level: 'warn' })
     }
-    if (bottom > 100 - sz.bottom + 0.5) {
+    if (!imageIsIntentionalBleed && bottom > 100 - sz.bottom + 0.5) {
       issues.push({ block: k, message: `${label(k)} below fold (safe area)`, level: 'warn' })
     }
   }
@@ -175,7 +180,9 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
       const a = scene[ki]
       const b = scene[kj]
       if (!a || !b) continue
-      if (rectsOverlap(a, b)) {
+      const ar = { ...a, h: a.h ?? estimateTextHeight(a as TextBlock, rules) }
+      const br = { ...b, h: b.h ?? estimateTextHeight(b as TextBlock, rules) }
+      if (rectsOverlap(ar, br)) {
         issues.push({
           block: ki,
           message: `${label(ki)} overlaps ${label(kj)}`,
@@ -188,21 +195,120 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
   // Low text contrast vs approximate background. fixLayout already corrects
   // title; here we flag subtitle + cta too.
   const bgApprox = approxBackgroundColor(scene.background)
-  for (const k of ['title', 'subtitle'] as const) {
-    const t = scene[k] as TextBlock | undefined
-    if (!t) continue
-    if (isLowContrast(t.fill, bgApprox)) {
-      issues.push({ block: k, message: `${label(k)} low contrast vs background`, level: 'warn' })
+  if (!scene.scrim) {
+    for (const k of ['title', 'subtitle'] as const) {
+      const t = scene[k] as TextBlock | undefined
+      if (!t) continue
+      if (isLowContrast(t.fill, bgApprox)) {
+        issues.push({ block: k, message: `${label(k)} low contrast vs background`, level: 'warn' })
+      }
+    }
+  }
+  if (scene.cta && isLowContrast(scene.cta.fill, scene.cta.bg)) {
+    issues.push({ block: 'cta', message: 'Cta low contrast vs button fill', level: 'warn' })
+  }
+
+  const smallAd = isSmallAdFormat(rules)
+  if (smallAd) {
+    const cta = scene.cta
+    if (cta) {
+      const ctaWidthPx = (cta.w / 100) * rules.width
+      const ctaHeightPx = ((cta.h ?? estimateTextHeight(cta, rules)) / 100) * rules.height
+      const ctaFontPx = (cta.fontSize / 100) * rules.width
+      if (ctaWidthPx < 92 || ctaHeightPx < 32 || ctaFontPx < 11) {
+        issues.push({ block: 'cta', message: 'Cta too small for ad format', level: 'warn' })
+      }
+    }
+
+    for (const k of ['title', 'subtitle'] as const) {
+      const t = scene[k] as TextBlock | undefined
+      if (!t?.text.trim()) continue
+      const compactLimit = k === 'title' ? (rules.aspectRatio > 4 ? 32 : 42) : (rules.aspectRatio > 4 ? 34 : 46)
+      if (stripMarkup(t.text).length > compactLimit) {
+        issues.push({ block: k, message: `${label(k)} too long for small ad format`, level: 'info' })
+      }
+    }
+  }
+
+  if (smallAd && scene.title && scene.cta) {
+    const titlePx = scene.title.fontSize * rules.width / 100
+    const ctaPx = scene.cta.fontSize * rules.width / 100
+    const ctaArea = scene.cta.w * (scene.cta.h ?? estimateTextHeight(scene.cta, rules))
+    if (ctaPx < titlePx * 0.42 || ctaArea < scene.title.w * estimateTextHeight(scene.title, rules) * 0.2) {
+      issues.push({ block: 'cta', message: 'Cta weak hierarchy vs headline', level: 'info' })
+    }
+  }
+
+  // Banner family — gentler limits than smallAd, because these formats have
+  // more horizontal real estate but still need a poster-style hook.
+  if (!smallAd && isBannerCopyFormat(rules.key)) {
+    for (const k of ['title', 'subtitle'] as const) {
+      const t = scene[k] as TextBlock | undefined
+      if (!t?.text.trim()) continue
+      const limit = k === 'title' ? 48 : 60
+      if (stripMarkup(t.text).length > limit) {
+        issues.push({ block: k, message: `${label(k)} too long for banner format`, level: 'info' })
+      }
+    }
+  }
+
+  if (scene.image && !scene.scrim) {
+    for (const k of ['title', 'subtitle'] as const) {
+      const t = scene[k] as TextBlock | undefined
+      if (!t || t.halo) continue
+      const textRect = { ...t, h: t.h ?? estimateTextHeight(t, rules) }
+      if (rectsOverlap(textRect, scene.image)) {
+        issues.push({ block: k, message: `${label(k)} sits on image without scrim`, level: 'info' })
+      }
     }
   }
 
   return issues
 }
 
-function estimateTextHeight(t: TextBlock): number {
-  // fontSize is % of format width; lineHeight defaults to 1.2; up to maxLines.
+function isSmallAdFormat(rules: FormatRuleSet): boolean {
+  return rules.width <= 320 || rules.height <= 400 || rules.aspectRatio > 4 || rules.key === 'avito-skyscraper'
+}
+
+function isIntentionalImageBleed(scene: Scene, rules: FormatRuleSet): boolean {
+  const image = scene.image
+  if (!image) return false
+  const fullBleed = image.x <= 0.5 && image.y <= 0.5 && image.w >= 99 && (image.h ?? 0) >= 99
+  const topBleedCard = image.x <= 0.5 && image.y <= 0.5 && image.w >= 99 && (image.h ?? 0) >= 45 && rules.aspectRatio < 1
+  return fullBleed || topBleedCard
+}
+
+function stripMarkup(text: string): string {
+  return text.replace(/\*\*/g, '').trim()
+}
+
+function estimateTextHeight(t: TextBlock, rules: FormatRuleSet): number {
+  // fontSize is % of format width, while y/h are % of format height.
+  // Convert through aspectRatio so portrait formats aren't overestimated and
+  // wide banners aren't underestimated.
   const lh = t.lineHeight ?? 1.2
-  return t.fontSize * lh * Math.max(1, t.maxLines)
+  return t.fontSize * lh * estimateActualLines(t) * rules.aspectRatio
+}
+
+function estimateActualLines(t: TextBlock): number {
+  const text = t.text.replace(/\*\*/g, '').trim()
+  if (!text) return 1
+  const capacity = Math.max(1, t.charsPerLine)
+  const maxLines = Math.max(1, t.maxLines)
+  const words = text.split(/\s+/).filter(Boolean)
+  let lines = 1
+  let used = 0
+  for (const word of words) {
+    const next = used === 0 ? word.length : used + 1 + word.length
+    if (next > capacity) {
+      lines += 1
+      used = word.length
+      if (lines >= maxLines) return maxLines
+    } else {
+      used = next
+    }
+  }
+  return Math.min(maxLines, lines)
 }
 
 function rectsOverlap(

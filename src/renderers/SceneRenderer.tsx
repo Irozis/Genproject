@@ -52,8 +52,16 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
         <BackgroundDefs bg={scene.background} id={bgId} />
         {scene.scrim ? (
           <linearGradient id={scrimId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={scene.scrim.color} stopOpacity={0} />
-            <stop offset="100%" stopColor={scene.scrim.color} stopOpacity={scene.scrim.opacity} />
+            <stop
+              offset="0%"
+              stopColor={scene.scrim.color}
+              stopOpacity={scene.scrim.direction === 'up' ? scene.scrim.opacity : 0}
+            />
+            <stop
+              offset="100%"
+              stopColor={scene.scrim.color}
+              stopOpacity={scene.scrim.direction === 'up' ? 0 : scene.scrim.opacity}
+            />
           </linearGradient>
         ) : null}
         {scene.image && scene.image.src && shouldClipImage(scene.image) ? (
@@ -625,11 +633,27 @@ function TextNode({
   fontFamily: string
   accent: string
 }) {
-  const fontSizePx = resolveFontSizePx(block.fontSize, W)
   const xLeft = pct(block.x, W)
   const yTop = pct(block.y, H)
   const wPx = pct(block.w, W)
   const align = block.align ?? 'left'
+  const rawText = applyCase(block.text, block.transform)
+  const hasHighlight = rawText.includes('**')
+  const plain = hasHighlight ? stripMarkers(rawText) : rawText
+  const fitMode = block.fitMode ?? 'auto'
+  const wrapMaxLines = fitMode === 'overflow' ? 99 : block.maxLines
+  const baseFontSizePx = resolveFontSizePx(block.fontSize, W)
+  const fontSizePx = fitMode === 'auto'
+    ? fitTextFontSize({
+        text: plain,
+        basePx: baseFontSizePx,
+        minPx: Math.max(8, baseFontSizePx * 0.62),
+        fontWeight: block.weight,
+        fontFamily,
+        maxWidthPx: wPx,
+        maxLines: wrapMaxLines,
+      })
+    : baseFontSizePx
   // Halo filter id is stable per bbox so hot-reload doesn't churn DOM.
   const haloId = block.halo
     ? `halo-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(fontSizePx)}`
@@ -639,11 +663,6 @@ function TextNode({
   // moving the anchor rather than computing per-line offsets.
   const anchorX = align === 'center' ? xLeft + wPx / 2 : align === 'right' ? xLeft + wPx : xLeft
   const textAnchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start'
-  const rawText = applyCase(block.text, block.transform)
-  const hasHighlight = rawText.includes('**')
-  const plain = hasHighlight ? stripMarkers(rawText) : rawText
-  const fitMode = block.fitMode ?? 'auto'
-  const wrapMaxLines = fitMode === 'overflow' ? 99 : block.maxLines
   const clipId = block.h && fitMode !== 'overflow'
     ? `text-clip-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(wPx)}-${Math.round(pct(block.h, H))}`
     : undefined
@@ -726,6 +745,42 @@ function TextNode({
       {clipId ? <g clipPath={`url(#${clipId})`}>{textNode}</g> : textNode}
     </>
   )
+}
+
+function fitTextFontSize({
+  text,
+  basePx,
+  minPx,
+  fontWeight,
+  fontFamily,
+  maxWidthPx,
+  maxLines,
+}: {
+  text: string
+  basePx: number
+  minPx: number
+  fontWeight: number
+  fontFamily: string
+  maxWidthPx: number
+  maxLines: number
+}): number {
+  if (!text || maxLines <= 0 || maxWidthPx <= 0) return basePx
+  let size = basePx
+  const safeWidth = maxWidthPx * 0.96
+  while (size > minPx) {
+    const lines = wrapText({
+      text,
+      fontSizePx: size,
+      fontWeight,
+      fontFamily,
+      maxWidthPx: safeWidth,
+      maxLines,
+      overflow: 'ellipsis',
+    })
+    if (!lines.some((line) => line.includes('…'))) return size
+    size = Math.max(minPx, size - 0.5)
+  }
+  return minPx
 }
 
 // Compute the starting token index for line `i` by replaying earlier lines.
@@ -812,8 +867,11 @@ function CtaNode({
   const y = pct(block.y, H)
   const w = pct(block.w, W)
   const h = pct(block.h ?? 7, H)
-  const fontSizePx = resolveFontSizePx(block.fontSize, W)
+  const baseFontSizePx = resolveFontSizePx(block.fontSize, W)
   const rx = Math.min(block.rx, h / 2)
+  const label = applyCase(block.text, block.transform)
+  const labelMaxWidth = w * 0.82
+  const fontSizePx = fitCtaFontSize(label, baseFontSizePx, Math.max(8, baseFontSizePx * 0.72), labelMaxWidth, block.weight, fontFamily)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
   return (
     <g>
@@ -829,10 +887,38 @@ function CtaNode({
         dominantBaseline="central"
         letterSpacing={letterSpacingPx || undefined}
       >
-        {applyCase(block.text, block.transform)}
+        {label}
       </text>
     </g>
   )
+}
+
+function fitCtaFontSize(
+  text: string,
+  basePx: number,
+  minPx: number,
+  maxWidthPx: number,
+  weight: number,
+  fontFamily: string,
+): number {
+  if (!text || maxWidthPx <= 0) return basePx
+  let size = basePx
+  while (size > minPx) {
+    const line = wrapText({
+      text,
+      fontSizePx: size,
+      fontWeight: weight,
+      fontFamily,
+      maxWidthPx,
+      maxLines: 1,
+      overflow: 'clip',
+      balance: false,
+      avoidOrphans: false,
+    })[0] ?? ''
+    if (line === text) return size
+    size = Math.max(minPx, size - 0.5)
+  }
+  return minPx
 }
 
 function applyCase(s: string, t?: TextBlock['transform']): string {

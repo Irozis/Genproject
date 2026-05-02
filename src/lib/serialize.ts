@@ -143,7 +143,10 @@ const sceneSchema = z.object({
 
 const blockKindEnum = z.enum(['title', 'subtitle', 'cta', 'badge', 'logo', 'image'])
 const blockOverrideSchema = z.object({
-  ...blockBase,
+  x: z.number().optional(),
+  y: z.number().optional(),
+  w: z.number().optional(),
+  h: z.number().optional(),
   text: z.string().optional(),
   textByLocale: z.record(z.string(), z.string()).optional(),
   fontSize: z.number().optional(),

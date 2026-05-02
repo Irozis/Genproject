@@ -6,6 +6,7 @@ import type {
   AssetHint,
   CompositionModel,
   EnabledMap,
+  FormatKey,
   FormatRuleSet,
   Scene,
   TextBlock,
@@ -49,6 +50,18 @@ const TITLE_TOKENS = { letterSpacing: -0.02, lineHeight: 1.02, weight: 900 }
 const SUBTITLE_TOKENS = { letterSpacing: 0, lineHeight: 1.35, weight: 400, opacity: 0.72 }
 const BADGE_TOKENS = { letterSpacing: 0.1, lineHeight: 1.0, weight: 700 }
 const CTA_TOKENS = { letterSpacing: 0.02, lineHeight: 1.0, weight: 700 }
+
+// Per-platform "bottom of the CTA" anchor for story-style formats. Each value
+// is the maximum y (% of canvas height) where the CTA's bottom edge can sit,
+// accounting for the platform's reactive overlay UI (IG "Send message", VK/TG
+// reactions, Avito feed strip). Keeps the CTA inside the thumb-zone instead
+// of letting it drift down to the safeZone bottom edge.
+const STORY_CTA_BOTTOM: Partial<Record<FormatKey, number>> = {
+  'instagram-story': 86,
+  'vk-stories': 87,
+  'telegram-story': 87,
+  'avito-fullscreen': 87,
+}
 
 function apply<T extends TextBlock>(block: T, tokens: Partial<TextBlock>): T {
   return { ...block, ...tokens }
@@ -163,6 +176,26 @@ function pxToHeightPct(px: number, rules: FormatRuleSet): number {
   return (px / rules.height) * 100
 }
 
+function pxToWidthPct(px: number, rules: FormatRuleSet): number {
+  if (rules.width <= 0) return 0
+  return (px / rules.width) * 100
+}
+
+function readableCtaFont(block: TextBlock | undefined, base: number, rules: FormatRuleSet): number {
+  const minPx = rules.width <= 320 || rules.key === 'avito-skyscraper' ? 11 : rules.aspectRatio > 4 ? 10 : 12
+  return Math.max(capFontSize(block, base), pxToWidthPct(minPx, rules))
+}
+
+function readableSubtitleFont(block: TextBlock | undefined, base: number, rules: FormatRuleSet): number {
+  const minPx = rules.width <= 320 ? 8 : rules.aspectRatio > 4 ? 9 : 12
+  return Math.max(capFontSize(block, base), pxToWidthPct(minPx, rules))
+}
+
+function readableCtaHeight(basePct: number, rules: FormatRuleSet): number {
+  const minPx = rules.width <= 320 ? 34 : rules.aspectRatio > 4 ? 32 : 44
+  return Math.max(basePct, pxToHeightPct(minPx, rules))
+}
+
 // Resolve the format's typescale multiplier. Default 1.0 when a format doesn't
 // override — keeps square formats as-is. Clamped to [0.8, 1.4] so a typo in
 // the rules file can't blow up text sizing.
@@ -213,6 +246,59 @@ function haloForBrightness(brightness: number): { color: string; opacity: number
   const opacity = clamp((brightness - 0.42) * 1.3, 0, 0.55)
   if (opacity <= 0.05) return undefined
   return { color: '#000000', opacity, blurPx: 1.2 }
+}
+
+// Subject-mass proxy: variability of brightness inside the bbox. A uniform
+// patch (sky, snow, solid background) returns ≈0; a busy patch with bright
+// and dark cells alternating (faces, products, edges of subjects) returns
+// closer to 0.4-0.7. We blend the brightness range with the mean absolute
+// deviation so a patch that's mostly mid-grey but has one outlier still
+// scores higher than a uniform patch. Used by layoutHeroOverlay to decide
+// whether the natural bottom-anchor would land on a subject.
+function regionContrast(
+  grid: number[][] | undefined,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  fallback: number,
+): number {
+  if (!grid || grid.length === 0) return fallback
+  const n = grid.length
+  const left = Math.max(0, Math.min(100, x))
+  const right = Math.max(0, Math.min(100, x + w))
+  const top = Math.max(0, Math.min(100, y))
+  const bottom = Math.max(0, Math.min(100, y + h))
+  if (right <= left || bottom <= top) return fallback
+  const col0 = Math.max(0, Math.min(n - 1, Math.floor((left / 100) * n)))
+  const col1 = Math.max(0, Math.min(n - 1, Math.floor(((right - 0.01) / 100) * n)))
+  const row0 = Math.max(0, Math.min(n - 1, Math.floor((top / 100) * n)))
+  const row1 = Math.max(0, Math.min(n - 1, Math.floor(((bottom - 0.01) / 100) * n)))
+  let min = 1
+  let max = 0
+  let sum = 0
+  let count = 0
+  for (let r = row0; r <= row1; r++) {
+    for (let c = col0; c <= col1; c++) {
+      const v = grid[r]?.[c] ?? fallback
+      if (v < min) min = v
+      if (v > max) max = v
+      sum += v
+      count += 1
+    }
+  }
+  if (count === 0) return fallback
+  const mean = sum / count
+  let mad = 0
+  for (let r = row0; r <= row1; r++) {
+    for (let c = col0; c <= col1; c++) {
+      const v = grid[r]?.[c] ?? fallback
+      mad += Math.abs(v - mean)
+    }
+  }
+  mad /= count
+  const range = max - min
+  return clamp(range * 0.6 + mad * 1.4, 0, 1)
 }
 
 // ---------------------------------------------------------------------------
@@ -286,15 +372,16 @@ const layoutTextDominant: Layout = (scene, rules, enabled) => {
   }
 
   if (enabled.cta && scene.cta) {
-    const ctaFont = 2.6
+    const ctaFont = readableCtaFont(scene.cta, 2.6, rules)
+    const ctaH = readableCtaHeight(7, rules)
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left,
-      y: r.ctaY - 6,
+      y: Math.min(r.ctaY - ctaH * 0.5, 100 - sz.bottom - ctaH),
       w: 32,
-      h: 7,
-        fontSize: capFontSize(scene.cta, ctaFont),
+      h: ctaH,
+      fontSize: ctaFont,
     }
   }
 
@@ -318,7 +405,6 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
 
   const sz = rules.safeZone
   const left = sz.left
-  const r = rhythm(rules)
   const isAvito = rules.key === 'avito-listing' || rules.key === 'avito-fullscreen' || rules.key === 'avito-skyscraper'
   const imageGap = 2
   const splitX = 58
@@ -375,12 +461,38 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
       100
     : baseSplitTitle
   const actualTitleFontSize = capFontSize(scene.title, titleFontSize)
+  const titleLines = scene.title
+    ? measuredLines(scene.title.text, actualTitleFontSize, textW, splitTarget, rules, TITLE_TOKENS.weight)
+    : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFontSize, titleLines, 1.02, rules) : 0
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle
+  const titleSubtitleGap = hasSubtitle ? Math.max(pxToHeightPct(12, rules), rules.gutter) : 0
+  const subW = textW * 0.95
+  const subFont = scene.subtitle ? fitFontSize(scene.subtitle.text, subW, 3, 2.8 * ts, MIN_SUBTITLE_SIZE) : 0
+  const actualSubFont = capFontSize(scene.subtitle, subFont)
+  const subtitleLines = scene.subtitle
+    ? measuredLines(scene.subtitle.text, actualSubFont, subW, 3, rules, SUBTITLE_TOKENS.weight)
+    : 0
+  const subtitleH = hasSubtitle && subtitleLines ? textBlockHeight(actualSubFont, subtitleLines, 1.35, rules) : 0
+  const hasCta = enabled.cta && !!scene.cta
+  const subtitleCtaGap = hasCta ? Math.max(pxToHeightPct(16, rules), rules.gutter * 1.05) : 0
+  const ctaTextW = Math.max(24, textW * 0.62)
+  const actualCtaFont = readableCtaFont(scene.cta, 2.6, rules)
+  const ctaLines = scene.cta ? measuredLines(scene.cta.text, actualCtaFont, ctaTextW, 2, rules, CTA_TOKENS.weight) : 0
+  const ctaTextH = hasCta ? textBlockHeight(actualCtaFont, ctaLines || 1, 1.0, rules) : 0
+  const ctaPadV = hasCta ? Math.max(pxToHeightPct(20, rules), rules.gutter * 0.9) : 0
+  const ctaH = hasCta ? Math.max(readableCtaHeight(0, rules), ctaTextH + ctaPadV) : 0
+  const stackH = titleH + titleSubtitleGap + subtitleH + subtitleCtaGap + ctaH
+  const preferredTop = (100 - stackH) / 2
+  const minTop = sz.top + (enabled.badge && scene.badge ? rules.gutter * 3.1 : rules.gutter * 1.4)
+  const titleY = clamp(preferredTop, minTop, 100 - sz.bottom - stackH)
+
   if (enabled.title && scene.title) {
     out.title = apply(
       {
         ...scene.title,
         x: left,
-        y: r.titleY,
+        y: titleY,
         w: textW,
         fontSize: actualTitleFontSize,
         maxLines: splitTarget,
@@ -389,65 +501,49 @@ const layoutSplitRightImage: Layout = (scene, rules, enabled) => {
     )
   }
 
-  if (enabled.subtitle && scene.subtitle) {
-    const titleLines = scene.title
-      ? measuredLines(scene.title.text, actualTitleFontSize, textW, splitTarget, rules, TITLE_TOKENS.weight)
-      : 1
-    const titleH = textBlockHeight(actualTitleFontSize, titleLines, 1.02, rules)
-    const titleSubtitleGap = Math.max(pxToHeightPct(12, rules), rules.gutter)
-    const subW = textW * 0.95
-    const subFont = fitFontSize(scene.subtitle.text, subW, 3, 2.8 * ts, MIN_SUBTITLE_SIZE)
-    const actualSubFont = capFontSize(scene.subtitle, subFont)
-    const subtitleLines = measuredLines(scene.subtitle.text, actualSubFont, subW, 3, rules, SUBTITLE_TOKENS.weight)
-    const subtitleH = textBlockHeight(actualSubFont, subtitleLines, 1.35, rules)
+  if (hasSubtitle && scene.subtitle) {
     out.subtitle = apply(
       {
         ...scene.subtitle,
         x: left,
-        y: r.titleY + titleH + titleSubtitleGap,
+        y: titleY + titleH + titleSubtitleGap,
         w: subW,
         fontSize: actualSubFont,
       },
       SUBTITLE_TOKENS,
     )
 
-    if (enabled.cta && scene.cta) {
-      const subtitleCtaGap = Math.max(pxToHeightPct(16, rules), rules.gutter)
-      const ctaFont = 2.6
-      const ctaTextW = Math.max(24, textW * 0.62)
-      const actualCtaFont = capFontSize(scene.cta, ctaFont)
-      const ctaLines = measuredLines(scene.cta.text, actualCtaFont, ctaTextW, 2, rules, CTA_TOKENS.weight)
-      const ctaTextH = textBlockHeight(actualCtaFont, ctaLines, 1.0, rules)
-      const ctaPadV = Math.max(pxToHeightPct(20, rules), rules.gutter * 0.9)
+    if (hasCta && scene.cta) {
       out.cta = {
         ...scene.cta,
         ...CTA_TOKENS,
         x: left,
-        y: r.titleY + titleH + titleSubtitleGap + subtitleH + subtitleCtaGap,
+        y: titleY + titleH + titleSubtitleGap + subtitleH + subtitleCtaGap,
         w: ctaTextW,
-        h: ctaTextH + ctaPadV,
+        h: ctaH,
         fontSize: actualCtaFont,
       }
     }
   }
 
-  if (enabled.cta && scene.cta && !out.cta) {
-    const ctaFont = 2.6
+  if (hasCta && scene.cta && !out.cta) {
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left,
-      y: r.titleY + pxToHeightPct(16, rules),
+      y: titleY + titleH + subtitleCtaGap,
       w: 30,
-      h: pxToHeightPct(48, rules),
-      fontSize: capFontSize(scene.cta, ctaFont),
+      h: ctaH,
+      fontSize: actualCtaFont,
     }
   }
 
   if (enabled.logo && scene.logo) {
+    // Right safe-zone corner so the logo never collides with the contain-fit
+    // image (Avito) or the title column on the left.
     out.logo = {
       ...scene.logo,
-      x: imageX - 7,
+      x: 100 - sz.right - 6,
       y: sz.top,
       w: 6,
       h: 6,
@@ -462,21 +558,32 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
   const left = sz.left
   const out: Scene = { background: scene.background, accent: scene.accent }
 
-  const imageW = enabled.image && scene.image ? 20 : 0
-  const ctaW = enabled.cta && scene.cta ? 17 : 0
-  const gap = rules.gutter
+  const imageW = enabled.image && scene.image ? 18 : 0
+  const ctaW = enabled.cta && scene.cta ? 22 : 0
+  const gap = Math.max(rules.gutter, 2)
   const titleW = 100 - sz.left - sz.right - imageW - ctaW - gap * 2
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, titleW, 1, 3.2, rules.minTitleSize)
-    : 3.2
+    ? fitFontSize(scene.title.text, titleW, 1, 3.6, rules.minTitleSize)
+    : 3.6
   const actualTitleFont = capFontSize(scene.title, titleFont)
+  const subW = Math.max(18, titleW * 0.7)
+  const subFont = capFontSize(scene.subtitle, 1.36)
+  const titleLines = scene.title ? measuredLines(scene.title.text, actualTitleFont, titleW, 1, rules, TITLE_TOKENS.weight) : 0
+  const subLines = scene.subtitle ? measuredLines(scene.subtitle.text, subFont, subW, 1, rules, SUBTITLE_TOKENS.weight) : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
+  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
+  const supportGap = enabled.subtitle && scene.subtitle ? Math.max(pxToHeightPct(6, rules), rules.gutter * 0.55) : 0
+  const copyStackH = titleH + supportGap + subH
+  const copyY = clamp((100 - copyStackH) / 2, sz.top, 100 - sz.bottom - copyStackH)
+  const ctaH = readableCtaHeight(46, rules)
+  const ctaY = clamp((100 - ctaH) / 2, sz.top, 100 - sz.bottom - ctaH)
 
   if (enabled.title && scene.title) {
     out.title = apply(
       {
         ...scene.title,
         x: left,
-        y: 18,
+        y: copyY,
         w: titleW,
         fontSize: actualTitleFont,
         maxLines: 1,
@@ -486,14 +593,13 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
   }
 
   if (enabled.subtitle && scene.subtitle) {
-    const subW = Math.max(18, titleW * 0.75)
     out.subtitle = apply(
       {
         ...scene.subtitle,
         x: left,
-        y: 57,
+        y: copyY + titleH + supportGap,
         w: subW,
-        fontSize: capFontSize(scene.subtitle, 1.35),
+        fontSize: subFont,
         maxLines: 1,
       },
       { ...SUBTITLE_TOKENS, opacity: 0.65 },
@@ -505,10 +611,10 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left + titleW + gap,
-      y: 30,
+      y: ctaY,
       w: ctaW,
-      h: 38,
-      fontSize: capFontSize(scene.cta, 1.45),
+      h: ctaH,
+      fontSize: readableCtaFont(scene.cta, 1.78, rules),
       maxLines: 1,
     }
   }
@@ -542,21 +648,31 @@ const layoutCompactBanner: Layout = (scene, rules, enabled) => {
   const sz = rules.safeZone
   const left = sz.left
   const out: Scene = { background: scene.background, accent: scene.accent }
-  const imageW = enabled.image && scene.image ? 36 : 0
+  const imageW = enabled.image && scene.image ? 34 : 0
   const gap = 4
   const textW = 100 - sz.left - sz.right - imageW - gap
-  const titleTarget = maxLinesFor(scene.title, 3, 3)
+  const titleTarget = maxLinesFor(scene.title, 2, 2)
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, textW, titleTarget, 5.4, rules.minTitleSize)
-    : 5.4
+    ? fitFontSize(scene.title.text, textW, titleTarget, 5.9, rules.minTitleSize)
+    : 5.9
   const actualTitleFont = capFontSize(scene.title, titleFont)
+  const titleLines = scene.title ? measuredLines(scene.title.text, actualTitleFont, textW, titleTarget, rules, TITLE_TOKENS.weight) : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
+  const subW = textW * 0.92
+  const subFont = readableSubtitleFont(scene.subtitle, 2.35, rules)
+  const subLines = scene.subtitle ? measuredLines(scene.subtitle.text, subFont, subW, 1, rules, SUBTITLE_TOKENS.weight) : 0
+  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
+  const ctaH = readableCtaHeight(11, rules)
+  const stackGap = Math.max(2.5, rules.gutter * 0.8)
+  const stackH = titleH + stackGap + subH + stackGap + ctaH
+  const titleY = clamp((100 - stackH) / 2, sz.top + rules.gutter, 100 - sz.bottom - stackH)
 
   if (enabled.title && scene.title) {
     out.title = apply(
       {
         ...scene.title,
         x: left,
-        y: 24,
+        y: titleY,
         w: textW,
         fontSize: actualTitleFont,
         maxLines: titleTarget,
@@ -570,10 +686,10 @@ const layoutCompactBanner: Layout = (scene, rules, enabled) => {
       {
         ...scene.subtitle,
         x: left,
-        y: 56,
-        w: textW * 0.92,
-        fontSize: capFontSize(scene.subtitle, 2.25),
-        maxLines: 2,
+        y: titleY + titleH + stackGap,
+        w: subW,
+        fontSize: subFont,
+        maxLines: 1,
       },
       SUBTITLE_TOKENS,
     )
@@ -584,10 +700,10 @@ const layoutCompactBanner: Layout = (scene, rules, enabled) => {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left,
-      y: 76,
-      w: Math.min(34, textW * 0.7),
-      h: 9,
-      fontSize: capFontSize(scene.cta, 2.3),
+      y: titleY + titleH + stackGap + subH + stackGap,
+      w: Math.min(42, textW * 0.84),
+      h: ctaH,
+      fontSize: readableCtaFont(scene.cta, 2.55, rules),
       maxLines: 1,
     }
   }
@@ -617,9 +733,125 @@ const layoutCompactBanner: Layout = (scene, rules, enabled) => {
   return out
 }
 
-// Image fills the canvas; text stacks from the bottom over a gradient scrim.
-// Positions are computed from the bottom up so there is never overlap regardless
-// of title/subtitle length.
+const layoutSmallVerticalAd: Layout = (scene, rules, enabled) => {
+  const sz = rules.safeZone
+  const left = sz.left
+  const innerW = 100 - sz.left - sz.right
+  const g = rules.gutter
+  const out: Scene = { background: scene.background, accent: scene.accent }
+
+  const imageH = enabled.image && scene.image ? 42 : 0
+  if (enabled.image && scene.image) {
+    out.image = {
+      ...scene.image,
+      x: left,
+      y: sz.top,
+      w: innerW,
+      h: imageH - sz.top,
+      rx: scene.image.rx ?? 14,
+      fit: scene.image.fit ?? 'cover',
+    }
+  }
+
+  const titleMaxLines = maxLinesFor(scene.title, 2, 2)
+  const titleFont = scene.title
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 6.4, rules.minTitleSize)
+    : 6.4
+  const actualTitleFont = capFontSize(scene.title, titleFont)
+  const subFont = readableSubtitleFont(scene.subtitle, 2.45, rules)
+  const titleLines = scene.title
+    ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
+    : 0
+  const subLines = scene.subtitle
+    ? measuredLines(scene.subtitle.text, subFont, innerW * 0.92, 1, rules, SUBTITLE_TOKENS.weight)
+    : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
+  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
+  const ctaH = readableCtaHeight(8.2, rules)
+  const hasBadge = enabled.badge && !!scene.badge
+  const badgeH = hasBadge ? 3 : 0
+  const badgeGap = hasBadge ? g * 0.8 : 0
+  const textGap = titleH && subH ? Math.max(g * 0.65, pxToHeightPct(10, rules)) : 0
+  const ctaGap = enabled.cta && scene.cta ? Math.max(g * 1.1, pxToHeightPct(16, rules)) : 0
+  const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (enabled.cta && scene.cta ? ctaH : 0)
+  const panelTop = (imageH || sz.top) + g * 1.2
+  const panelBottom = 100 - sz.bottom
+  // Pin the copy stack against the photo edge — that's where it reads as a
+  // real product listing instead of a balanced poster. Any leftover space
+  // lives below the CTA as breathing room.
+  const stackTop = clamp(panelTop, panelTop, Math.max(panelTop, panelBottom - stackH))
+  const badgeY = stackTop
+  const titleY = badgeY + badgeH + badgeGap
+  const subY = titleY + titleH + textGap
+  const ctaY = subY + subH + ctaGap
+
+  if (hasBadge && scene.badge) {
+    out.badge = apply(
+      { ...scene.badge, x: left, y: badgeY, w: 34, h: badgeH, fontSize: 1.75 },
+      BADGE_TOKENS,
+    )
+  }
+
+  if (enabled.title && scene.title) {
+    out.title = apply(
+      {
+        ...scene.title,
+        x: left,
+        y: titleY,
+        w: innerW,
+        fontSize: actualTitleFont,
+        maxLines: Math.max(1, titleLines),
+      },
+      TITLE_TOKENS,
+    )
+  }
+
+  if (enabled.subtitle && scene.subtitle) {
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: subY,
+        w: innerW * 0.92,
+        fontSize: subFont,
+        maxLines: Math.max(1, subLines),
+      },
+      { ...SUBTITLE_TOKENS, opacity: 0.76 },
+    )
+  }
+
+  if (enabled.cta && scene.cta) {
+    out.cta = {
+      ...scene.cta,
+      ...CTA_TOKENS,
+      x: left,
+      y: ctaY,
+      w: Math.min(64, innerW),
+      h: ctaH,
+      fontSize: readableCtaFont(scene.cta, 2.65, rules),
+      maxLines: 1,
+    }
+  }
+
+  if (enabled.logo && scene.logo) {
+    out.logo = {
+      ...scene.logo,
+      x: 100 - sz.right - 8,
+      y: sz.top,
+      w: 8,
+      h: 5,
+    }
+  }
+
+  return out
+}
+
+// Image fills the canvas; text stacks over a gradient scrim. Default anchor
+// is the canvas bottom — but when the image hint shows that the bottom band
+// is busy with subjects (faces, products, animals), we either flip the whole
+// stack to the top safe-zone or, for story formats, split it: title +
+// subtitle at the top, CTA at the platform's thumb-zone. The text block
+// always lands against an image edge — never the floating middle.
 const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   const sz = rules.safeZone
   const left = sz.left
@@ -640,9 +872,9 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
     }
   }
 
-  // --- Stack from bottom up -------------------------------------------------
+  // --- Sizing (anchor-independent) ------------------------------------------
   const ts = tscale(rules)
-  const ctaH = 7
+  const ctaH = readableCtaHeight(7, rules)
   const baseHeroTitle = 6.5 * ts
   const titleMaxLines = maxLinesFor(scene.title, 2, 2)
   const titleFont = scene.title
@@ -662,42 +894,189 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   const titleH = textBlockHeight(actualTitleFont, titleLines || 1, 1.02, rules)
   const subH = textBlockHeight(actualSubFont, subLines || 1, 1.35, rules)
 
-  const bottom = 100 - sz.bottom
-  let cursorY = bottom
-  let ctaY = 0
-  if (enabled.cta && scene.cta) {
-    ctaY = cursorY - ctaH
-    cursorY = ctaY - g * 1.2
+  const hasTitle = enabled.title && !!scene.title
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle
+  const hasCta = enabled.cta && !!scene.cta
+
+  // --- Anchor decision -------------------------------------------------------
+  //
+  // Three modes:
+  //   bottom (default) — title+subtitle+CTA stacked from the canvas bottom up
+  //   top              — title+subtitle+CTA stacked from the canvas top down
+  //   split            — title+subtitle from the top, CTA at thumb-zone
+  //
+  // We flip away from 'bottom' only when:
+  //   (a) we have a real image hint (no flips for image-less drafts),
+  //   (b) the bottom band has clear subject mass (regionContrast > 0.34),
+  //   (c) the alternative band is meaningfully calmer (Δ ≥ 0.10),
+  //   (d) the alternative still leaves the text inside a safe corridor.
+  //
+  // Hysteresis (Δ ≥ 0.10) keeps us from oscillating when the user swaps in a
+  // visually similar image.
+  const storyCtaBottom = STORY_CTA_BOTTOM[rules.key as keyof typeof STORY_CTA_BOTTOM]
+  const isStory = storyCtaBottom !== undefined
+  const safeBottom = 100 - sz.bottom
+  const ctaBottomEdge = isStory ? Math.min(storyCtaBottom!, safeBottom) : safeBottom
+
+  // Estimated full text-stack height — used to size the lookup window.
+  const stackH = (hasTitle ? titleH : 0)
+    + (hasSubtitle ? subH + g * 0.5 : 0)
+    + (hasCta ? ctaH + g * 1.2 : 0)
+  // Where the bottom-anchored stack would start — that's the band we
+  // measure for subjects. Default scrim guard rail is `28%`, so don't go
+  // higher than that when probing.
+  const probedBottomTop = Math.max(28, ctaBottomEdge - stackH - g)
+  const bottomBusy = regionContrast(
+    hint?.brightnessGrid,
+    left,
+    probedBottomTop,
+    innerW,
+    Math.max(g, ctaBottomEdge - probedBottomTop),
+    0,
+  )
+  // Where the top-anchored stack would end — same window size, mirrored.
+  const probedTopBottom = Math.min(72, sz.top + stackH + g)
+  const topBusy = regionContrast(
+    hint?.brightnessGrid,
+    left,
+    sz.top,
+    innerW,
+    Math.max(g, probedTopBottom - sz.top),
+    0,
+  )
+
+  type AnchorMode = 'bottom' | 'top' | 'split'
+  let mode: AnchorMode = isStory ? 'split' : 'bottom'
+  if (
+    !isStory
+    && mode === 'bottom'
+    &&
+    hint?.brightnessGrid
+    && bottomBusy > 0.34
+    && topBusy < bottomBusy - 0.10
+    && probedTopBottom < 60
+  ) {
+    mode = 'top'
   }
-  let subY = 0
-  if (enabled.subtitle && scene.subtitle) {
-    subY = cursorY - subH
-    cursorY = subY - g * 0.5
+
+  // Tall-portrait floor: even when the bottom band is calm enough to keep
+  // bottom-mode active, a long title + subtitle + CTA stack can still grow
+  // past the lower 40% of the canvas and crash into the upper-middle band
+  // where photo subjects live (heads, products, hero shots typically sit
+  // between 30% and 60% on a 9:16 photo). Compute the projected titleY for
+  // bottom-mode and, if it would breach the floor, force split (story) or
+  // top (non-story portrait) so the middle of the canvas stays clear of
+  // any text. The check only fires on portrait formats — on 1:1 and wider
+  // aspect ratios there's no "middle band" to worry about.
+  if (mode === 'bottom' && hasTitle && rules.aspectRatio < 0.9) {
+    const projectedSubAndCtaH = (hasCta ? ctaH + g * 1.2 : 0) + (hasSubtitle ? subH + g * 0.5 : 0)
+    const projectedTitleY = ctaBottomEdge - projectedSubAndCtaH - titleH
+    // Story-class portraits get a tighter floor (subjects in 9:16 frames
+    // almost always reach below 60% of the canvas); 4:5 portraits get a
+    // softer one because their subjects rarely reach below ~55%.
+    const titleFloor = rules.aspectRatio < 0.7 ? 65 : 55
+    if (projectedTitleY < titleFloor) {
+      mode = isStory ? 'split' : 'top'
+    }
   }
+
+  // Lift the stack a little when the bottom is bright (legacy behaviour) —
+  // applies only in 'bottom' mode where the text stays against the bottom.
+  const brightBottomLift = mode === 'bottom'
+    && hint?.bottomBandBrightness !== undefined
+    && hint.bottomBandBrightness > 0.72
+    ? g * 2.4
+    : 0
+  const bottom = ctaBottomEdge - brightBottomLift
+
+  // --- Position the blocks ---------------------------------------------------
   let titleY = 0
-  if (enabled.title && scene.title) {
-    titleY = cursorY - titleH
+  let subY = 0
+  let ctaY = 0
+
+  if (mode === 'bottom') {
+    let cursorY = bottom
+    if (hasCta) {
+      ctaY = cursorY - ctaH
+      cursorY = ctaY - g * 1.2
+    }
+    if (hasSubtitle) {
+      subY = cursorY - subH
+      cursorY = subY - g * 0.5
+    }
+    if (hasTitle) {
+      titleY = cursorY - titleH
+    }
+  } else if (mode === 'top') {
+    let cursorY = sz.top + g
+    if (hasTitle) {
+      titleY = cursorY
+      cursorY = titleY + titleH + g * 0.5
+    }
+    if (hasSubtitle) {
+      subY = cursorY
+      cursorY = subY + subH + g * 1.2
+    }
+    if (hasCta) {
+      ctaY = cursorY
+    }
+  } else {
+    // split: title + subtitle at top, CTA pinned to thumb-zone bottom.
+    let cursorY = sz.top + g
+    if (hasTitle) {
+      titleY = cursorY
+      cursorY = titleY + titleH + g * 0.5
+    }
+    if (hasSubtitle) {
+      subY = cursorY
+    }
+    if (hasCta) {
+      ctaY = bottom - ctaH
+    }
   }
 
   // --- Scrim tuned to actually cover the text stack -------------------------
-  const stackTop = Math.max(0, Math.min(titleY, subY || titleY, ctaY || titleY) - g)
-  // Opacity scales with how bright the band under the text actually is: a
-  // sunlit sky needs a heavy veil to keep white text readable, while an
-  // already-dark photo gets a softer scrim so it stays visually open. Falls
-  // back to 0.68 when we haven't analysed the image yet.
+  // Single Scrim entity per Scene; in 'split' mode we cover the top band
+  // (title + subtitle) and rely on CTA's solid fill for legibility at the
+  // bottom — no second gradient needed.
+  //
+  // Bottom-mode scrim has a guard rail at y=28 (so a tiny stack doesn't
+  // produce a sliver of gradient floating in mid-frame) and a 7% lead-in
+  // above the topmost block — that lead-in keeps the gradient soft enough
+  // to fade in rather than start abruptly under the title.
+  const stackTopY = Math.max(0, Math.min(titleY || 100, subY || 100, ctaY || 100) - g)
+  const stackBottomY = mode === 'split'
+    ? Math.max(titleY + titleH, subY + subH) + g
+    : Math.max(titleY + titleH, subY + subH, ctaY + (hasCta ? ctaH : 0)) + g
+  const localTextBrightness = Math.max(
+    regionBrightness(hint?.brightnessGrid, left, titleY, innerW, titleH, hint ? 0.5 : 0.72),
+    regionBrightness(hint?.brightnessGrid, left, subY, innerW * 0.9, subH, hint ? 0.5 : 0.72),
+  )
   const opacity = hint?.bottomBandBrightness !== undefined
-    ? clamp(0.42 + hint.bottomBandBrightness * 0.55, 0.45, 0.85)
-    : 0.68
-  out.scrim = {
-    y: Math.max(40, stackTop - 5),
-    h: 100 - Math.max(40, stackTop - 5),
-    color: '#000000',
-    opacity,
-  }
+    ? clamp(Math.max(0.5 + hint.bottomBandBrightness * 0.55, 0.52 + localTextBrightness * 0.42), 0.58, 0.92)
+    : 0.74
+  out.scrim = mode === 'bottom'
+    ? {
+      y: Math.max(28, stackTopY - 7),
+      h: 100 - Math.max(28, stackTopY - 7),
+      color: '#000000',
+      opacity,
+      direction: 'down',
+    }
+    : {
+      y: 0,
+      h: clamp(stackBottomY, 18, mode === 'split' ? 50 : 72),
+      color: '#000000',
+      opacity,
+      direction: 'up',
+    }
 
   if (enabled.badge && scene.badge) {
+    // In top/split modes the title now lives where the badge used to sit —
+    // push the badge to the opposite edge instead.
+    const badgeY = mode === 'bottom' ? sz.top : Math.min(94, bottom + g)
     out.badge = apply(
-      { ...scene.badge, x: left, y: sz.top, w: 26, fontSize: 2.4, fill: '#FFFFFF' },
+      { ...scene.badge, x: left, y: badgeY, w: 26, fontSize: 2.4, fill: '#FFFFFF' },
       BADGE_TOKENS,
     )
   }
@@ -705,16 +1084,29 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   // Halo is tuned to the brightness of each block's own bbox — text over a
   // bright sky gets a heavier halo than text over the dark foreground below it.
   const titleHalo = haloForBrightness(
-    regionBrightness(hint?.brightnessGrid, left, titleY, innerW, titleH, 0.5),
+    regionBrightness(hint?.brightnessGrid, left, titleY, innerW, titleH, hint ? 0.5 : 0.82),
   )
-  const subHalo = haloForBrightness(
-    regionBrightness(hint?.brightnessGrid, left, subY, innerW * 0.9, subH, 0.5),
+  // Subtitles fade into the gradient scrim faster than titles do (they sit
+  // closer to the transparent edge), so in top/split modes we always give
+  // the subtitle at least a light halo even when the local brightness alone
+  // wouldn't justify one. This keeps the body copy readable against snow,
+  // skies and other mid-luminance noisy patches.
+  const subBrightnessAtBlock = regionBrightness(
+    hint?.brightnessGrid,
+    left,
+    subY,
+    innerW * 0.9,
+    subH,
+    hint ? 0.5 : 0.82,
   )
+  const subHalo = mode === 'bottom'
+    ? haloForBrightness(subBrightnessAtBlock)
+    : (haloForBrightness(subBrightnessAtBlock) ?? { color: '#000000', opacity: 0.32, blurPx: 1.2 })
 
-  if (enabled.title && scene.title) {
+  if (hasTitle) {
     out.title = apply(
       {
-        ...scene.title,
+        ...scene.title!,
         x: left,
         y: titleY,
         w: innerW,
@@ -727,10 +1119,10 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
     )
   }
 
-  if (enabled.subtitle && scene.subtitle) {
+  if (hasSubtitle) {
     out.subtitle = apply(
       {
-        ...scene.subtitle,
+        ...scene.subtitle!,
         x: left,
         y: subY,
         w: innerW * 0.9,
@@ -743,26 +1135,186 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
     )
   }
 
+  if (hasCta) {
+    const ctaFont = readableCtaFont(scene.cta!, 2.6, rules)
+    const ctaW = 32
+    // Smart CTA X-position: when we have a real image hint, score each
+    // candidate slot by both its *internal* variance (busy patches with
+    // high-contrast subjects) and its *deviation from the row mean*
+    // (uniformly dark patches against a bright row, e.g. a dark
+    // silhouette on snow, are still subjects even though their internal
+    // variance is low). Pick the slot with the lowest combined score.
+    // Hysteresis (Δ ≥ 0.10) keeps the default `left` slot when no
+    // alternative is meaningfully better — small image fluctuations
+    // never flip the CTA away from the designer-intuitive default.
+    const xLeft = left
+    const xRight = Math.max(xLeft, 100 - sz.right - ctaW)
+    const xCenter = (100 - ctaW) / 2
+    let ctaX = xLeft
+    if (!isStory && hint?.brightnessGrid) {
+      // Score a CTA slot by:
+      //   (a) ambient deviation — how far the slot's mean brightness sits
+      //       from the row mean (subjects show up as dark silhouettes on a
+      //       bright background or vice versa, regardless of internal
+      //       texture); the dominant signal,
+      //   (b) internal contrast — gritty patches with high-frequency
+      //       detail (e.g. a printed pattern, the textured belly of a
+      //       penguin) are bad CTA hosts even when their mean matches the
+      //       row; used as a softer tiebreaker.
+      // Without (a), a uniformly dark silhouette (cat in red parka against
+      // white snow) registers as "calm" because its internal variance is
+      // zero — exactly the failure mode the user pointed out.
+      const rowMean = regionBrightness(hint.brightnessGrid, 0, ctaY, 100, ctaH, 0.5)
+      function slotMass(x: number): number {
+        const meanLocal = regionBrightness(hint!.brightnessGrid!, x, ctaY, ctaW, ctaH, 0.5)
+        const internal = regionContrast(hint!.brightnessGrid!, x, ctaY, ctaW, ctaH, 0)
+        return Math.abs(meanLocal - rowMean) * 1.5 + internal * 0.15
+      }
+      const mLeft = slotMass(xLeft)
+      const mCenter = slotMass(xCenter)
+      const mRight = slotMass(xRight)
+      // Prefer center over right when both qualify — split-mode stories
+      // typically have a "gap" between subjects in the middle (e.g.
+      // between the cat and the penguin on snow), which is where a
+      // designer would drop a CTA by hand. Right edges still win when
+      // they're decisively cleaner than the centre.
+      const bestAlt = mCenter <= mRight ? { m: mCenter, x: xCenter } : { m: mRight, x: xRight }
+      if (bestAlt.m < mLeft - 0.10) ctaX = bestAlt.x
+    }
+    out.cta = {
+      ...scene.cta!,
+      ...CTA_TOKENS,
+      x: ctaX,
+      y: ctaY,
+      w: ctaW,
+      h: ctaH,
+      fontSize: ctaFont,
+    }
+  }
+
+  if (enabled.logo && scene.logo) {
+    // Mirror the logo to the opposite corner from the title in top/split
+    // modes so it doesn't collide with the new text block at the top.
+    const logoY = mode === 'bottom' ? sz.top : Math.min(100 - sz.bottom - 6, 92)
+    out.logo = {
+      ...scene.logo,
+      x: 100 - sz.right - 6,
+      y: logoY,
+      w: 6,
+      h: 6,
+    }
+  }
+
+  return out
+}
+
+const layoutAvitoSkyscraper: Layout = (scene, rules, enabled) => {
+  const sz = rules.safeZone
+  const left = sz.left
+  const innerW = 100 - sz.left - sz.right
+  const g = rules.gutter
+  const out: Scene = { background: scene.background, accent: scene.accent }
+
+  const imageH = 45
+  if (enabled.image && scene.image) {
+    out.image = {
+      ...scene.image,
+      x: left,
+      y: sz.top,
+      w: innerW,
+      h: imageH - sz.top,
+      rx: scene.image.rx ?? 18,
+      fit: 'contain',
+    }
+  }
+
+  const titleMaxLines = maxLinesFor(scene.title, 2, 2)
+  const titleFont = scene.title
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 7.4, rules.minTitleSize)
+    : 7.4
+  const actualTitleFont = capFontSize(scene.title, titleFont)
+  const subFont = readableSubtitleFont(scene.subtitle, 2.45, rules)
+  const ctaH = readableCtaHeight(7.6, rules)
+  const titleLines = scene.title
+    ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
+    : 0
+  const subLines = scene.subtitle
+    ? measuredLines(scene.subtitle.text, subFont, innerW * 0.92, 1, rules, SUBTITLE_TOKENS.weight)
+    : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
+  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
+  const hasBadge = enabled.badge && !!scene.badge
+  const badgeH = hasBadge ? 3 : 0
+  const badgeGap = hasBadge ? g * 0.85 : 0
+  const textGap = titleH && subH ? Math.max(g * 0.75, pxToHeightPct(12, rules)) : 0
+  const ctaGap = enabled.cta && scene.cta ? Math.max(g * 1.1, pxToHeightPct(20, rules)) : 0
+  const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (enabled.cta && scene.cta ? ctaH : 0)
+  const panelTop = imageH + g * 1.2
+  const panelBottom = 100 - sz.bottom
+  // Skyscraper reads as a tall listing card, not a poster — pin the copy
+  // stack to the photo edge so the column has a clear "image / details /
+  // CTA" rhythm instead of a free-floating text block in the middle.
+  const stackTop = clamp(panelTop, panelTop, Math.max(panelTop, panelBottom - stackH))
+  const badgeY = stackTop
+  const titleY = badgeY + badgeH + badgeGap
+  const subY = titleY + titleH + textGap
+  const ctaY = subY + subH + ctaGap
+
+  if (hasBadge && scene.badge) {
+    out.badge = apply(
+      { ...scene.badge, x: left, y: badgeY, w: 32, h: badgeH, fontSize: 1.8 },
+      BADGE_TOKENS,
+    )
+  }
+
+  if (enabled.title && scene.title) {
+    out.title = apply(
+      {
+        ...scene.title,
+        x: left,
+        y: titleY,
+        w: innerW,
+        fontSize: actualTitleFont,
+        maxLines: Math.max(1, titleLines),
+      },
+      TITLE_TOKENS,
+    )
+  }
+
+  if (enabled.subtitle && scene.subtitle) {
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: subY,
+        w: innerW * 0.92,
+        fontSize: subFont,
+        maxLines: Math.max(1, subLines),
+      },
+      { ...SUBTITLE_TOKENS, opacity: 0.78 },
+    )
+  }
+
   if (enabled.cta && scene.cta) {
-    const ctaFont = 2.6
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left,
       y: ctaY,
-      w: 32,
+      w: Math.min(76, innerW),
       h: ctaH,
-      fontSize: capFontSize(scene.cta, ctaFont),
+      fontSize: readableCtaFont(scene.cta, 2.8, rules),
+      maxLines: 1,
     }
   }
 
   if (enabled.logo && scene.logo) {
     out.logo = {
       ...scene.logo,
-      x: 100 - sz.right - 6,
+      x: 100 - sz.right - 8,
       y: sz.top,
-      w: 6,
-      h: 6,
+      w: 8,
+      h: 5,
     }
   }
 
@@ -773,6 +1325,9 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
 // vertically centered in its area — no empty voids at short content, no
 // overflow at long content. Image height adapts to format aspect ratio.
 const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
+  if (rules.key === 'avito-skyscraper') return layoutAvitoSkyscraper(scene, rules, enabled)
+  if (rules.key === 'yandex-rsy-240x400') return layoutSmallVerticalAd(scene, rules, enabled)
+
   const sz = rules.safeZone
   const left = sz.left
   const innerW = 100 - sz.left - sz.right
@@ -797,7 +1352,7 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
     : baseSubSize
   const actualTitleFontSize = capFontSize(scene.title, titleFontSize)
   const actualSubFontSize = capFontSize(scene.subtitle, subFontSize)
-  const ctaH = 6
+  const ctaH = readableCtaHeight(isStoryish ? 6 : 6.2, rules)
 
   const out: Scene = { background: scene.background, accent: scene.accent }
 
@@ -823,17 +1378,29 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   const titleH = titleLines ? textBlockHeight(actualTitleFontSize, titleLines, 1.02, rules) : 0
   const subH = subLines ? textBlockHeight(actualSubFontSize, subLines, 1.35, rules) : 0
 
-  // Text stack: top-align under the image. Flow CTA right after the subtitle
-  // so the bottom doesn't grow a vertical void on tall formats (story). On
-  // short formats where subtitle+CTA would overflow the text area, clamp CTA
-  // to the bottom of the text area as a hard floor.
-  const textStackTop = textAreaTop + g * 1.2
-  const textGap = titleH && subH ? g * 0.6 : 0
-  const titleY = textStackTop
-  const subY = titleY + titleH + textGap
+  // Text stack rides directly under the photo edge — that's the canonical
+  // marketplace product-card silhouette. Anchoring at the panel top with a
+  // small gutter eliminates the dead void between image and copy that used
+  // to make the cards feel like a "resized post" rather than a commercial
+  // listing. Bottom of the stack still respects the safe-zone, so when the
+  // copy is short, the void lives below the CTA where it reads as
+  // breathing room rather than a layout glitch.
+  const hasBadge = enabled.badge && !!scene.badge
   const hasCta = enabled.cta && !!scene.cta
-  const afterTextY = (subLines ? subY + subH : titleY + titleH) + g * 1.5
-  const ctaY = Math.min(afterTextY, textAreaBottom - ctaH)
+  const badgeH = hasBadge ? 2.8 : 0
+  const badgeGap = hasBadge ? g * 0.85 : 0
+  const textGap = titleH && subH ? Math.max(g * 0.55, pxToHeightPct(10, rules)) : 0
+  const ctaGap = hasCta ? Math.max(g * 1.2, pxToHeightPct(20, rules)) : 0
+  const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (hasCta ? ctaH : 0)
+  const stackTop = clamp(
+    textAreaTop + Math.max(g * 1.1, pxToHeightPct(18, rules)),
+    textAreaTop + g * 0.8,
+    Math.max(textAreaTop + g * 0.8, textAreaBottom - stackH),
+  )
+  const badgeY = stackTop
+  const titleY = stackTop + badgeH + badgeGap
+  const subY = titleY + titleH + textGap
+  const ctaY = subY + subH + ctaGap
 
   if (enabled.title && scene.title) {
     out.title = apply(
@@ -843,7 +1410,7 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
         y: titleY,
         w: innerW,
         fontSize: actualTitleFontSize,
-        maxLines: titleMaxLines,
+        maxLines: Math.max(1, titleLines),
       },
       TITLE_TOKENS,
     )
@@ -857,29 +1424,35 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
         y: subY,
         w: innerW * 0.95,
         fontSize: actualSubFontSize,
-        maxLines: 2,
+        maxLines: Math.max(1, subLines),
       },
       SUBTITLE_TOKENS,
     )
   }
 
-  if (enabled.badge && scene.badge) {
+  if (hasBadge && scene.badge) {
     out.badge = apply(
-      { ...scene.badge, x: left, y: textAreaTop + g * 0.4, w: 24, fontSize: 2.2 },
+      { ...scene.badge, x: left, y: badgeY, w: 24, h: badgeH, fontSize: 2.2 },
       BADGE_TOKENS,
     )
   }
 
   if (hasCta && scene.cta) {
     const ctaFont = 2.4
+    // Card-class formats (3:4 wb/ozon, 4:5 vk-vertical, ya-market vertical)
+    // read as marketplace listings. A wide CTA bar (≈50% of canvas width)
+    // anchors the lower panel and matches what shoppers see on real
+    // product cards. On 1:1 / square fallbacks we still keep a tighter
+    // pill so it doesn't dwarf the rest of the layout.
+    const ctaW = rules.aspectRatio < 0.95 ? Math.min(56, 100 - sz.left - sz.right) : 34
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
       x: left,
       y: ctaY,
-      w: 34,
+      w: ctaW,
       h: ctaH,
-      fontSize: capFontSize(scene.cta, ctaFont),
+      fontSize: readableCtaFont(scene.cta, ctaFont, rules),
     }
   }
 
