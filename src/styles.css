@@ -2722,6 +2722,84 @@ summary:focus-visible {
   cursor: move;
 }
 .layout-editor__block:active { cursor: grabbing; }
+.layout-editor__block.is-cropping {
+  cursor: move;
+  border: 2px dashed rgba(255, 122, 74, 0.95);
+  background: transparent;
+}
+.layout-editor__block.is-cropping:hover {
+  border-color: rgba(255, 122, 74, 1);
+}
+.layout-editor__crop-preview {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+}
+/* Crop mode: fade out the source extension that lives *outside* the
+   crop frame so the user can read it as "this gets trimmed". The
+   in-block region is clipped out and the SVG shows through there. */
+.layout-editor__crop-preview.is-crop-mode {
+  opacity: 0.55;
+  filter: saturate(0.55) brightness(0.92);
+}
+/* Normal selection mode: render the source faithfully on top of the SVG
+   so the user always has a guaranteed-visible "what's actually inside
+   the frame" reference. SVG `<image>` can blend invisibly into dark
+   themes when the source is dark, so this overlay is the source of
+   truth while editing. */
+.layout-editor__crop-preview.is-content-preview {
+  opacity: 1;
+  filter: none;
+  outline: 1px solid rgba(15, 118, 110, 0.55);
+  outline-offset: -1px;
+}
+.layout-editor__crop-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.layout-editor__block.is-cropping .layout-editor__block-label {
+  color: #b14224;
+  background: var(--surface);
+  border-color: rgba(255, 122, 74, 0.85);
+  opacity: 1;
+}
+.layout-editor__crop-guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.layout-editor__crop-guide {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.layout-editor__crop-guide--v1,
+.layout-editor__crop-guide--v2 {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.layout-editor__crop-guide--v1 { left: 33.333%; }
+.layout-editor__crop-guide--v2 { left: 66.666%; }
+.layout-editor__crop-guide--h1,
+.layout-editor__crop-guide--h2 {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+.layout-editor__crop-guide--h1 { top: 33.333%; }
+.layout-editor__crop-guide--h2 { top: 66.666%; }
+.layout-editor__crop-toggle {
+  align-self: flex-start;
+}
+.layout-editor__crop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
 .layout-editor__block-label {
   position: absolute;
   top: -18px;

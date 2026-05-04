@@ -21,6 +21,7 @@ import {
   type MouseEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type WheelEvent as ReactWheelEvent,
 } from 'react'
 import { SceneRenderer } from '../renderers/SceneRenderer'
 import { buildScene } from '../lib/buildScene'
@@ -70,11 +71,19 @@ type HandleDir = (typeof HANDLE_DIRS)[number]
 type DragState =
   | { kind: 'move'; startMouseX: number; startMouseY: number; startBlock: { x: number; y: number; w: number; h: number } }
   | { kind: 'resize'; dir: HandleDir; startMouseX: number; startMouseY: number; startBlock: { x: number; y: number; w: number; h: number }; aspect: number; preserveAspect: boolean }
+  | { kind: 'pan'; startMouseX: number; startMouseY: number; startBlock: { x: number; y: number; w: number; h: number }; startCropX: number; startCropY: number }
   | null
 
 const SNAP_TOLERANCE = 1.0 // % — snap to safe-zone edges within this distance
 const MIN_W = 4
 const MIN_H = 2
+// cropX / cropY are stored as % of block width/height. The renderer clamps
+// them to ±50% — beyond that the image's edge would pull inside the frame
+// and the user would see a transparent gap. Same range is enforced here so
+// the slider and the visual drag can't disagree.
+const CROP_PAN_LIMIT = 50
+const CROP_ZOOM_MIN = 1
+const CROP_ZOOM_MAX = 3
 
 export function LayoutEditor({
   formatKey,
@@ -129,6 +138,10 @@ export function LayoutEditor({
   const [dragState, setDragState] = useState<DragState>(null)
   const [snapping, setSnapping] = useState(true)
   const [editingText, setEditingText] = useState<BlockKind | null>(null)
+  // Visual crop tool for the image block. When on, dragging inside the image
+  // pans (cropX/cropY) and the wheel zooms (cropZoom). The regular move/resize
+  // affordances on the image hide so the two interaction models don't fight.
+  const [cropMode, setCropMode] = useState(false)
 
   const stageRef = useRef<HTMLDivElement>(null)
 
@@ -194,6 +207,22 @@ export function LayoutEditor({
       if (!block) return
       pushHistory(draft)
       ev.currentTarget.setPointerCapture(ev.pointerId)
+      // Image block in crop mode + Alt: drag pans the image *inside* the
+      // frame (changes cropX/cropY). Without Alt, drag moves the frame on
+      // the canvas — that's what users intuitively expect: "the orange
+      // rectangle is the slot, I drag it where I want".
+      if (kind === 'image' && cropMode && ev.altKey) {
+        const imgBlock = scene.image as { cropX?: number; cropY?: number } | undefined
+        setDragState({
+          kind: 'pan',
+          startMouseX: ev.clientX,
+          startMouseY: ev.clientY,
+          startBlock: block,
+          startCropX: imgBlock?.cropX ?? 0,
+          startCropY: imgBlock?.cropY ?? 0,
+        })
+        return
+      }
       setDragState({
         kind: 'move',
         startMouseX: ev.clientX,
@@ -201,7 +230,7 @@ export function LayoutEditor({
         startBlock: block,
       })
     },
-    [draft, editingText, pushHistory, scene],
+    [cropMode, draft, editingText, pushHistory, scene],
   )
 
   const onHandlePointerDown = useCallback(
@@ -243,7 +272,26 @@ export function LayoutEditor({
         }
         nx = clamp(nx, -10, 100 - sb.w + 10)
         ny = clamp(ny, -10, 100 - sb.h + 10)
+        // Move only updates x/y — crop offsets, fit, focal etc. are kept so
+        // user crop work isn't silently destroyed by a small reposition.
+        // If the user wants a clean cover-fit at the new spot, the
+        // "⤢ Заполнить рамку" button in the side panel does that explicitly.
         updateBlock(selected, { x: round(nx), y: round(ny) })
+        return
+      }
+
+      if (dragState.kind === 'pan') {
+        // Convert stage % delta into block-local % delta. cropX/cropY are
+        // stored as % of block width/height — moving the cursor 1% of the
+        // stage right shifts the image inside a 50%-wide block by 2% of
+        // the block's width, hence the divide.
+        const sb = dragState.startBlock
+        if (sb.w <= 0 || sb.h <= 0) return
+        const dCropX = (dxPct / sb.w) * 100
+        const dCropY = (dyPct / sb.h) * 100
+        const nextX = clamp(dragState.startCropX + dCropX, -CROP_PAN_LIMIT, CROP_PAN_LIMIT)
+        const nextY = clamp(dragState.startCropY + dCropY, -CROP_PAN_LIMIT, CROP_PAN_LIMIT)
+        updateBlock(selected, { cropX: round(nextX), cropY: round(nextY) })
         return
       }
 
@@ -305,6 +353,35 @@ export function LayoutEditor({
     setDragState(null)
   }, [])
 
+  // Wheel inside the cropping image block adjusts cropZoom. Step is small so
+  // a single notch (≈ 100 px deltaY on a typical mouse) feels like a 5 %
+  // zoom change — enough to be useful, slow enough to be controllable.
+  const onCropWheel = useCallback(
+    (ev: ReactWheelEvent<HTMLDivElement>) => {
+      if (!cropMode || selected !== 'image') return
+      ev.preventDefault()
+      const block = scene.image as { cropZoom?: number; cropX?: number; cropY?: number } | undefined
+      if (!block) return
+      // Negative deltaY = scroll up = "zoom in" (the macOS/Figma convention).
+      const step = -ev.deltaY * 0.0015
+      const next = clamp((block.cropZoom ?? 1) + step, CROP_ZOOM_MIN, CROP_ZOOM_MAX)
+      // Zooming back to 1× has no panning room — clear stale crop offsets so
+      // the image isn't mysteriously off-center after the user "un-zooms".
+      const patch: Partial<BlockOverride> = { cropZoom: round(next) }
+      if (next <= CROP_ZOOM_MIN + 0.001) {
+        patch.cropX = 0
+        patch.cropY = 0
+      } else {
+        // Re-clamp existing offsets to the new zoom's pan range.
+        const limit = (next - 1) * 50
+        patch.cropX = clamp(block.cropX ?? 0, -limit, limit)
+        patch.cropY = clamp(block.cropY ?? 0, -limit, limit)
+      }
+      updateBlock('image', patch)
+    },
+    [cropMode, scene.image, selected, updateBlock],
+  )
+
   useEffect(() => {
     if (!dragState) return
     window.addEventListener('pointermove', onPointerMove)
@@ -314,6 +391,13 @@ export function LayoutEditor({
       window.removeEventListener('pointerup', onPointerUp)
     }
   }, [dragState, onPointerMove, onPointerUp])
+
+  // Crop mode is meaningful only while the image block is the active one.
+  // If the user picks another layer (or deselects), turn it off automatically
+  // so the next selection's normal interactions kick in.
+  useEffect(() => {
+    if (cropMode && selected !== 'image') setCropMode(false)
+  }, [cropMode, selected])
 
   // --- Keyboard -------------------------------------------------------------
   // Esc closes the modal, Enter saves. Arrow keys nudge the selected block
@@ -445,13 +529,25 @@ export function LayoutEditor({
                 textFont={brandKit.textFont}
                 brandInitials={brandKit.brandName}
                 brandColor={brandKit.palette.accent}
+                imageAspectRatio={assetHint?.aspectRatio ?? null}
                 className="layout-editor__svg"
               />
               <SafeZoneOverlay safeZone={rules.safeZone} />
+              {selected === 'image' && scene.image?.src ? (
+                <CropPreview
+                  imageBlock={scene.image}
+                  block={blockGeometry(scene, 'image')}
+                  cropMode={cropMode}
+                />
+              ) : null}
               <BlockOverlays
                 scene={scene}
                 selected={selected}
-                onSelect={(k) => setSelected(k)}
+                cropMode={cropMode}
+                onSelect={(k) => {
+                  setSelected(k)
+                  if (k !== 'image') setCropMode(false)
+                }}
                 onPointerDown={onBlockPointerDown}
                 onResizePointerDown={onHandlePointerDown}
                 onDoubleClick={(k) => {
@@ -459,6 +555,7 @@ export function LayoutEditor({
                     setEditingText(k)
                   }
                 }}
+                onCropWheel={onCropWheel}
               />
               {editingText ? (
                 <InlineTextField
@@ -502,6 +599,8 @@ export function LayoutEditor({
               baseline={baselineScene}
               brandKit={brandKit}
               draft={draft}
+              cropMode={cropMode}
+              onToggleCropMode={(next) => setCropMode(next)}
               onChange={(kind, patch) => {
                 pushHistory(draft)
                 updateBlock(kind, patch)
@@ -651,17 +750,23 @@ const SafeZoneOverlay = memo(function SafeZoneOverlay({
 function BlockOverlays({
   scene,
   selected,
+  cropMode,
   onSelect,
   onPointerDown,
   onResizePointerDown,
   onDoubleClick,
+  onCropWheel,
 }: {
   scene: Scene
   selected: BlockKind | null
+  /** Image-block crop tool is active — disables resize handles and shows a
+   *  crop frame instead so the user can pan/zoom inside the image. */
+  cropMode: boolean
   onSelect: (kind: BlockKind) => void
   onPointerDown: (ev: ReactPointerEvent<HTMLDivElement>, kind: BlockKind) => void
   onResizePointerDown: (ev: ReactPointerEvent<HTMLButtonElement>, kind: BlockKind, dir: HandleDir) => void
   onDoubleClick: (kind: BlockKind) => void
+  onCropWheel: (ev: ReactWheelEvent<HTMLDivElement>) => void
 }) {
   return (
     <div className="layout-editor__overlays">
@@ -669,6 +774,7 @@ function BlockOverlays({
         const box = blockGeometry(scene, k)
         if (!box) return null
         const isSelected = selected === k
+        const isCropping = k === 'image' && cropMode && isSelected
         const style: CSSProperties = {
           left: `${box.x}%`,
           top: `${box.y}%`,
@@ -679,18 +785,24 @@ function BlockOverlays({
         return (
           <div
             key={k}
-            className={`layout-editor__block layout-editor__block--${k}${isSelected ? ' is-selected' : ''}`}
+            className={
+              `layout-editor__block layout-editor__block--${k}` +
+              `${isSelected ? ' is-selected' : ''}` +
+              `${isCropping ? ' is-cropping' : ''}`
+            }
             style={style}
             onPointerDown={(ev) => onPointerDown(ev, k)}
             onClick={() => onSelect(k)}
             onDoubleClick={() => onDoubleClick(k)}
+            onWheel={isCropping ? onCropWheel : undefined}
             role="button"
             aria-label={labelFor(k)}
             tabIndex={0}
           >
             <span className="layout-editor__block-label" aria-hidden="true">
-              {labelFor(k)}
+              {isCropping ? 'Кадрирование' : labelFor(k)}
             </span>
+            {isCropping ? <CropGuides /> : null}
             {isSelected
               ? HANDLE_DIRS.map((dir) => (
                   <button
@@ -699,7 +811,11 @@ function BlockOverlays({
                     className={`layout-editor__handle layout-editor__handle--${dir}`}
                     onPointerDown={(ev) => onResizePointerDown(ev, k, dir)}
                     aria-label={`Изменить размер ${dir}`}
-                    title="Перетащите для изменения размера. Shift — сохранить пропорции"
+                    title={
+                      isCropping
+                        ? 'Потяните, чтобы изменить рамку обрезки'
+                        : 'Перетащите для изменения размера. Shift — сохранить пропорции'
+                    }
                   />
                 ))
               : null}
@@ -707,6 +823,107 @@ function BlockOverlays({
         )
       })}
     </div>
+  )
+}
+
+// Decorative thirds grid for the crop tool — same visual language as
+// camera viewfinders and Figma's cropping mode, helps users compose.
+function CropGuides() {
+  return (
+    <div className="layout-editor__crop-guides" aria-hidden="true">
+      <span className="layout-editor__crop-guide layout-editor__crop-guide--v1" />
+      <span className="layout-editor__crop-guide layout-editor__crop-guide--v2" />
+      <span className="layout-editor__crop-guide layout-editor__crop-guide--h1" />
+      <span className="layout-editor__crop-guide layout-editor__crop-guide--h2" />
+    </div>
+  )
+}
+
+// Source-image preview rendered *over* the SVG so the user can clearly see
+// the actual photo while editing — even in dark themes where dark image
+// content (black speakers, shadows, etc.) tends to blend with the canvas
+// background and the SVG `<image>` becomes visually invisible. Coordinates
+// MUST stay in sync with `ImageNode` in SceneRenderer; every formula change
+// there has to be mirrored here, otherwise the preview drifts from what
+// gets exported.
+//
+// Two modes:
+//  • normal (cropMode = false): full opacity, clipped exactly to the block.
+//    Acts as a guaranteed-visible duplicate of the SVG image, plus a thin
+//    accent border so the bounds are unmistakable.
+//  • crop (cropMode = true): the in-block region is *clipped out* via an
+//    even-odd SVG path (so the SVG shows through there) and the source
+//    extension *outside* the block is dimmed/desaturated to read as
+//    "this part will be trimmed".
+function CropPreview({
+  imageBlock,
+  block,
+  cropMode,
+}: {
+  imageBlock: { src: string | null; cropZoom?: number; cropX?: number; cropY?: number; fit?: 'cover' | 'contain'; focalX?: number; focalY?: number; rx?: number }
+  block: { x: number; y: number; w: number; h: number } | null
+  cropMode: boolean
+}) {
+  if (!block || !imageBlock.src) return null
+  const zoom = Math.max(1, imageBlock.cropZoom ?? 1)
+  const cropX = clamp(imageBlock.cropX ?? 0, -50, 50)
+  const cropY = clamp(imageBlock.cropY ?? 0, -50, 50)
+  const imageX = block.x - ((zoom - 1) * block.w) / 2 + (cropX / 100) * block.w
+  const imageY = block.y - ((zoom - 1) * block.h) / 2 + (cropY / 100) * block.h
+  const imageW = block.w * zoom
+  const imageH = block.h * zoom
+  if (imageW <= 0 || imageH <= 0) return null
+  // Block coordinates expressed as fractions of the overlay (0..1).
+  const lRel = (block.x - imageX) / imageW
+  const tRel = (block.y - imageY) / imageH
+  const rRel = lRel + block.w / imageW
+  const bRel = tRel + block.h / imageH
+  const clipId = `crop-mask-${Math.round(imageX * 10)}-${Math.round(imageY * 10)}-${Math.round(imageW * 10)}-${Math.round(imageH * 10)}-${cropMode ? 't' : 'b'}`
+  const fit = imageBlock.fit ?? 'cover'
+  // Continuous focal — SceneRenderer's smooth-cover branch uses the same
+  // raw [0..1] value, so HTML `object-position: X% Y%` and the SVG image
+  // shift in lockstep when the user drags the focal slider.
+  const focalX = clamp(imageBlock.focalX ?? 0.5, 0, 1)
+  const focalY = clamp(imageBlock.focalY ?? 0.5, 0, 1)
+  const rx = imageBlock.rx ?? 0
+  // In normal mode the clip is the *block* rectangle — overlay is visible
+  // only where the saved image will show. In crop mode it's the inverted
+  // rectangle (everything *except* the block).
+  const clipPathD = cropMode
+    ? `M 0 0 H 1 V 1 H 0 Z M ${lRel} ${tRel} H ${rRel} V ${bRel} H ${lRel} Z`
+    : `M ${lRel} ${tRel} H ${rRel} V ${bRel} H ${lRel} Z`
+  return (
+    <>
+      <svg width={0} height={0} className="layout-editor__crop-defs" aria-hidden="true">
+        <defs>
+          <clipPath id={clipId} clipPathUnits="objectBoundingBox">
+            <path d={clipPathD} fillRule="evenodd" />
+          </clipPath>
+        </defs>
+      </svg>
+      <img
+        className={
+          'layout-editor__crop-preview' +
+          (cropMode ? ' is-crop-mode' : ' is-content-preview')
+        }
+        src={imageBlock.src}
+        alt=""
+        draggable={false}
+        crossOrigin="anonymous"
+        style={{
+          left: `${imageX}%`,
+          top: `${imageY}%`,
+          width: `${imageW}%`,
+          height: `${imageH}%`,
+          objectFit: fit,
+          objectPosition: `${focalX * 100}% ${focalY * 100}%`,
+          clipPath: `url(#${clipId})`,
+          // Mirror the exported image's rounded corners so the preview
+          // doesn't have visibly different edge geometry than the SVG.
+          borderRadius: rx > 0 ? `${rx}px` : undefined,
+        }}
+      />
+    </>
   )
 }
 
@@ -832,18 +1049,22 @@ function SidePanel({
   baseline,
   brandKit,
   draft,
+  cropMode,
   onChange,
   onReset,
   onToggleVisibility,
+  onToggleCropMode,
 }: {
   selected: BlockKind | null
   scene: Scene
   baseline: Scene
   brandKit: BrandKit
   draft: EditableBlocks
+  cropMode: boolean
   onChange: (kind: BlockKind, patch: Partial<BlockOverride>) => void
   onReset: (kind: BlockKind) => void
   onToggleVisibility: (kind: BlockKind, visible: boolean) => void
+  onToggleCropMode: (next: boolean) => void
 }) {
   if (!selected) {
     return (
@@ -915,7 +1136,12 @@ function SidePanel({
       ) : null}
 
       {selected === 'image' ? (
-        <ImageBlockProps block={block} onChange={(patch) => onChange('image', patch)} />
+        <ImageBlockProps
+          block={block}
+          cropMode={cropMode}
+          onChange={(patch) => onChange('image', patch)}
+          onToggleCropMode={onToggleCropMode}
+        />
       ) : null}
 
       {selected === 'logo' ? (
@@ -1125,10 +1351,14 @@ function CtaBlockProps({
 
 function ImageBlockProps({
   block,
+  cropMode,
   onChange,
+  onToggleCropMode,
 }: {
   block: Record<string, unknown> | undefined
+  cropMode: boolean
   onChange: (patch: Partial<BlockOverride>) => void
+  onToggleCropMode: (next: boolean) => void
 }) {
   if (!block) return null
   const fit = (readString(block, 'fit', 'cover') as 'cover' | 'contain') ?? 'cover'
@@ -1136,6 +1366,9 @@ function ImageBlockProps({
   const focalX = readNumber(block, 'focalX', 0.5)
   const focalY = readNumber(block, 'focalY', 0.5)
   const cropZoom = readNumber(block, 'cropZoom', 1)
+  const cropX = readNumber(block, 'cropX', 0)
+  const cropY = readNumber(block, 'cropY', 0)
+  const panLimit = Math.max(0, (cropZoom - 1) * 50)
   return (
     <>
       <PropsSection title="Заполнение">
@@ -1159,16 +1392,101 @@ function ImageBlockProps({
         />
       </PropsSection>
       <PropsSection title="Кадр">
+        <div className="layout-editor__crop-actions">
+          <button
+            type="button"
+            className={`btn btn-xs${cropMode ? ' btn-primary' : ' btn-ghost'} layout-editor__crop-toggle`}
+            onClick={() => onToggleCropMode(!cropMode)}
+            title="Перетаскивание — двигает рамку, Alt+перетаскивание — сдвигает картинку, колёсико — масштаб"
+          >
+            {cropMode ? '✓ Кадрирую на холсте' : '✂ Кадрировать на холсте'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-xs btn-ghost"
+            onClick={() =>
+              onChange({
+                cropX: 0,
+                cropY: 0,
+                cropZoom: 1,
+                fit: 'cover',
+                focalX: 0.5,
+                focalY: 0.5,
+              })
+            }
+            title="Сбросить кадрирование, чтобы картинка чисто заполнила рамку"
+            disabled={
+              cropZoom === 1 &&
+              cropX === 0 &&
+              cropY === 0 &&
+              fit === 'cover' &&
+              focalX === 0.5 &&
+              focalY === 0.5
+            }
+          >
+            ⤢ Заполнить рамку
+          </button>
+        </div>
+        {cropMode ? (
+          <p className="layout-editor__note">
+            Перетащите рамку, чтобы поставить её в любое место холста. Углы рамки
+            меняют её размер. <b>Alt + перетаскивание</b> внутри рамки сдвигает
+            картинку, чтобы выбрать видимую часть. Колёсико — масштаб.
+          </p>
+        ) : null}
         <RangeRow
           label="Масштаб"
           unit=""
           value={cropZoom}
-          min={1}
-          max={3}
+          min={CROP_ZOOM_MIN}
+          max={CROP_ZOOM_MAX}
           step={0.05}
           format={(v) => `${v.toFixed(2)}×`}
-          onChange={(v) => onChange({ cropZoom: v })}
+          onChange={(v) => {
+            // Re-clamp pan offsets so the image can't end up outside the
+            // shrinking pan range when the user dials zoom back down.
+            const limit = Math.max(0, (v - 1) * 50)
+            onChange({
+              cropZoom: v,
+              cropX: clamp(cropX, -limit, limit),
+              cropY: clamp(cropY, -limit, limit),
+            })
+          }}
         />
+        {cropZoom > CROP_ZOOM_MIN ? (
+          <>
+            <RangeRow
+              label="Сдвиг по горизонтали"
+              unit=""
+              value={cropX}
+              min={-panLimit}
+              max={panLimit}
+              step={1}
+              format={(v) => `${v > 0 ? '+' : ''}${Math.round(v)}%`}
+              onChange={(v) => onChange({ cropX: v })}
+            />
+            <RangeRow
+              label="Сдвиг по вертикали"
+              unit=""
+              value={cropY}
+              min={-panLimit}
+              max={panLimit}
+              step={1}
+              format={(v) => `${v > 0 ? '+' : ''}${Math.round(v)}%`}
+              onChange={(v) => onChange({ cropY: v })}
+            />
+            {cropX !== 0 || cropY !== 0 ? (
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs"
+                onClick={() => onChange({ cropX: 0, cropY: 0 })}
+                title="Вернуть картинку в центр кадра"
+              >
+                Сбросить сдвиг
+              </button>
+            ) : null}
+          </>
+        ) : null}
         <RangeRow
           label="Фокус по горизонтали"
           unit=""

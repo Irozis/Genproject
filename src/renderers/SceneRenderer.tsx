@@ -27,10 +27,16 @@ type Props = {
   brandColor?: string
   className?: string
   style?: CSSProperties
+  /** Source-image aspect ratio (intrinsic width / intrinsic height). When
+   *  provided, ImageNode uses it to compute *continuous* focal alignment in
+   *  cover mode — every change of focalX/focalY produces a smooth visual
+   *  shift instead of snapping to Min/Mid/Max thresholds.
+   *  When absent, falls back to SVG's discretized `preserveAspectRatio`. */
+  imageAspectRatio?: number | null
 }
 
 export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRenderer(
-  { scene, rules, displayFont, textFont, brandInitials, brandColor, className, style },
+  { scene, rules, displayFont, textFont, brandInitials, brandColor, className, style, imageAspectRatio },
   ref,
 ) {
   const { width: W, height: H, key } = rules
@@ -64,7 +70,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
             />
           </linearGradient>
         ) : null}
-        {scene.image && scene.image.src && shouldClipImage(scene.image) ? (
+        {scene.image && scene.image.src && needsImageClipPath(scene.image, imageAspectRatio) ? (
           <clipPath id={imgClipId}>
             <rect
               x={pct(scene.image.x, W)}
@@ -92,6 +98,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
           H={H}
           clipId={imgClipId}
           shadowId={imgShadowId}
+          imageAspectRatio={imageAspectRatio ?? null}
         />
       ) : null}
 
@@ -405,12 +412,14 @@ function ImageNode({
   H,
   clipId,
   shadowId,
+  imageAspectRatio,
 }: {
   block: ImageBlock
   W: number
   H: number
   clipId: string
   shadowId: string
+  imageAspectRatio: number | null
 }) {
   if (!block.src) {
     return (
@@ -427,26 +436,77 @@ function ImageNode({
       />
     )
   }
-  const isClipped = shouldClipImage(block)
   const zoom = Math.max(1, block.cropZoom ?? 1)
   const cropX = clamp(block.cropX ?? 0, -50, 50)
   const cropY = clamp(block.cropY ?? 0, -50, 50)
-  const imageX = block.x - ((zoom - 1) * block.w) / 2 + (cropX / 100) * block.w
-  const imageY = block.y - ((zoom - 1) * (block.h ?? 50)) / 2 + (cropY / 100) * (block.h ?? 50)
-  const imageW = block.w * zoom
-  const imageH = (block.h ?? 50) * zoom
+  // Block bbox (crop-zoom expanded) in canvas % coords. With zoom > 1 the
+  // image extends outside the block; clipPath crops it back to the block.
+  const blockX = block.x - ((zoom - 1) * block.w) / 2 + (cropX / 100) * block.w
+  const blockY = block.y - ((zoom - 1) * (block.h ?? 50)) / 2 + (cropY / 100) * (block.h ?? 50)
+  const blockW = block.w * zoom
+  const blockH = (block.h ?? 50) * zoom
+
+  const focalX = clamp(block.focalX ?? 0.5, 0, 1)
+  const focalY = clamp(block.focalY ?? 0.5, 0, 1)
+  const fit = block.fit ?? 'cover'
+
+  // Continuous-focal path: when we know the source's intrinsic aspect, we
+  // can size and position the image manually so focalX/focalY produce
+  // smooth shifts instead of SVG `preserveAspectRatio`'s 3-step snap. This
+  // matches what HTML's `object-fit:cover; object-position:X% Y%` does.
+  if (imageAspectRatio && imageAspectRatio > 0 && fit === 'cover') {
+    // All math in user-units (the SVG viewBox is 0..W × 0..H).
+    const bx = (blockX / 100) * W
+    const by = (blockY / 100) * H
+    const bw = (blockW / 100) * W
+    const bh = (blockH / 100) * H
+    const blockAspect = bw > 0 && bh > 0 ? bw / bh : 1
+    let dispW: number
+    let dispH: number
+    if (imageAspectRatio >= blockAspect) {
+      // Source is wider (or equal) — fit height, overhang horizontally.
+      dispH = bh
+      dispW = bh * imageAspectRatio
+    } else {
+      // Source is taller — fit width, overhang vertically.
+      dispW = bw
+      dispH = bw / imageAspectRatio
+    }
+    const offsetX = -(dispW - bw) * focalX
+    const offsetY = -(dispH - bh) * focalY
+    // Clip is required: the image element is bigger than the block bbox in
+    // one dimension and would otherwise paint outside it.
+    return (
+      <image
+        href={block.src}
+        crossOrigin="anonymous"
+        x={bx + offsetX}
+        y={by + offsetY}
+        width={dispW}
+        height={dispH}
+        preserveAspectRatio="none"
+        clipPath={`url(#${clipId})`}
+        filter={block.rx > 0 ? `url(#${shadowId})` : undefined}
+      />
+    )
+  }
+
+  // Fallback: discretized focal via SVG's preserveAspectRatio. Used for
+  // 'contain' (where focal isn't really meaningful inside letterbox bars
+  // anyway) and when intrinsic aspect isn't known.
+  const isClipped = shouldClipImage(block)
   const par =
-    block.fit === 'contain'
+    fit === 'contain'
       ? 'xMidYMid meet'
-      : `${focalAlign(block.focalX ?? 0.5, 'x')}${focalAlign(block.focalY ?? 0.5, 'y')} slice`
+      : `${focalAlign(focalX, 'x')}${focalAlign(focalY, 'y')} slice`
   return (
     <image
       href={block.src}
       crossOrigin="anonymous"
-      x={pct(imageX, W)}
-      y={pct(imageY, H)}
-      width={pct(imageW, W)}
-      height={pct(imageH, H)}
+      x={pct(blockX, W)}
+      y={pct(blockY, H)}
+      width={pct(blockW, W)}
+      height={pct(blockH, H)}
       preserveAspectRatio={par}
       clipPath={isClipped ? `url(#${clipId})` : undefined}
       filter={block.rx > 0 ? `url(#${shadowId})` : undefined}
@@ -456,6 +516,16 @@ function ImageNode({
 
 function shouldClipImage(block: ImageBlock): boolean {
   return block.rx > 0 || (block.cropZoom ?? 1) > 1 || !!block.cropX || !!block.cropY
+}
+
+// Whether the SVG render path will need the block's clipPath. Same triggers
+// as `shouldClipImage` *plus* the smooth-cover branch — that path always
+// renders the source bigger than the block and relies on the clipPath to
+// trim the overhang back to the block bounds.
+function needsImageClipPath(block: ImageBlock, imageAspectRatio: number | null | undefined): boolean {
+  if (shouldClipImage(block)) return true
+  const fit = block.fit ?? 'cover'
+  return fit === 'cover' && !!imageAspectRatio && imageAspectRatio > 0
 }
 
 // Map a normalized focal [0..1] coord to the SVG preserveAspectRatio alignment

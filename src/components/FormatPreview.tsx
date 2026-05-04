@@ -409,6 +409,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             textFont={brandKit.textFont}
             brandInitials={brandKit.brandName}
             brandColor={brandKit.palette.accent}
+            imageAspectRatio={assetHint?.aspectRatio ?? null}
             className="preview__svg"
           />
           <PreviewHotspots
