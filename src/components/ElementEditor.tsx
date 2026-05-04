@@ -394,14 +394,48 @@ function PositionPanel({
   return (
     <div className="position-panel">
       <div className="position-panel__head">
-        <span>Позиция</span>
-        <QuickPositionControls block={{ ...block, h }} onChange={set} />
+        <span>Положение и размер</span>
       </div>
-      <div className="position-grid">
-        <PositionField label="X" value={block.x} min={-20} max={120} onChange={(x) => set({ x })} />
-        <PositionField label="Y" value={block.y} min={-20} max={120} onChange={(y) => set({ y })} />
-        <PositionField label="W" value={block.w} min={2} max={120} onChange={(w) => set({ w })} />
-        <PositionField label="H" value={h} min={2} max={120} onChange={(nextH) => set({ h: nextH })} />
+      <div className="position-panel__body">
+        <div className="position-fields">
+          <PositionField
+            label="Слева"
+            unit="%"
+            hint="Отступ от левого края холста"
+            value={block.x}
+            min={-20}
+            max={120}
+            onChange={(x) => set({ x })}
+          />
+          <PositionField
+            label="Сверху"
+            unit="%"
+            hint="Отступ от верхнего края холста"
+            value={block.y}
+            min={-20}
+            max={120}
+            onChange={(y) => set({ y })}
+          />
+          <PositionField
+            label="Ширина"
+            unit="%"
+            hint="Ширина блока в процентах от ширины холста"
+            value={block.w}
+            min={2}
+            max={120}
+            onChange={(w) => set({ w })}
+          />
+          <PositionField
+            label="Высота"
+            unit="%"
+            hint="Высота блока в процентах от высоты холста"
+            value={h}
+            min={2}
+            max={120}
+            onChange={(nextH) => set({ h: nextH })}
+          />
+        </div>
+        <AnchorPad block={{ ...block, h }} onChange={set} />
       </div>
     </div>
   )
@@ -409,47 +443,101 @@ function PositionPanel({
 
 function PositionField({
   label,
+  unit,
+  hint,
   value,
   min,
   max,
   onChange,
 }: {
   label: string
+  unit?: string
+  hint?: string
   value: number
   min: number
   max: number
   onChange: (next: number) => void
 }) {
   return (
-    <label className="position-field">
-      <span>{label}</span>
-      <input
-        type="number"
-        min={min}
-        max={max}
-        step={0.25}
-        value={round(value)}
-        onChange={(e) => onChange(clamp(Number(e.target.value), min, max))}
-      />
+    <label className="position-field" title={hint}>
+      <span className="position-field__label">{label}</span>
+      <span className="position-field__input-wrap">
+        <input
+          type="number"
+          min={min}
+          max={max}
+          step={0.25}
+          value={round(value)}
+          onChange={(e) => onChange(clamp(Number(e.target.value), min, max))}
+        />
+        {unit ? <span className="position-field__unit">{unit}</span> : null}
+      </span>
     </label>
   )
 }
 
-function QuickPositionControls({
+// 3×3 grid of buttons that snap the block to the corresponding edge/corner of
+// the canvas. Mirrors the alignment widget familiar from Figma/Sketch/PowerPoint
+// — far more discoverable than single-letter shortcuts.
+type AnchorH = 'left' | 'center' | 'right'
+type AnchorV = 'top' | 'middle' | 'bottom'
+
+function AnchorPad({
   block,
   onChange,
 }: {
   block: { x: number; y: number; w: number; h: number }
   onChange: (patch: Partial<{ x: number; y: number }>) => void
 }) {
+  const xFor = (h: AnchorH): number => {
+    if (h === 'left') return 0
+    if (h === 'right') return 100 - block.w
+    return (100 - block.w) / 2
+  }
+  const yFor = (v: AnchorV): number => {
+    if (v === 'top') return 0
+    if (v === 'bottom') return 100 - block.h
+    return (100 - block.h) / 2
+  }
+  const labelFor = (h: AnchorH, v: AnchorV): string => {
+    const hLabel = h === 'left' ? 'к левому краю' : h === 'right' ? 'к правому краю' : 'по горизонтали'
+    const vLabel = v === 'top' ? 'к верхнему краю' : v === 'bottom' ? 'к нижнему краю' : 'по вертикали'
+    if (h === 'center' && v === 'middle') return 'По центру холста'
+    if (h === 'center') return `Прижать ${vLabel} и центрировать по горизонтали`
+    if (v === 'middle') return `Прижать ${hLabel} и центрировать по вертикали`
+    return `Прижать ${hLabel} и ${vLabel}`
+  }
+  const isActive = (h: AnchorH, v: AnchorV): boolean => {
+    const dx = Math.abs(block.x - xFor(h))
+    const dy = Math.abs(block.y - yFor(v))
+    return dx < 0.5 && dy < 0.5
+  }
+  const order: Array<[AnchorV, AnchorH]> = [
+    ['top', 'left'], ['top', 'center'], ['top', 'right'],
+    ['middle', 'left'], ['middle', 'center'], ['middle', 'right'],
+    ['bottom', 'left'], ['bottom', 'center'], ['bottom', 'right'],
+  ]
   return (
-    <div className="position-quick" aria-label="Быстрое позиционирование">
-      <button type="button" onClick={() => onChange({ x: 0 })} title="Влево" aria-label="Влево">Л</button>
-      <button type="button" onClick={() => onChange({ x: (100 - block.w) / 2 })} title="По центру" aria-label="По центру">Ц</button>
-      <button type="button" onClick={() => onChange({ x: 100 - block.w })} title="Вправо" aria-label="Вправо">П</button>
-      <button type="button" onClick={() => onChange({ y: 0 })} title="Вверх" aria-label="Вверх">В</button>
-      <button type="button" onClick={() => onChange({ y: (100 - block.h) / 2 })} title="По середине" aria-label="По середине">С</button>
-      <button type="button" onClick={() => onChange({ y: 100 - block.h })} title="Вниз" aria-label="Вниз">Н</button>
+    <div className="anchor-pad" role="group" aria-label="Привязка к холсту">
+      <div className="anchor-pad__head">Привязать</div>
+      <div className="anchor-pad__grid">
+        {order.map(([v, h]) => {
+          const active = isActive(h, v)
+          return (
+            <button
+              key={`${v}-${h}`}
+              type="button"
+              className={`anchor-pad__cell${active ? ' is-on' : ''}`}
+              title={labelFor(h, v)}
+              aria-label={labelFor(h, v)}
+              aria-pressed={active}
+              onClick={() => onChange({ x: xFor(h), y: yFor(v) })}
+            >
+              <span className="anchor-pad__dot" aria-hidden="true" />
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

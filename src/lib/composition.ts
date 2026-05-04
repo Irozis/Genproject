@@ -42,6 +42,29 @@ export function chooseModel(p: ContentProfile): CompositionModel {
   return 'hero-overlay'
 }
 
+/** Short labels for UI (composition picker + tooltips). */
+export const COMPOSITION_MODEL_LABELS: Record<
+  CompositionModel,
+  { short: string; title: string }
+> = {
+  'text-dominant': {
+    short: 'Текст',
+    title: 'Текст на фоне / без выделенной колонки под изображение',
+  },
+  'split-right-image': {
+    short: 'Сплит',
+    title: 'Текст и изображение в двух колонках (удобно для широких форматов)',
+  },
+  'hero-overlay': {
+    short: 'Герой',
+    title: 'Текст поверх изображения со скримом',
+  },
+  'image-top-text-bottom': {
+    short: 'Фото сверху',
+    title: 'Изображение сверху, текстовый блок снизу',
+  },
+}
+
 // ---------------------------------------------------------------------------
 // Typography tokens — consistent across all layouts
 // ---------------------------------------------------------------------------
@@ -959,6 +982,26 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
     mode = 'top'
   }
 
+  // Story flip: split mode pins title to the very top of the canvas, but
+  // 9:16 photography typically puts the subject (face, product hero) in the
+  // upper third — so the title lands directly on a face / busy patch. When
+  // we have a real image hint and the top band is busier than the bottom,
+  // switch to a "bottom-anchored" stack: text sits at ~55-70% of the
+  // canvas (above the calmer feet/torso/floor band), CTA pinned to the
+  // thumb-zone like split. Hysteresis Δ ≥ 0.10 keeps split stable when
+  // both bands are similarly busy.
+  let storyFlipToBottom = false
+  if (
+    isStory
+    && mode === 'split'
+    && hint?.brightnessGrid
+    && topBusy > 0.32
+    && bottomBusy < topBusy - 0.10
+  ) {
+    mode = 'bottom'
+    storyFlipToBottom = true
+  }
+
   // Tall-portrait floor: even when the bottom band is calm enough to keep
   // bottom-mode active, a long title + subtitle + CTA stack can still grow
   // past the lower 40% of the canvas and crash into the upper-middle band
@@ -968,7 +1011,7 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   // top (non-story portrait) so the middle of the canvas stays clear of
   // any text. The check only fires on portrait formats — on 1:1 and wider
   // aspect ratios there's no "middle band" to worry about.
-  if (mode === 'bottom' && hasTitle && rules.aspectRatio < 0.9) {
+  if (mode === 'bottom' && hasTitle && rules.aspectRatio < 0.9 && !storyFlipToBottom) {
     const projectedSubAndCtaH = (hasCta ? ctaH + g * 1.2 : 0) + (hasSubtitle ? subH + g * 0.5 : 0)
     const projectedTitleY = ctaBottomEdge - projectedSubAndCtaH - titleH
     // Story-class portraits get a tighter floor (subjects in 9:16 frames
@@ -1333,10 +1376,13 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   const innerW = 100 - sz.left - sz.right
   const g = rules.gutter
 
-  // Story-ish (very tall) → smaller image to leave room for a proper text area.
+  // Story-ish (very tall) → bigger image (the text panel doesn't need 50%
+  // of a 9:16 canvas — that leaves a giant empty void below the CTA;
+  // ~62% photo / 38% panel is much closer to how editorial story templates
+  // and Reels covers actually look).
   // Product-highlight-ish (4:5) → larger image because text has less room below.
   const isStoryish = rules.aspectRatio < 0.7
-  const imageH = isStoryish ? 50 : 58
+  const imageH = isStoryish ? 62 : 58
   const textAreaTop = imageH
   const textAreaBottom = 100 - sz.bottom
 
@@ -1385,6 +1431,13 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   // listing. Bottom of the stack still respects the safe-zone, so when the
   // copy is short, the void lives below the CTA where it reads as
   // breathing room rather than a layout glitch.
+  //
+  // Story-ish (9:16) is the exception: the panel is still tall (~38% of
+  // canvas) and the stack typically fills only half of it, so top-anchoring
+  // leaves a noticeable gap *below* the CTA. We balance the layout by
+  // splitting the leftover height between top-of-panel and below-CTA, so
+  // the stack reads as vertically centred in the panel without losing the
+  // "anchored under the photo" feel (we keep ~⅔ of the slack at the top).
   const hasBadge = enabled.badge && !!scene.badge
   const hasCta = enabled.cta && !!scene.cta
   const badgeH = hasBadge ? 2.8 : 0
@@ -1392,10 +1445,14 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   const textGap = titleH && subH ? Math.max(g * 0.55, pxToHeightPct(10, rules)) : 0
   const ctaGap = hasCta ? Math.max(g * 1.2, pxToHeightPct(20, rules)) : 0
   const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (hasCta ? ctaH : 0)
+  const minTopGap = Math.max(g * 1.1, pxToHeightPct(18, rules))
+  const minBottomGap = g * 0.8
+  const slack = Math.max(0, textAreaBottom - textAreaTop - stackH - minTopGap - minBottomGap)
+  const topOffset = isStoryish ? minTopGap + slack * 0.6 : minTopGap
   const stackTop = clamp(
-    textAreaTop + Math.max(g * 1.1, pxToHeightPct(18, rules)),
-    textAreaTop + g * 0.8,
-    Math.max(textAreaTop + g * 0.8, textAreaBottom - stackH),
+    textAreaTop + topOffset,
+    textAreaTop + minBottomGap,
+    Math.max(textAreaTop + minBottomGap, textAreaBottom - stackH - minBottomGap),
   )
   const badgeY = stackTop
   const titleY = stackTop + badgeH + badgeGap

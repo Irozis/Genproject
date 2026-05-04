@@ -119,6 +119,27 @@ export function wrapText(input: WrapInput): string[] {
   return result
 }
 
+/**
+ * Measure the rendered width of a single line of text in pixels using the
+ * same canvas backend that drives `wrapText`. Falls back to a deterministic
+ * heuristic in environments without a DOM (SSR, vitest by default).
+ *
+ * Note: this does NOT account for SVG `letter-spacing` — that's a tracking
+ * value applied on top of glyph metrics. Add it explicitly at call sites
+ * that use letter-spacing (e.g. `width + letterSpacingPx * text.length`).
+ */
+export function measureTextWidth(
+  text: string,
+  fontSizePx: number,
+  fontWeight: number,
+  fontFamily: string,
+): number {
+  if (!text || fontSizePx <= 0) return 0
+  const ctx = getCtx()
+  const fontSpec = `${fontWeight} ${fontSizePx}px ${fontFamily}`
+  return memoMeasure(text, fontSpec, ctx)
+}
+
 export function fitFontSize(input: FontFitInput): number {
   const precision = input.precisionPx ?? 0.25
   const min = Math.max(0, input.minFontSizePx)

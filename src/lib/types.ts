@@ -71,6 +71,9 @@ export type TextBlock = Block & {
   /** Horizontal alignment within the block's width. Default 'left'. */
   align?: TextAlign
   transform?: 'none' | 'uppercase' | 'title-case' | 'sentence-case'
+  /** Per-block CSS font-family override. When absent, the brand kit's
+   *  display/text font is used (decided by the renderer per block role). */
+  fontFamily?: string
   /** Optional text-shadow / halo for legibility on photographic backgrounds.
    *  Layouts add this automatically when local image brightness under the
    *  text bbox is high enough to wash out plain fills. */
@@ -101,7 +104,12 @@ export type LogoBlock = Block & {
   bgOpacity: number
 }
 
-export type BlockOverride = Partial<Block & TextBlock & CtaBlock & ImageBlock & LogoBlock>
+export type BlockOverride = Partial<Block & TextBlock & CtaBlock & ImageBlock & LogoBlock> & {
+  /** Hide this block in the format(s) that own this override. Lets the user
+   *  drop, say, a badge from a single format without disabling it project-wide
+   *  via the master `enabled` map. Only meaningful inside `BlockOverrides`. */
+  hidden?: boolean
+}
 
 export type BlockOverrides = Partial<Record<FormatKey, Partial<Record<BlockKind, BlockOverride>>>>
 

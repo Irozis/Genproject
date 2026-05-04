@@ -4,7 +4,7 @@
 import { forwardRef } from 'react'
 import type { CSSProperties } from 'react'
 import { tonalStops } from '../lib/color'
-import { wrapText } from '../lib/textMeasure'
+import { measureTextWidth, wrapText } from '../lib/textMeasure'
 import type {
   Background,
   Decor,
@@ -98,7 +98,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
       {scene.scrim ? <ScrimNode scrim={scene.scrim} W={W} H={H} gradientId={scrimId} /> : null}
 
       {scene.badge ? (
-        <BadgeNode block={scene.badge} W={W} H={H} fontFamily={textFont} />
+        <BadgeNode block={scene.badge} W={W} H={H} fontFamily={scene.badge.fontFamily ?? textFont} />
       ) : null}
 
       {scene.title ? (
@@ -106,16 +106,22 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
           block={scene.title}
           W={W}
           H={H}
-          fontFamily={displayFont}
+          fontFamily={scene.title.fontFamily ?? displayFont}
           accent={scene.accent}
         />
       ) : null}
 
       {scene.subtitle ? (
-        <TextNode block={scene.subtitle} W={W} H={H} fontFamily={textFont} accent={scene.accent} />
+        <TextNode
+          block={scene.subtitle}
+          W={W}
+          H={H}
+          fontFamily={scene.subtitle.fontFamily ?? textFont}
+          accent={scene.accent}
+        />
       ) : null}
 
-      {scene.cta ? <CtaNode block={scene.cta} W={W} H={H} fontFamily={displayFont} /> : null}
+      {scene.cta ? <CtaNode block={scene.cta} W={W} H={H} fontFamily={scene.cta.fontFamily ?? displayFont} /> : null}
 
       {scene.logo ? (
         <LogoNode
@@ -815,14 +821,24 @@ function BadgeNode({
   fontFamily: string
 }) {
   const fontSizePx = resolveFontSizePx(block.fontSize, W)
-  const padX = fontSizePx * 0.7
+  // Slightly more breathing room than 0.7 — uppercase Cyrillic glyphs
+  // (Ф, Ж, Щ) sit visually wider than the canvas measurement suggests, so
+  // a hair of extra horizontal pad prevents the right side from touching
+  // the stroke.
+  const padX = fontSizePx * 0.85
   const padY = fontSizePx * 0.4
   const x = pct(block.x, W)
   const y = pct(block.y, H)
   const text = applyCase(block.text, block.transform ?? 'uppercase')
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.1)
-  const textWidthApprox = text.length * fontSizePx * 0.58 + (text.length - 1) * letterSpacingPx
-  const w = textWidthApprox + padX * 2
+  // Real glyph width via canvas measureText, plus tracking applied to every
+  // glyph (browsers add letter-spacing after the last character too — using
+  // (length - 1) under-estimated and was the root cause of "ФЕРМА" peeking
+  // past the pill border). The 1.02× safety multiplier absorbs sub-pixel
+  // shaping differences across Chrome / Safari / Firefox.
+  const baseTextWidth = measureTextWidth(text, fontSizePx, block.weight, fontFamily)
+  const trackedTextWidth = (baseTextWidth + letterSpacingPx * text.length) * 1.02
+  const w = trackedTextWidth + padX * 2
   const h = fontSizePx + padY * 2
   return (
     <g>
@@ -838,13 +854,15 @@ function BadgeNode({
         strokeWidth={Math.max(1, fontSizePx * 0.05)}
       />
       <text
-        x={x + padX}
-        y={y + padY + fontSizePx * 0.85}
+        x={x + w / 2}
+        y={y + h / 2}
         fill={block.fill}
         fontFamily={fontFamily}
         fontSize={fontSizePx}
         fontWeight={block.weight}
-        letterSpacing={letterSpacingPx}
+        letterSpacing={letterSpacingPx || undefined}
+        textAnchor="middle"
+        dominantBaseline="central"
       >
         {text}
       </text>

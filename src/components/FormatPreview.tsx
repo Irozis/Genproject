@@ -11,7 +11,8 @@ import {
   type WheelEvent,
 } from 'react'
 import { SceneRenderer } from '../renderers/SceneRenderer'
-import { buildScene } from '../lib/buildScene'
+import { buildScene, resolveCompositionModel } from '../lib/buildScene'
+import { COMPOSITION_MODEL_LABELS } from '../lib/composition'
 import { checkOverflow, type LayoutIssue } from '../lib/fixLayout'
 import { getFormat } from '../lib/formats'
 import { applyLayoutDensity } from '../lib/layoutDensity'
@@ -56,6 +57,10 @@ type Props = {
   canPaste?: boolean
   locale?: string
   customFormats?: FormatRuleSet[]
+  /** `null` — снять фиксированный макет и использовать авто-подбор по контенту. */
+  onCompositionChange?: (model: CompositionModel | null) => void
+  /** Открыть полноэкранный редактор макета этого формата. */
+  onOpenLayoutEditor?: (formatKey: FormatKey) => void
 }
 
 type EditableTextKind = 'title' | 'subtitle' | 'cta' | 'badge'
@@ -87,6 +92,8 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     canPaste,
     locale,
     customFormats,
+    onCompositionChange,
+    onOpenLayoutEditor,
   },
   ref,
 ) {
@@ -247,6 +254,15 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
       }),
     [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, blockOverride, locale, customFormats, density],
   )
+  /** Что выберет авто-подбор (для подписи пункта «Авто» в списке). */
+  const autoPreviewModel = useMemo(
+    () =>
+      resolveCompositionModel(effectiveMaster, formatKey, brandKit, enabled, {
+        density,
+        customFormats,
+      }),
+    [effectiveMaster, formatKey, brandKit, enabled, density, customFormats],
+  )
   const issues = useMemo(() => checkOverflow(scene, rules), [scene, rules])
 
   return (
@@ -257,7 +273,45 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
           <div className="preview__dim">{rules.width}×{rules.height}</div>
         </div>
         <div className="preview__head-actions">
+          <select
+            className="preview__composition-select"
+            aria-label="Схема размещения блоков"
+            value={override ?? 'auto'}
+            disabled={!onCompositionChange}
+            title={
+              override === undefined
+                ? `Авто-подбор по контенту и пропорциям. Сейчас: «${COMPOSITION_MODEL_LABELS[autoPreviewModel].short}».`
+                : autoPreviewModel === override
+                  ? COMPOSITION_MODEL_LABELS[override].title
+                  : `${COMPOSITION_MODEL_LABELS[override].title} При «Авто» вместо этого: «${COMPOSITION_MODEL_LABELS[autoPreviewModel].short}».`
+            }
+            onChange={(e) => {
+              if (!onCompositionChange) return
+              const v = e.target.value
+              if (v === 'auto') onCompositionChange(null)
+              else onCompositionChange(v as CompositionModel)
+            }}
+          >
+            <option value="auto">
+              Авто ({COMPOSITION_MODEL_LABELS[autoPreviewModel].short})
+            </option>
+            {(Object.keys(COMPOSITION_MODEL_LABELS) as CompositionModel[]).map((m) => (
+              <option key={m} value={m} title={COMPOSITION_MODEL_LABELS[m].title}>
+                {COMPOSITION_MODEL_LABELS[m].short}
+              </option>
+            ))}
+          </select>
           <IssuesBadge issues={issues} onFix={() => onFix(formatKey)} />
+          {onOpenLayoutEditor ? (
+            <button
+              type="button"
+              className="btn btn-primary btn-xs preview__open-editor"
+              onClick={() => onOpenLayoutEditor(formatKey)}
+              title="Открыть полноэкранный редактор: перетаскивать и менять размер блоков как в Figma"
+            >
+              Редактировать
+            </button>
+          ) : null}
           <button
             type="button"
             className={`btn btn-ghost btn-xs preview__mode${isCustom ? ' is-on' : ''}`}
@@ -409,7 +463,9 @@ export const FormatPreview = memo(
     prev.onPasteLayout === next.onPasteLayout &&
     prev.canPaste === next.canPaste &&
     prev.locale === next.locale &&
-    prev.customFormats === next.customFormats,
+    prev.customFormats === next.customFormats &&
+    prev.onCompositionChange === next.onCompositionChange &&
+    prev.onOpenLayoutEditor === next.onOpenLayoutEditor,
 )
 
 function extractLayout(scene: Scene): Partial<Record<BlockKind, BlockOverride>> {

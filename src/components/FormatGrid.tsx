@@ -41,6 +41,9 @@ type Props = {
   onDisableCustom?: (formatKey: FormatKey) => void
   locale?: string
   customFormats?: FormatRuleSet[]
+  /** `null` — для этого формата снять фиксированный макет (авто-подбор). */
+  onFormatComposition?: (formatKey: FormatKey, model: CompositionModel | null) => void
+  onOpenLayoutEditor?: (formatKey: FormatKey) => void
 }
 
 export type FormatGridHandle = {
@@ -70,6 +73,8 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     onDisableCustom,
     locale,
     customFormats,
+    onFormatComposition,
+    onOpenLayoutEditor,
   },
   ref,
 ) {
@@ -124,6 +129,10 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
           canPaste={!!layoutClipboard}
           locale={locale}
           customFormats={customFormats}
+          onCompositionChange={
+            onFormatComposition ? (model) => onFormatComposition(k, model) : undefined
+          }
+          onOpenLayoutEditor={onOpenLayoutEditor}
         />
       ))}
     </div>

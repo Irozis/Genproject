@@ -5,6 +5,9 @@ import { Sidebar } from './components/Sidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { TemplatePicker } from './components/TemplatePicker'
 import { FormatGrid, type FormatGridHandle } from './components/FormatGrid'
+import { LayoutEditor } from './components/LayoutEditor'
+import { PropagateDialog } from './components/PropagateDialog'
+import { projectOverrides } from './lib/propagateLayout'
 import { newProject } from './lib/defaults'
 import { loadProject, saveProject } from './lib/storage'
 import { exportZip, exportPdf } from './lib/export'
@@ -12,7 +15,8 @@ import { exportSvgZip } from './lib/exportSvg'
 import { exportJson, importJson } from './lib/serialize'
 import { analyzeImage } from './lib/imageAnalysis'
 import { paletteAlternatives, type DerivedBrandColors } from './lib/paletteFromImage'
-import { buildScene } from './lib/buildScene'
+import { buildScene, resolveCompositionModel } from './lib/buildScene'
+import { COMPOSITION_MODEL_LABELS } from './lib/composition'
 import { fixLayout } from './lib/fixLayout'
 import { getFormat } from './lib/formats'
 import { applyLayoutDensity } from './lib/layoutDensity'
@@ -25,6 +29,7 @@ import type {
   BlockKind,
   BrandKit,
   BrandSnapshot,
+  CompositionModel,
   FormatKey,
   FormatRuleSet,
   LayoutDensity,
@@ -49,6 +54,11 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false)
   const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, BlockOverride>> | null>(null)
   const [snapshots, setSnapshots] = useState<BrandSnapshot[]>(() => listSnapshots())
+  // Полноэкранный редактор макета и диалог переноса на другие форматы.
+  const [editingFormat, setEditingFormat] = useState<FormatKey | null>(null)
+  const [propagateState, setPropagateState] = useState<
+    { source: FormatKey; overrides: Partial<Record<BlockKind, BlockOverride>> } | null
+  >(null)
   const gridRef = useRef<FormatGridHandle>(null)
   // Monotonic counter for image-analysis results. The user may replace the image
   // before the previous analysis resolves — we drop any hint that isn't from the
@@ -501,6 +511,21 @@ export default function App() {
     }))
   }, [setProject])
 
+  const setFormatComposition = useCallback((formatKey: FormatKey, model: CompositionModel | null) => {
+    setProject((p) => {
+      const next = { ...(p.formatOverrides ?? {}) }
+      if (model === null) {
+        delete next[formatKey]
+      } else {
+        next[formatKey] = model
+      }
+      return {
+        ...p,
+        formatOverrides: Object.keys(next).length > 0 ? next : undefined,
+      }
+    })
+  }, [setProject])
+
   const disableFormatCustom = useCallback((formatKey: FormatKey) => {
     setSelectedFormat((current) => current === formatKey ? null : current)
     setProject((p) => {
@@ -534,6 +559,105 @@ export default function App() {
     setSelectedKind(k)
     setSelectedFormat(project.blockOverrides?.[formatKey] ? formatKey : null)
   }, [project.blockOverrides])
+
+  // Open the full-screen layout editor for a format. If the format is in
+  // "Auto" mode (no manual composition picked), resolve the auto-chosen
+  // model and pin it now — that way the user edits on top of a known,
+  // stable layout. Otherwise the auto-picker could re-evaluate next time
+  // (image changes, density tweaks, etc.) and the saved blockOverrides
+  // would no longer match the layout they were authored against.
+  const openLayoutEditor = useCallback(
+    (formatKey: FormatKey) => {
+      if (!project.formatOverrides?.[formatKey]) {
+        const resolved = resolveCompositionModel(
+          masterWithAssets,
+          formatKey,
+          project.brandKit,
+          project.enabled,
+          {
+            assetHint: project.assetHint ?? undefined,
+            customFormats: project.customFormats,
+            density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+          },
+        )
+        setProject((p) => ({
+          ...p,
+          formatOverrides: { ...(p.formatOverrides ?? {}), [formatKey]: resolved },
+        }))
+        pushToast(
+          `Композиция «${COMPOSITION_MODEL_LABELS[resolved].short}» зафиксирована для редактирования`,
+          'info',
+        )
+      }
+      setEditingFormat(formatKey)
+    },
+    [
+      masterWithAssets,
+      project.formatOverrides,
+      project.brandKit,
+      project.enabled,
+      project.assetHint,
+      project.customFormats,
+      project.formatDensities,
+      project.layoutDensity,
+      pushToast,
+      setProject,
+    ],
+  )
+
+  const closeLayoutEditor = useCallback(() => {
+    setEditingFormat(null)
+  }, [])
+
+  // Save edited overrides back into the project. Always lands them under
+  // blockOverrides[formatKey] — that way the format becomes "custom" and the
+  // user's manual edits aren't blown away by master-scene tweaks afterward.
+  const saveEditedLayout = useCallback(
+    (formatKey: FormatKey, overrides: Partial<Record<BlockKind, BlockOverride>>) => {
+      setProject((p) => ({
+        ...p,
+        blockOverrides: {
+          ...(p.blockOverrides ?? {}),
+          [formatKey]: overrides,
+        },
+      }))
+      setSelectedFormat(formatKey)
+    },
+    [setProject],
+  )
+
+  const requestPropagate = useCallback(
+    (formatKey: FormatKey, overrides: Partial<Record<BlockKind, BlockOverride>>) => {
+      setPropagateState({ source: formatKey, overrides })
+    },
+    [],
+  )
+
+  const applyPropagate = useCallback(
+    (targets: FormatKey[]) => {
+      if (!propagateState) return
+      const { source, overrides } = propagateState
+      const sourceRules = applyLayoutDensity(
+        getFormat(source, project.customFormats),
+        project.formatDensities?.[source] ?? project.layoutDensity,
+      )
+      setProject((p) => {
+        const nextBlockOverrides = { ...(p.blockOverrides ?? {}) }
+        for (const target of targets) {
+          if (target === source) continue
+          const targetRules = applyLayoutDensity(
+            getFormat(target, p.customFormats),
+            p.formatDensities?.[target] ?? p.layoutDensity,
+          )
+          nextBlockOverrides[target] = projectOverrides(overrides, sourceRules, targetRules)
+        }
+        return { ...p, blockOverrides: nextBlockOverrides }
+      })
+      pushToast(`Макет применён к ${targets.length} формат${pluralEnding(targets.length)}.`, 'info')
+      setPropagateState(null)
+    },
+    [project.customFormats, project.formatDensities, project.layoutDensity, propagateState, pushToast, setProject],
+  )
 
   async function handleExport(kind: ExportFormat) {
     setExporting(kind)
@@ -723,13 +847,57 @@ export default function App() {
               onDisableCustom={disableFormatCustom}
               locale={project.activeLocale}
               customFormats={project.customFormats}
+              onFormatComposition={setFormatComposition}
+              onOpenLayoutEditor={openLayoutEditor}
             />
           </ErrorBoundary>
         </main>
       </div>
+      {editingFormat ? (
+        <LayoutEditor
+          formatKey={editingFormat}
+          master={masterWithAssets}
+          brandKit={project.brandKit}
+          enabled={project.enabled}
+          override={project.formatOverrides?.[editingFormat]}
+          focal={project.imageFocals?.[editingFormat]}
+          density={project.formatDensities?.[editingFormat] ?? project.layoutDensity}
+          customFormats={project.customFormats}
+          assetHint={project.assetHint}
+          blockOverride={project.blockOverrides?.[editingFormat]}
+          locale={project.activeLocale}
+          onSave={(overrides) => {
+            saveEditedLayout(editingFormat, overrides)
+            setEditingFormat(null)
+          }}
+          onCancel={closeLayoutEditor}
+          onPropagate={(overrides) => {
+            saveEditedLayout(editingFormat, overrides)
+            requestPropagate(editingFormat, overrides)
+            setEditingFormat(null)
+          }}
+        />
+      ) : null}
+      {propagateState ? (
+        <PropagateDialog
+          sourceFormat={propagateState.source}
+          candidates={project.selectedFormats}
+          customFormats={project.customFormats}
+          onCancel={() => setPropagateState(null)}
+          onApply={applyPropagate}
+        />
+      ) : null}
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
+}
+
+function pluralEnding(n: number): string {
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 === 1 && mod100 !== 11) return ''
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'а'
+  return 'ов'
 }
 
 type ToastEntry = { id: number; text: string; tone: 'error' | 'info' }

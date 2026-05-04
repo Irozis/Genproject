@@ -43,6 +43,28 @@ const TONE_DEFAULTS: Record<BrandKit['toneOfVoice'], { titleWeight: number; lett
   editorial: { titleWeight: 800, letterSpacing: -0.03, maxLines: 2, align: 'center' },
 }
 
+function pickCompositionModel(
+  branded: Scene,
+  rules: FormatRuleSet,
+  enabled: EnabledMap,
+  override: CompositionModel | undefined,
+): CompositionModel {
+  return override ?? chooseModel(profile(branded, rules, enabled))
+}
+
+/** Same composition decision as `buildScene` — for UI (picker labels, tooltips). */
+export function resolveCompositionModel(
+  master: Scene,
+  formatKey: FormatKey,
+  brandKit: BrandKit,
+  enabled: EnabledMap,
+  options: BuildOptions = {},
+): CompositionModel {
+  const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
+  const branded = applyBrandKit(master, brandKit)
+  return pickCompositionModel(branded, rules, enabled, options.override)
+}
+
 export function buildScene(
   master: Scene,
   formatKey: FormatKey,
@@ -56,7 +78,7 @@ export function buildScene(
   const branded = applyBrandKit(master, brandKit)
 
   // 2. profile content + choose layout (or honour override)
-  const model: CompositionModel = options.override ?? chooseModel(profile(branded, rules, enabled))
+  const model = pickCompositionModel(branded, rules, enabled, options.override)
 
   // 3. compute positioned scene
   const positioned = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
@@ -99,11 +121,28 @@ function applyBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind,
   const out: Scene = { ...scene }
   for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
     const o = overrides[k]
+    if (!o) continue
+    // `hidden: true` removes the block from this format entirely — consumers
+    // (renderer, hotspot map, layout issues) all gracefully handle a missing
+    // block, so this is enough to make the block disappear without touching
+    // the master scene or the project-wide `enabled` map.
+    if (o.hidden) {
+      delete (out as Record<string, unknown>)[k]
+      continue
+    }
     const b = out[k]
-    if (!o || !b) continue
-    ;(out as Record<string, unknown>)[k] = { ...b, ...dropUndefined(o) }
+    if (!b) continue
+    ;(out as Record<string, unknown>)[k] = { ...b, ...dropUndefined(stripPresentationOnly(o)) }
   }
   return out
+}
+
+// `hidden` is an editor-only flag; it must not leak into the rendered Scene
+// (TextBlock / CtaBlock / etc. don't have such a field). Strip it here so
+// the spread below doesn't ship a stray boolean to the renderer.
+function stripPresentationOnly(o: BlockOverride): Omit<BlockOverride, 'hidden'> {
+  const { hidden: _hidden, ...rest } = o
+  return rest
 }
 
 function dropUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {

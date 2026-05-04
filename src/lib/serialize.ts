@@ -171,6 +171,8 @@ const blockOverrideSchema = z.object({
   cropX: z.number().optional(),
   cropY: z.number().optional(),
   bgOpacity: z.number().optional(),
+  fontFamily: z.string().optional(),
+  hidden: z.boolean().optional(),
 })
 
 const enabledMapSchema = z.record(blockKindEnum, z.boolean())
