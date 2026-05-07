@@ -236,6 +236,17 @@ export type Project = {
   visualSystem: VisualSystemKey
   assetHint: AssetHint | null
   imageSrc: string | null
+  originalImageSrc?: string | null
+  extendedImageSrc?: string | null
+  useExtendedImage?: boolean
+  backgroundExtension?: {
+    changed: boolean
+    reason: string
+    originalSize: { width: number; height: number }
+    extendedSize: { width: number; height: number }
+    subjectBounds?: { x: number; y: number; w: number; h: number }
+    backgroundUniformity: number
+  }
   logoSrc: string | null
   selectedFormats: FormatKey[]
   // Optional per-format override: force a specific composition model for a given

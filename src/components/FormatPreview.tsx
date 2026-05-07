@@ -266,7 +266,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   const issues = useMemo(() => checkOverflow(scene, rules), [scene, rules])
 
   return (
-    <article className={`preview${aspectClass}`}>
+    <article className={`preview${aspectClass}`} data-format-key={formatKey}>
       <header className="preview__head">
         <div>
           <div className="preview__title">{rules.label}</div>

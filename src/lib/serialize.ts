@@ -227,6 +227,15 @@ const assetHintSchema = z.object({
   brightnessGrid: z.array(z.array(z.number())).optional(),
 })
 
+const backgroundExtensionSchema = z.object({
+  changed: z.boolean(),
+  reason: z.string(),
+  originalSize: z.object({ width: z.number(), height: z.number() }),
+  extendedSize: z.object({ width: z.number(), height: z.number() }),
+  subjectBounds: z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }).optional(),
+  backgroundUniformity: z.number(),
+})
+
 const formatKeySchema = z.enum([
   'vk-square',
   'vk-vertical',
@@ -283,6 +292,10 @@ export const projectSchema = z.object({
   visualSystem: z.enum(['product-card', 'minimal', 'bold-editorial']),
   assetHint: assetHintSchema.nullable(),
   imageSrc: z.string().nullable(),
+  originalImageSrc: z.string().nullable().optional(),
+  extendedImageSrc: z.string().nullable().optional(),
+  useExtendedImage: z.boolean().optional(),
+  backgroundExtension: backgroundExtensionSchema.optional(),
   logoSrc: z.string().nullable(),
   selectedFormats: z.array(anyFormatKeySchema),
   formatOverrides: z.record(anyFormatKeySchema, compositionModelSchema).optional(),
@@ -303,6 +316,7 @@ export const projectSchema = z.object({
 // ---------------------------------------------------------------------------
 
 export function exportJson(project: Project): void {
+  assertPortableProjectAssets(project)
   const safe = project.name.replace(/[^a-z0-9_-]/gi, '_') || 'project'
   const json = JSON.stringify(project, null, 2)
   const blob = new Blob([json], { type: 'application/json' })
@@ -335,4 +349,19 @@ export function parseBrandSnapshotList(value: unknown): BrandSnapshot[] {
   const parsed = brandSnapshotListSchema.safeParse(value)
   if (!parsed.success) return []
   return parsed.data as BrandSnapshot[]
+}
+
+export function assertPortableProjectAssets(project: Project): void {
+  const bad: string[] = []
+  if (project.imageSrc?.startsWith('blob:')) bad.push('imageSrc')
+  if (project.originalImageSrc?.startsWith('blob:')) bad.push('originalImageSrc')
+  if (project.extendedImageSrc?.startsWith('blob:')) bad.push('extendedImageSrc')
+  if (project.logoSrc?.startsWith('blob:')) bad.push('logoSrc')
+  if (project.master.image?.src?.startsWith('blob:')) bad.push('master.image.src')
+  if (project.master.logo?.src?.startsWith('blob:')) bad.push('master.logo.src')
+  if (bad.length > 0) {
+    throw new Error(
+      `Project contains non-portable blob URL asset(s): ${bad.join(', ')}. Re-upload the asset so it is stored as a data URL before exporting JSON.`,
+    )
+  }
 }

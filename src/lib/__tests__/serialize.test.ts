@@ -3,6 +3,8 @@
 // + blockOverrides pass-through.
 
 import { describe, it, expect } from 'vitest'
+import { buildScene } from '../buildScene'
+import { getFormat } from '../formats'
 import { importJson, parseBrandSnapshotList, projectSchema } from '../serialize'
 import { newProject } from '../defaults'
 import type { Project } from '../types'
@@ -167,6 +169,42 @@ describe('importJson', () => {
   it('throws a schema error on shape mismatch', async () => {
     const file = asFile({ id: 'x', name: 'x' })
     await expect(importJson(file)).rejects.toThrow(/does not match Project schema/)
+  })
+
+  it('preserves project image data URL and buildScene uses it after restore', async () => {
+    const dataUrl =
+      'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMCAxMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZmYwIi8+PC9zdmc+'
+    const p: Project = {
+      ...newProject('image-round-trip'),
+      imageSrc: dataUrl,
+      selectedFormats: ['vk-square'],
+      enabled: { ...newProject('enabled').enabled, image: true },
+      master: {
+        ...newProject('master').master,
+        image: {
+          x: 50,
+          y: 8,
+          w: 44,
+          h: 84,
+          src: null,
+          rx: 16,
+          fit: 'cover',
+        },
+      },
+    }
+
+    const restored = await importJson(asFile(JSON.parse(JSON.stringify(p))))
+    expect(restored.imageSrc).toBe(dataUrl)
+
+    const input = {
+      ...restored.master,
+      image: restored.master.image ? { ...restored.master.image, src: restored.imageSrc } : undefined,
+    }
+    const scene = buildScene(input, 'vk-square', restored.brandKit, restored.enabled, {
+      customFormats: restored.customFormats,
+    })
+    expect(scene.image?.src).toBe(dataUrl)
+    expect(getFormat('vk-square').key).toBe('vk-square')
   })
 })
 

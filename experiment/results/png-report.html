@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PNG Export Validation Report</title>
+  <style>
+    :root { --ok:#15803d; --ok-bg:#dcfce7; --warn:#a16207; --warn-bg:#fef3c7; --fail:#b91c1c; --fail-bg:#fee2e2; --ink:#111827; --muted:#6b7280; --line:#e5e7eb; --page:#f8fafc; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--page); color:var(--ink); font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    header { padding:28px 32px 18px; background:linear-gradient(135deg,#0f172a,#334155); color:white; }
+    h1 { margin:0 0 14px; }
+    .metrics { display:flex; flex-wrap:wrap; gap:10px; }
+    .metric { border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:10px 12px; background:rgba(255,255,255,.1); }
+    .metric b { display:block; font-size:20px; }
+    main { padding:24px 32px 32px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:18px; }
+    .card { background:white; border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 16px 40px rgba(15,23,42,.08); }
+    .card.technicalReady { border-color:#bbf7d0; } .card.technicalWarning { border-color:#fde68a; } .card.technicalFail { border-color:#fecaca; }
+    .head { display:flex; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line); }
+    .head strong { display:block; overflow-wrap:anywhere; } .head small { color:var(--muted); }
+    .status { align-self:start; border-radius:999px; padding:5px 10px; font-size:12px; font-weight:800; }
+    .technicalReady .status { background:var(--ok-bg); color:var(--ok); } .technicalWarning .status { background:var(--warn-bg); color:var(--warn); } .technicalFail .status { background:var(--fail-bg); color:var(--fail); }
+    .preview { display:grid; place-items:center; min-height:260px; padding:16px; background:#f1f5f9; }
+    .preview img { max-width:100%; max-height:340px; border-radius:10px; background:white; box-shadow:0 8px 20px rgba(15,23,42,.12); }
+    .meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:14px 16px; border-bottom:1px solid var(--line); color:var(--muted); font-size:13px; }
+    .notes { padding:14px 16px 18px; }
+    ul { margin:8px 0 0; padding-left:18px; } li { margin:5px 0; }
+    .manual { border:1px dashed var(--line); border-radius:12px; padding:10px; color:var(--muted); background:#fff; }
+    code { background:#f3f4f6; border-radius:6px; padding:1px 5px; }
+    .empty { color:var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PNG Export Validation Report</h1>
+    <div class="metrics">
+      <div class="metric"><span>ZIP files</span><b>5</b></div>
+      <div class="metric"><span>PNG files</span><b>100</b></div>
+      <div class="metric"><span>Readable</span><b>100</b></div>
+      <div class="metric"><span>Dimension matches</span><b>100</b></div>
+    </div>
+  </header>
+  <main><div class="grid"><article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-fullscreen.png</strong><small>novyy-proekt / <code>avito-fullscreen</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__avito-fullscreen.png" alt="novyy-proekt__avito-fullscreen.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3174233</strong></div><div>avg luma: <strong>0.4809</strong></div><div>dark/light: <strong>0.1626/0.1844</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4809, dark pixels 0.1626, light pixels 0.1844. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-listing.png</strong><small>novyy-proekt / <code>avito-listing</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__avito-listing.png" alt="novyy-proekt__avito-listing.png preview" /></div>
+  <div class="meta"><div>size: <strong>1280x960</strong></div><div>expected: <strong>1280x960</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1198528</strong></div><div>avg luma: <strong>0.8064</strong></div><div>dark/light: <strong>0.0496/0.7631</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8064, dark pixels 0.0496, light pixels 0.7631. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-skyscraper.png</strong><small>novyy-proekt / <code>avito-skyscraper</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__avito-skyscraper.png" alt="novyy-proekt__avito-skyscraper.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x900</strong></div><div>expected: <strong>300x900</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>334527</strong></div><div>avg luma: <strong>0.7763</strong></div><div>dark/light: <strong>0.0298/0.6916</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7763, dark pixels 0.0298, light pixels 0.6916. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__instagram-story.png</strong><small>novyy-proekt / <code>instagram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__instagram-story.png" alt="novyy-proekt__instagram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3169736</strong></div><div>avg luma: <strong>0.4788</strong></div><div>dark/light: <strong>0.1637/0.1837</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4788, dark pixels 0.1637, light pixels 0.1837. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-card.png</strong><small>novyy-proekt / <code>ozon-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__ozon-card.png" alt="novyy-proekt__ozon-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1552458</strong></div><div>avg luma: <strong>0.6447</strong></div><div>dark/light: <strong>0.0825/0.4337</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6447, dark pixels 0.0825, light pixels 0.4337. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-fresh-square.png</strong><small>novyy-proekt / <code>ozon-fresh-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__ozon-fresh-square.png" alt="novyy-proekt__ozon-fresh-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1355288</strong></div><div>avg luma: <strong>0.8051</strong></div><div>dark/light: <strong>0.0444/0.7509</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8051, dark pixels 0.0444, light pixels 0.7509. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__telegram-story.png</strong><small>novyy-proekt / <code>telegram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__telegram-story.png" alt="novyy-proekt__telegram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3174233</strong></div><div>avg luma: <strong>0.4809</strong></div><div>dark/light: <strong>0.1626/0.1844</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4809, dark pixels 0.1626, light pixels 0.1844. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-landscape.png</strong><small>novyy-proekt / <code>vk-landscape</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__vk-landscape.png" alt="novyy-proekt__vk-landscape.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x607</strong></div><div>expected: <strong>1080x607</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>732298</strong></div><div>avg luma: <strong>0.788</strong></div><div>dark/light: <strong>0.0465/0.711</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.788, dark pixels 0.0465, light pixels 0.711. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-square.png</strong><small>novyy-proekt / <code>vk-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__vk-square.png" alt="novyy-proekt__vk-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1976754</strong></div><div>avg luma: <strong>0.4511</strong></div><div>dark/light: <strong>0.1654/0.1227</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4511, dark pixels 0.1654, light pixels 0.1227. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-stories.png</strong><small>novyy-proekt / <code>vk-stories</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__vk-stories.png" alt="novyy-proekt__vk-stories.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3174233</strong></div><div>avg luma: <strong>0.4809</strong></div><div>dark/light: <strong>0.1626/0.1844</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4809, dark pixels 0.1626, light pixels 0.1844. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-vertical.png</strong><small>novyy-proekt / <code>vk-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__vk-vertical.png" alt="novyy-proekt__vk-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1350</strong></div><div>expected: <strong>1080x1350</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2410617</strong></div><div>avg luma: <strong>0.4839</strong></div><div>dark/light: <strong>0.1447/0.1607</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4839, dark pixels 0.1447, light pixels 0.1607. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-card.png</strong><small>novyy-proekt / <code>wb-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__wb-card.png" alt="novyy-proekt__wb-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1552458</strong></div><div>avg luma: <strong>0.6447</strong></div><div>dark/light: <strong>0.0825/0.4337</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6447, dark pixels 0.0825, light pixels 0.4337. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-infographic.png</strong><small>novyy-proekt / <code>wb-infographic</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__wb-infographic.png" alt="novyy-proekt__wb-infographic.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1552573</strong></div><div>avg luma: <strong>0.6447</strong></div><div>dark/light: <strong>0.0825/0.4337</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6447, dark pixels 0.0825, light pixels 0.4337. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-banner.png</strong><small>novyy-proekt / <code>yandex-market-banner</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-market-banner.png" alt="novyy-proekt__yandex-market-banner.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x450</strong></div><div>expected: <strong>1080x450</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>560781</strong></div><div>avg luma: <strong>0.7587</strong></div><div>dark/light: <strong>0.0628/0.6593</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7587, dark pixels 0.0628, light pixels 0.6593. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-card.png</strong><small>novyy-proekt / <code>yandex-market-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-market-card.png" alt="novyy-proekt__yandex-market-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1355288</strong></div><div>avg luma: <strong>0.8051</strong></div><div>dark/light: <strong>0.0444/0.7509</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8051, dark pixels 0.0444, light pixels 0.7509. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-stretch.png</strong><small>novyy-proekt / <code>yandex-market-stretch</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-market-stretch.png" alt="novyy-proekt__yandex-market-stretch.png preview" /></div>
+  <div class="meta"><div>size: <strong>1706x184</strong></div><div>expected: <strong>1706x184</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>258533</strong></div><div>avg luma: <strong>0.8031</strong></div><div>dark/light: <strong>0.0269/0.7479</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8031, dark pixels 0.0269, light pixels 0.7479. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-vertical.png</strong><small>novyy-proekt / <code>yandex-market-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-market-vertical.png" alt="novyy-proekt__yandex-market-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>940x1524</strong></div><div>expected: <strong>940x1524</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2085154</strong></div><div>avg luma: <strong>0.6563</strong></div><div>dark/light: <strong>0.0765/0.4478</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6563, dark pixels 0.0765, light pixels 0.4478. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-240x400.png</strong><small>novyy-proekt / <code>yandex-rsy-240x400</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-rsy-240x400.png" alt="novyy-proekt__yandex-rsy-240x400.png preview" /></div>
+  <div class="meta"><div>size: <strong>240x400</strong></div><div>expected: <strong>240x400</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>125746</strong></div><div>avg luma: <strong>0.7592</strong></div><div>dark/light: <strong>0.0349/0.6611</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7592, dark pixels 0.0349, light pixels 0.6611. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-300x250.png</strong><small>novyy-proekt / <code>yandex-rsy-300x250</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-rsy-300x250.png" alt="novyy-proekt__yandex-rsy-300x250.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x250</strong></div><div>expected: <strong>300x250</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>98170</strong></div><div>avg luma: <strong>0.8039</strong></div><div>dark/light: <strong>0.0333/0.7442</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8039, dark pixels 0.0333, light pixels 0.7442. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-728x90.png</strong><small>novyy-proekt / <code>yandex-rsy-728x90</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(1)__novyy-proekt__yandex-rsy-728x90.png" alt="novyy-proekt__yandex-rsy-728x90.png preview" /></div>
+  <div class="meta"><div>size: <strong>728x90</strong></div><div>expected: <strong>728x90</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>65902</strong></div><div>avg luma: <strong>0.8048</strong></div><div>dark/light: <strong>0.0237/0.7464</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8048, dark pixels 0.0237, light pixels 0.7464. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-fullscreen.png</strong><small>novyy-proekt / <code>avito-fullscreen</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__avito-fullscreen.png" alt="novyy-proekt__avito-fullscreen.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2733960</strong></div><div>avg luma: <strong>0.2382</strong></div><div>dark/light: <strong>0.6127/0.0231</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2382, dark pixels 0.6127, light pixels 0.0231. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-listing.png</strong><small>novyy-proekt / <code>avito-listing</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__avito-listing.png" alt="novyy-proekt__avito-listing.png preview" /></div>
+  <div class="meta"><div>size: <strong>1280x960</strong></div><div>expected: <strong>1280x960</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>992857</strong></div><div>avg luma: <strong>0.1641</strong></div><div>dark/light: <strong>0.8771/0.003</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.1641, dark pixels 0.8771, light pixels 0.003. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-skyscraper.png</strong><small>novyy-proekt / <code>avito-skyscraper</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__avito-skyscraper.png" alt="novyy-proekt__avito-skyscraper.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x900</strong></div><div>expected: <strong>300x900</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>291672</strong></div><div>avg luma: <strong>0.1889</strong></div><div>dark/light: <strong>0.8222/0.0039</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.1889, dark pixels 0.8222, light pixels 0.0039. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__instagram-story.png</strong><small>novyy-proekt / <code>instagram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__instagram-story.png" alt="novyy-proekt__instagram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2731210</strong></div><div>avg luma: <strong>0.2379</strong></div><div>dark/light: <strong>0.6118/0.0233</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2379, dark pixels 0.6118, light pixels 0.0233. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-card.png</strong><small>novyy-proekt / <code>ozon-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__ozon-card.png" alt="novyy-proekt__ozon-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1471314</strong></div><div>avg luma: <strong>0.2407</strong></div><div>dark/light: <strong>0.6302/0.0129</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2407, dark pixels 0.6302, light pixels 0.0129. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-fresh-square.png</strong><small>novyy-proekt / <code>ozon-fresh-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__ozon-fresh-square.png" alt="novyy-proekt__ozon-fresh-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1164616</strong></div><div>avg luma: <strong>0.176</strong></div><div>dark/light: <strong>0.8339/0.002</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.176, dark pixels 0.8339, light pixels 0.002. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__telegram-story.png</strong><small>novyy-proekt / <code>telegram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__telegram-story.png" alt="novyy-proekt__telegram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2733960</strong></div><div>avg luma: <strong>0.2382</strong></div><div>dark/light: <strong>0.6127/0.0231</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2382, dark pixels 0.6127, light pixels 0.0231. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-landscape.png</strong><small>novyy-proekt / <code>vk-landscape</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__vk-landscape.png" alt="novyy-proekt__vk-landscape.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x607</strong></div><div>expected: <strong>1080x607</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>656908</strong></div><div>avg luma: <strong>0.1762</strong></div><div>dark/light: <strong>0.8281/0.0011</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.1762, dark pixels 0.8281, light pixels 0.0011. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-square.png</strong><small>novyy-proekt / <code>vk-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__vk-square.png" alt="novyy-proekt__vk-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1768380</strong></div><div>avg luma: <strong>0.2675</strong></div><div>dark/light: <strong>0.5437/0.0436</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2675, dark pixels 0.5437, light pixels 0.0436. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-stories.png</strong><small>novyy-proekt / <code>vk-stories</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__vk-stories.png" alt="novyy-proekt__vk-stories.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2733960</strong></div><div>avg luma: <strong>0.2382</strong></div><div>dark/light: <strong>0.6127/0.0231</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2382, dark pixels 0.6127, light pixels 0.0231. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-vertical.png</strong><small>novyy-proekt / <code>vk-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__vk-vertical.png" alt="novyy-proekt__vk-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1350</strong></div><div>expected: <strong>1080x1350</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2073921</strong></div><div>avg luma: <strong>0.2554</strong></div><div>dark/light: <strong>0.5786/0.0353</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2554, dark pixels 0.5786, light pixels 0.0353. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-card.png</strong><small>novyy-proekt / <code>wb-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__wb-card.png" alt="novyy-proekt__wb-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1471314</strong></div><div>avg luma: <strong>0.2407</strong></div><div>dark/light: <strong>0.6302/0.0129</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2407, dark pixels 0.6302, light pixels 0.0129. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-infographic.png</strong><small>novyy-proekt / <code>wb-infographic</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__wb-infographic.png" alt="novyy-proekt__wb-infographic.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1471816</strong></div><div>avg luma: <strong>0.2407</strong></div><div>dark/light: <strong>0.6302/0.0129</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2407, dark pixels 0.6302, light pixels 0.0129. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-banner.png</strong><small>novyy-proekt / <code>yandex-market-banner</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-market-banner.png" alt="novyy-proekt__yandex-market-banner.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x450</strong></div><div>expected: <strong>1080x450</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>505573</strong></div><div>avg luma: <strong>0.1902</strong></div><div>dark/light: <strong>0.7927/0.0055</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.1902, dark pixels 0.7927, light pixels 0.0055. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-card.png</strong><small>novyy-proekt / <code>yandex-market-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-market-card.png" alt="novyy-proekt__yandex-market-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1164616</strong></div><div>avg luma: <strong>0.176</strong></div><div>dark/light: <strong>0.8339/0.002</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.176, dark pixels 0.8339, light pixels 0.002. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-stretch.png</strong><small>novyy-proekt / <code>yandex-market-stretch</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-market-stretch.png" alt="novyy-proekt__yandex-market-stretch.png preview" /></div>
+  <div class="meta"><div>size: <strong>1706x184</strong></div><div>expected: <strong>1706x184</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>257908</strong></div><div>avg luma: <strong>0.2043</strong></div><div>dark/light: <strong>0.7801/0.0046</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2043, dark pixels 0.7801, light pixels 0.0046. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-vertical.png</strong><small>novyy-proekt / <code>yandex-market-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-market-vertical.png" alt="novyy-proekt__yandex-market-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>940x1524</strong></div><div>expected: <strong>940x1524</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1893959</strong></div><div>avg luma: <strong>0.2335</strong></div><div>dark/light: <strong>0.6606/0.0103</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2335, dark pixels 0.6606, light pixels 0.0103. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-240x400.png</strong><small>novyy-proekt / <code>yandex-rsy-240x400</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-rsy-240x400.png" alt="novyy-proekt__yandex-rsy-240x400.png preview" /></div>
+  <div class="meta"><div>size: <strong>240x400</strong></div><div>expected: <strong>240x400</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>123719</strong></div><div>avg luma: <strong>0.2118</strong></div><div>dark/light: <strong>0.7379/0.0076</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2118, dark pixels 0.7379, light pixels 0.0076. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-300x250.png</strong><small>novyy-proekt / <code>yandex-rsy-300x250</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-rsy-300x250.png" alt="novyy-proekt__yandex-rsy-300x250.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x250</strong></div><div>expected: <strong>300x250</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>91990</strong></div><div>avg luma: <strong>0.1885</strong></div><div>dark/light: <strong>0.8041/0.0013</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.1885, dark pixels 0.8041, light pixels 0.0013. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-728x90.png</strong><small>novyy-proekt / <code>yandex-rsy-728x90</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(2)__novyy-proekt__yandex-rsy-728x90.png" alt="novyy-proekt__yandex-rsy-728x90.png preview" /></div>
+  <div class="meta"><div>size: <strong>728x90</strong></div><div>expected: <strong>728x90</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>66769</strong></div><div>avg luma: <strong>0.2029</strong></div><div>dark/light: <strong>0.7819/0.0036</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.2029, dark pixels 0.7819, light pixels 0.0036. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-fullscreen.png</strong><small>novyy-proekt / <code>avito-fullscreen</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__avito-fullscreen.png" alt="novyy-proekt__avito-fullscreen.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3017963</strong></div><div>avg luma: <strong>0.4355</strong></div><div>dark/light: <strong>0.2243/0.0655</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4355, dark pixels 0.2243, light pixels 0.0655. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-listing.png</strong><small>novyy-proekt / <code>avito-listing</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__avito-listing.png" alt="novyy-proekt__avito-listing.png preview" /></div>
+  <div class="meta"><div>size: <strong>1280x960</strong></div><div>expected: <strong>1280x960</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1212449</strong></div><div>avg luma: <strong>0.788</strong></div><div>dark/light: <strong>0.0512/0.7271</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.788, dark pixels 0.0512, light pixels 0.7271. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-skyscraper.png</strong><small>novyy-proekt / <code>avito-skyscraper</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__avito-skyscraper.png" alt="novyy-proekt__avito-skyscraper.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x900</strong></div><div>expected: <strong>300x900</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>339458</strong></div><div>avg luma: <strong>0.7566</strong></div><div>dark/light: <strong>0.0307/0.6369</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7566, dark pixels 0.0307, light pixels 0.6369. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__instagram-story.png</strong><small>novyy-proekt / <code>instagram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__instagram-story.png" alt="novyy-proekt__instagram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3002893</strong></div><div>avg luma: <strong>0.4306</strong></div><div>dark/light: <strong>0.2302/0.0647</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4306, dark pixels 0.2302, light pixels 0.0647. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-card.png</strong><small>novyy-proekt / <code>ozon-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__ozon-card.png" alt="novyy-proekt__ozon-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1424119</strong></div><div>avg luma: <strong>0.6248</strong></div><div>dark/light: <strong>0.0892/0.3967</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6248, dark pixels 0.0892, light pixels 0.3967. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-fresh-square.png</strong><small>novyy-proekt / <code>ozon-fresh-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__ozon-fresh-square.png" alt="novyy-proekt__ozon-fresh-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1283694</strong></div><div>avg luma: <strong>0.761</strong></div><div>dark/light: <strong>0.065/0.6662</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.761, dark pixels 0.065, light pixels 0.6662. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__telegram-story.png</strong><small>novyy-proekt / <code>telegram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__telegram-story.png" alt="novyy-proekt__telegram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3017963</strong></div><div>avg luma: <strong>0.4355</strong></div><div>dark/light: <strong>0.2243/0.0655</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4355, dark pixels 0.2243, light pixels 0.0655. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-landscape.png</strong><small>novyy-proekt / <code>vk-landscape</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__vk-landscape.png" alt="novyy-proekt__vk-landscape.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x607</strong></div><div>expected: <strong>1080x607</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>741220</strong></div><div>avg luma: <strong>0.756</strong></div><div>dark/light: <strong>0.0512/0.6445</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.756, dark pixels 0.0512, light pixels 0.6445. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-square.png</strong><small>novyy-proekt / <code>vk-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__vk-square.png" alt="novyy-proekt__vk-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1803183</strong></div><div>avg luma: <strong>0.4205</strong></div><div>dark/light: <strong>0.2301/0.06</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4205, dark pixels 0.2301, light pixels 0.06. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-stories.png</strong><small>novyy-proekt / <code>vk-stories</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__vk-stories.png" alt="novyy-proekt__vk-stories.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>3017963</strong></div><div>avg luma: <strong>0.4355</strong></div><div>dark/light: <strong>0.2243/0.0655</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4355, dark pixels 0.2243, light pixels 0.0655. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-vertical.png</strong><small>novyy-proekt / <code>vk-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__vk-vertical.png" alt="novyy-proekt__vk-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1350</strong></div><div>expected: <strong>1080x1350</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2294219</strong></div><div>avg luma: <strong>0.4436</strong></div><div>dark/light: <strong>0.2125/0.068</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4436, dark pixels 0.2125, light pixels 0.068. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-card.png</strong><small>novyy-proekt / <code>wb-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__wb-card.png" alt="novyy-proekt__wb-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1424119</strong></div><div>avg luma: <strong>0.6248</strong></div><div>dark/light: <strong>0.0892/0.3967</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6248, dark pixels 0.0892, light pixels 0.3967. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-infographic.png</strong><small>novyy-proekt / <code>wb-infographic</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__wb-infographic.png" alt="novyy-proekt__wb-infographic.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1424317</strong></div><div>avg luma: <strong>0.6248</strong></div><div>dark/light: <strong>0.0892/0.3967</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6248, dark pixels 0.0892, light pixels 0.3967. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-banner.png</strong><small>novyy-proekt / <code>yandex-market-banner</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-market-banner.png" alt="novyy-proekt__yandex-market-banner.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x450</strong></div><div>expected: <strong>1080x450</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>559087</strong></div><div>avg luma: <strong>0.7371</strong></div><div>dark/light: <strong>0.0635/0.6088</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7371, dark pixels 0.0635, light pixels 0.6088. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-card.png</strong><small>novyy-proekt / <code>yandex-market-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-market-card.png" alt="novyy-proekt__yandex-market-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1283694</strong></div><div>avg luma: <strong>0.761</strong></div><div>dark/light: <strong>0.065/0.6662</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.761, dark pixels 0.065, light pixels 0.6662. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-stretch.png</strong><small>novyy-proekt / <code>yandex-market-stretch</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-market-stretch.png" alt="novyy-proekt__yandex-market-stretch.png preview" /></div>
+  <div class="meta"><div>size: <strong>1706x184</strong></div><div>expected: <strong>1706x184</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>262675</strong></div><div>avg luma: <strong>0.7924</strong></div><div>dark/light: <strong>0.0444/0.7331</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7924, dark pixels 0.0444, light pixels 0.7331. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-vertical.png</strong><small>novyy-proekt / <code>yandex-market-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-market-vertical.png" alt="novyy-proekt__yandex-market-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>940x1524</strong></div><div>expected: <strong>940x1524</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1991862</strong></div><div>avg luma: <strong>0.6204</strong></div><div>dark/light: <strong>0.0747/0.3609</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6204, dark pixels 0.0747, light pixels 0.3609. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-240x400.png</strong><small>novyy-proekt / <code>yandex-rsy-240x400</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-rsy-240x400.png" alt="novyy-proekt__yandex-rsy-240x400.png preview" /></div>
+  <div class="meta"><div>size: <strong>240x400</strong></div><div>expected: <strong>240x400</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>125749</strong></div><div>avg luma: <strong>0.7431</strong></div><div>dark/light: <strong>0.0513/0.6433</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7431, dark pixels 0.0513, light pixels 0.6433. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-300x250.png</strong><small>novyy-proekt / <code>yandex-rsy-300x250</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-rsy-300x250.png" alt="novyy-proekt__yandex-rsy-300x250.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x250</strong></div><div>expected: <strong>300x250</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>100008</strong></div><div>avg luma: <strong>0.7723</strong></div><div>dark/light: <strong>0.0421/0.6687</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7723, dark pixels 0.0421, light pixels 0.6687. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-728x90.png</strong><small>novyy-proekt / <code>yandex-rsy-728x90</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(3)__novyy-proekt__yandex-rsy-728x90.png" alt="novyy-proekt__yandex-rsy-728x90.png preview" /></div>
+  <div class="meta"><div>size: <strong>728x90</strong></div><div>expected: <strong>728x90</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>68122</strong></div><div>avg luma: <strong>0.797</strong></div><div>dark/light: <strong>0.0386/0.7339</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.797, dark pixels 0.0386, light pixels 0.7339. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-fullscreen.png</strong><small>novyy-proekt / <code>avito-fullscreen</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__avito-fullscreen.png" alt="novyy-proekt__avito-fullscreen.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1219676</strong></div><div>avg luma: <strong>0.5197</strong></div><div>dark/light: <strong>0.3087/0.3395</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.5197, dark pixels 0.3087, light pixels 0.3395. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-listing.png</strong><small>novyy-proekt / <code>avito-listing</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__avito-listing.png" alt="novyy-proekt__avito-listing.png preview" /></div>
+  <div class="meta"><div>size: <strong>1280x960</strong></div><div>expected: <strong>1280x960</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>912182</strong></div><div>avg luma: <strong>0.8387</strong></div><div>dark/light: <strong>0.0854/0.8572</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8387, dark pixels 0.0854, light pixels 0.8572. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-skyscraper.png</strong><small>novyy-proekt / <code>avito-skyscraper</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__avito-skyscraper.png" alt="novyy-proekt__avito-skyscraper.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x900</strong></div><div>expected: <strong>300x900</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>258328</strong></div><div>avg luma: <strong>0.8269</strong></div><div>dark/light: <strong>0.0789/0.8207</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8269, dark pixels 0.0789, light pixels 0.8207. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__instagram-story.png</strong><small>novyy-proekt / <code>instagram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__instagram-story.png" alt="novyy-proekt__instagram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1218256</strong></div><div>avg luma: <strong>0.511</strong></div><div>dark/light: <strong>0.3109/0.3231</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.511, dark pixels 0.3109, light pixels 0.3231. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-card.png</strong><small>novyy-proekt / <code>ozon-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__ozon-card.png" alt="novyy-proekt__ozon-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1000073</strong></div><div>avg luma: <strong>0.6641</strong></div><div>dark/light: <strong>0.2385/0.6139</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6641, dark pixels 0.2385, light pixels 0.6139. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-fresh-square.png</strong><small>novyy-proekt / <code>ozon-fresh-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__ozon-fresh-square.png" alt="novyy-proekt__ozon-fresh-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>830397</strong></div><div>avg luma: <strong>0.8341</strong></div><div>dark/light: <strong>0.0885/0.8394</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8341, dark pixels 0.0885, light pixels 0.8394. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__telegram-story.png</strong><small>novyy-proekt / <code>telegram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__telegram-story.png" alt="novyy-proekt__telegram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1219676</strong></div><div>avg luma: <strong>0.5197</strong></div><div>dark/light: <strong>0.3087/0.3395</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.5197, dark pixels 0.3087, light pixels 0.3395. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-landscape.png</strong><small>novyy-proekt / <code>vk-landscape</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__vk-landscape.png" alt="novyy-proekt__vk-landscape.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x607</strong></div><div>expected: <strong>1080x607</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>521301</strong></div><div>avg luma: <strong>0.8113</strong></div><div>dark/light: <strong>0.1128/0.8103</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8113, dark pixels 0.1128, light pixels 0.8103. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-square.png</strong><small>novyy-proekt / <code>vk-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__vk-square.png" alt="novyy-proekt__vk-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>809250</strong></div><div>avg luma: <strong>0.4739</strong></div><div>dark/light: <strong>0.3543/0.3235</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.4739, dark pixels 0.3543, light pixels 0.3235. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-stories.png</strong><small>novyy-proekt / <code>vk-stories</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__vk-stories.png" alt="novyy-proekt__vk-stories.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1219676</strong></div><div>avg luma: <strong>0.5197</strong></div><div>dark/light: <strong>0.3087/0.3395</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.5197, dark pixels 0.3087, light pixels 0.3395. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-vertical.png</strong><small>novyy-proekt / <code>vk-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__vk-vertical.png" alt="novyy-proekt__vk-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1350</strong></div><div>expected: <strong>1080x1350</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>922438</strong></div><div>avg luma: <strong>0.503</strong></div><div>dark/light: <strong>0.3178/0.3461</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.503, dark pixels 0.3178, light pixels 0.3461. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-card.png</strong><small>novyy-proekt / <code>wb-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__wb-card.png" alt="novyy-proekt__wb-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1000073</strong></div><div>avg luma: <strong>0.6641</strong></div><div>dark/light: <strong>0.2385/0.6139</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6641, dark pixels 0.2385, light pixels 0.6139. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-infographic.png</strong><small>novyy-proekt / <code>wb-infographic</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__wb-infographic.png" alt="novyy-proekt__wb-infographic.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>999427</strong></div><div>avg luma: <strong>0.6646</strong></div><div>dark/light: <strong>0.2378/0.6144</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6646, dark pixels 0.2378, light pixels 0.6144. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-banner.png</strong><small>novyy-proekt / <code>yandex-market-banner</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-market-banner.png" alt="novyy-proekt__yandex-market-banner.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x450</strong></div><div>expected: <strong>1080x450</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>401799</strong></div><div>avg luma: <strong>0.7923</strong></div><div>dark/light: <strong>0.1291/0.7811</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7923, dark pixels 0.1291, light pixels 0.7811. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-card.png</strong><small>novyy-proekt / <code>yandex-market-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-market-card.png" alt="novyy-proekt__yandex-market-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>830397</strong></div><div>avg luma: <strong>0.8341</strong></div><div>dark/light: <strong>0.0885/0.8394</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8341, dark pixels 0.0885, light pixels 0.8394. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-stretch.png</strong><small>novyy-proekt / <code>yandex-market-stretch</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-market-stretch.png" alt="novyy-proekt__yandex-market-stretch.png preview" /></div>
+  <div class="meta"><div>size: <strong>1706x184</strong></div><div>expected: <strong>1706x184</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>257325</strong></div><div>avg luma: <strong>0.7912</strong></div><div>dark/light: <strong>0.0968/0.7602</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7912, dark pixels 0.0968, light pixels 0.7602. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-vertical.png</strong><small>novyy-proekt / <code>yandex-market-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-market-vertical.png" alt="novyy-proekt__yandex-market-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>940x1524</strong></div><div>expected: <strong>940x1524</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1119501</strong></div><div>avg luma: <strong>0.7167</strong></div><div>dark/light: <strong>0.1977/0.6751</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7167, dark pixels 0.1977, light pixels 0.6751. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-240x400.png</strong><small>novyy-proekt / <code>yandex-rsy-240x400</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-rsy-240x400.png" alt="novyy-proekt__yandex-rsy-240x400.png preview" /></div>
+  <div class="meta"><div>size: <strong>240x400</strong></div><div>expected: <strong>240x400</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>117676</strong></div><div>avg luma: <strong>0.7526</strong></div><div>dark/light: <strong>0.1395/0.7297</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7526, dark pixels 0.1395, light pixels 0.7297. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-300x250.png</strong><small>novyy-proekt / <code>yandex-rsy-300x250</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-rsy-300x250.png" alt="novyy-proekt__yandex-rsy-300x250.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x250</strong></div><div>expected: <strong>300x250</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>79655</strong></div><div>avg luma: <strong>0.8308</strong></div><div>dark/light: <strong>0.0768/0.8187</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8308, dark pixels 0.0768, light pixels 0.8187. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-728x90.png</strong><small>novyy-proekt / <code>yandex-rsy-728x90</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt%20(4)__novyy-proekt__yandex-rsy-728x90.png" alt="novyy-proekt__yandex-rsy-728x90.png preview" /></div>
+  <div class="meta"><div>size: <strong>728x90</strong></div><div>expected: <strong>728x90</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>66988</strong></div><div>avg luma: <strong>0.7993</strong></div><div>dark/light: <strong>0.0855/0.7657</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7993, dark pixels 0.0855, light pixels 0.7657. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-fullscreen.png</strong><small>novyy-proekt / <code>avito-fullscreen</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__avito-fullscreen.png" alt="novyy-proekt__avito-fullscreen.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2598673</strong></div><div>avg luma: <strong>0.6291</strong></div><div>dark/light: <strong>0.0524/0.2349</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6291, dark pixels 0.0524, light pixels 0.2349. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-listing.png</strong><small>novyy-proekt / <code>avito-listing</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__avito-listing.png" alt="novyy-proekt__avito-listing.png preview" /></div>
+  <div class="meta"><div>size: <strong>1280x960</strong></div><div>expected: <strong>1280x960</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1160542</strong></div><div>avg luma: <strong>0.8391</strong></div><div>dark/light: <strong>0.0338/0.7954</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8391, dark pixels 0.0338, light pixels 0.7954. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__avito-skyscraper.png</strong><small>novyy-proekt / <code>avito-skyscraper</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__avito-skyscraper.png" alt="novyy-proekt__avito-skyscraper.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x900</strong></div><div>expected: <strong>300x900</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>326231</strong></div><div>avg luma: <strong>0.8255</strong></div><div>dark/light: <strong>0.0114/0.7246</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8255, dark pixels 0.0114, light pixels 0.7246. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__instagram-story.png</strong><small>novyy-proekt / <code>instagram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__instagram-story.png" alt="novyy-proekt__instagram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2585958</strong></div><div>avg luma: <strong>0.6216</strong></div><div>dark/light: <strong>0.0555/0.2287</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6216, dark pixels 0.0555, light pixels 0.2287. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-card.png</strong><small>novyy-proekt / <code>ozon-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__ozon-card.png" alt="novyy-proekt__ozon-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1479321</strong></div><div>avg luma: <strong>0.7451</strong></div><div>dark/light: <strong>0.0145/0.4605</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7451, dark pixels 0.0145, light pixels 0.4605. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__ozon-fresh-square.png</strong><small>novyy-proekt / <code>ozon-fresh-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__ozon-fresh-square.png" alt="novyy-proekt__ozon-fresh-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1267358</strong></div><div>avg luma: <strong>0.8416</strong></div><div>dark/light: <strong>0.0146/0.7392</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8416, dark pixels 0.0146, light pixels 0.7392. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__telegram-story.png</strong><small>novyy-proekt / <code>telegram-story</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__telegram-story.png" alt="novyy-proekt__telegram-story.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2598673</strong></div><div>avg luma: <strong>0.6291</strong></div><div>dark/light: <strong>0.0524/0.2349</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6291, dark pixels 0.0524, light pixels 0.2349. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-landscape.png</strong><small>novyy-proekt / <code>vk-landscape</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__vk-landscape.png" alt="novyy-proekt__vk-landscape.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x607</strong></div><div>expected: <strong>1080x607</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>715510</strong></div><div>avg luma: <strong>0.827</strong></div><div>dark/light: <strong>0.024/0.7043</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.827, dark pixels 0.024, light pixels 0.7043. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-square.png</strong><small>novyy-proekt / <code>vk-square</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__vk-square.png" alt="novyy-proekt__vk-square.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1756598</strong></div><div>avg luma: <strong>0.5584</strong></div><div>dark/light: <strong>0.0763/0.0789</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.5584, dark pixels 0.0763, light pixels 0.0789. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-stories.png</strong><small>novyy-proekt / <code>vk-stories</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__vk-stories.png" alt="novyy-proekt__vk-stories.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1920</strong></div><div>expected: <strong>1080x1920</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2598673</strong></div><div>avg luma: <strong>0.6291</strong></div><div>dark/light: <strong>0.0524/0.2349</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.6291, dark pixels 0.0524, light pixels 0.2349. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__vk-vertical.png</strong><small>novyy-proekt / <code>vk-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__vk-vertical.png" alt="novyy-proekt__vk-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1350</strong></div><div>expected: <strong>1080x1350</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>2010301</strong></div><div>avg luma: <strong>0.5839</strong></div><div>dark/light: <strong>0.0712/0.0912</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.5839, dark pixels 0.0712, light pixels 0.0912. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-card.png</strong><small>novyy-proekt / <code>wb-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__wb-card.png" alt="novyy-proekt__wb-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1479321</strong></div><div>avg luma: <strong>0.7451</strong></div><div>dark/light: <strong>0.0145/0.4605</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7451, dark pixels 0.0145, light pixels 0.4605. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__wb-infographic.png</strong><small>novyy-proekt / <code>wb-infographic</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__wb-infographic.png" alt="novyy-proekt__wb-infographic.png preview" /></div>
+  <div class="meta"><div>size: <strong>900x1200</strong></div><div>expected: <strong>900x1200</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1479372</strong></div><div>avg luma: <strong>0.7451</strong></div><div>dark/light: <strong>0.0145/0.4605</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7451, dark pixels 0.0145, light pixels 0.4605. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-banner.png</strong><small>novyy-proekt / <code>yandex-market-banner</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-market-banner.png" alt="novyy-proekt__yandex-market-banner.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x450</strong></div><div>expected: <strong>1080x450</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>557279</strong></div><div>avg luma: <strong>0.8064</strong></div><div>dark/light: <strong>0.0314/0.6636</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8064, dark pixels 0.0314, light pixels 0.6636. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-card.png</strong><small>novyy-proekt / <code>yandex-market-card</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-market-card.png" alt="novyy-proekt__yandex-market-card.png preview" /></div>
+  <div class="meta"><div>size: <strong>1080x1080</strong></div><div>expected: <strong>1080x1080</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1267358</strong></div><div>avg luma: <strong>0.8416</strong></div><div>dark/light: <strong>0.0146/0.7392</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8416, dark pixels 0.0146, light pixels 0.7392. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-stretch.png</strong><small>novyy-proekt / <code>yandex-market-stretch</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-market-stretch.png" alt="novyy-proekt__yandex-market-stretch.png preview" /></div>
+  <div class="meta"><div>size: <strong>1706x184</strong></div><div>expected: <strong>1706x184</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>273890</strong></div><div>avg luma: <strong>0.8349</strong></div><div>dark/light: <strong>0.0154/0.7527</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8349, dark pixels 0.0154, light pixels 0.7527. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-market-vertical.png</strong><small>novyy-proekt / <code>yandex-market-vertical</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-market-vertical.png" alt="novyy-proekt__yandex-market-vertical.png preview" /></div>
+  <div class="meta"><div>size: <strong>940x1524</strong></div><div>expected: <strong>940x1524</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>1947486</strong></div><div>avg luma: <strong>0.7487</strong></div><div>dark/light: <strong>0.0136/0.4597</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.7487, dark pixels 0.0136, light pixels 0.4597. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-240x400.png</strong><small>novyy-proekt / <code>yandex-rsy-240x400</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-rsy-240x400.png" alt="novyy-proekt__yandex-rsy-240x400.png preview" /></div>
+  <div class="meta"><div>size: <strong>240x400</strong></div><div>expected: <strong>240x400</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>129552</strong></div><div>avg luma: <strong>0.8112</strong></div><div>dark/light: <strong>0.0091/0.6767</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8112, dark pixels 0.0091, light pixels 0.6767. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-300x250.png</strong><small>novyy-proekt / <code>yandex-rsy-300x250</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-rsy-300x250.png" alt="novyy-proekt__yandex-rsy-300x250.png preview" /></div>
+  <div class="meta"><div>size: <strong>300x250</strong></div><div>expected: <strong>300x250</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>95398</strong></div><div>avg luma: <strong>0.841</strong></div><div>dark/light: <strong>0.0091/0.7303</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.841, dark pixels 0.0091, light pixels 0.7303. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article>
+<article class="card technicalReady">
+  <div class="head"><div><strong>novyy-proekt__yandex-rsy-728x90.png</strong><small>novyy-proekt / <code>yandex-rsy-728x90</code></small></div><span class="status">technicalReady</span></div>
+  <div class="preview"><img src="./png/novyy-proekt__novyy-proekt__yandex-rsy-728x90.png" alt="novyy-proekt__yandex-rsy-728x90.png preview" /></div>
+  <div class="meta"><div>size: <strong>728x90</strong></div><div>expected: <strong>728x90</strong></div><div>dimensionMatch: <strong>true</strong></div><div>fileSize: <strong>69413</strong></div><div>avg luma: <strong>0.8362</strong></div><div>dark/light: <strong>0.0141/0.7514</strong></div></div>
+  <div class="notes"><strong>autoNotes</strong><ul><li>Average luma 0.8362, dark pixels 0.0141, light pixels 0.7514. This is a whole-image technical signal, not a design contrast verdict.</li></ul><div class="manual"><strong>Manual review:</strong> fill humanStatus, validatorCorrect, notes in manual-png-review-template.csv.</div></div>
+</article></div></main>
+</body>
+</html>

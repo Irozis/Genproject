@@ -29,6 +29,7 @@ type Props = {
   onBrandChange: (next: BrandKit) => void
   onSetImage: (dataUrl: string) => void
   onSetLogo: (dataUrl: string) => void
+  onToggleUseExtendedImage: (next: boolean) => void
   onToggleFormat: (key: FormatKey) => void
   /** Per-format focal override. Pass null to clear (inherit master). */
   onSetFormatFocal: (key: FormatKey, focal: { x: number; y: number } | null) => void
@@ -57,6 +58,7 @@ export function Sidebar({
   onBrandChange,
   onSetImage,
   onSetLogo,
+  onToggleUseExtendedImage,
   onToggleFormat,
   onSetFormatFocal,
   paletteAlternatives,
@@ -78,6 +80,7 @@ export function Sidebar({
   const [customGutter, setCustomGutter] = useState('4')
   const selectedLabel = selectedKind ? labelForKind(selectedKind) : null
   const selectedFormatLabel = editingFormatKey ? getFormat(editingFormatKey, project.customFormats).label : null
+  const previewImageSrc = project.useExtendedImage && project.extendedImageSrc ? project.extendedImageSrc : project.imageSrc
 
   return (
     <aside className="sidebar">
@@ -327,7 +330,19 @@ export function Sidebar({
               />
               {project.imageSrc ? (
                 <>
-                  <img className="asset-thumb" src={project.imageSrc} alt="" />
+                  <img className="asset-thumb" src={previewImageSrc ?? ''} alt="" />
+                  <label className="format-row" style={{ marginTop: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={!!project.useExtendedImage && !!project.extendedImageSrc}
+                      disabled={!project.extendedImageSrc}
+                      onChange={(e) => onToggleUseExtendedImage(e.target.checked)}
+                    />
+                    <span className="format-row__label">Сохранять объект целиком</span>
+                  </label>
+                  <div style={{ fontSize: 12, opacity: 0.72, marginTop: 6 }}>
+                    {backgroundExtensionStatus(project)}
+                  </div>
                   <div className="focal-label">Фокус master</div>
                   <FocalGrid
                     fx={project.master.image?.focalX ?? 0.5}
@@ -372,6 +387,14 @@ export function Sidebar({
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return <div className="section-header">{children}</div>
+}
+
+function backgroundExtensionStatus(project: Project): string {
+  const result = project.backgroundExtension
+  if (!result) return 'Расширение фона ещё не рассчитано'
+  if (result.changed && project.extendedImageSrc) return 'Фон расширен'
+  if (result.reason === 'no-extension-needed') return 'Расширение не требуется'
+  return `Расширение не применено: ${result.reason}`
 }
 
 function EditContextCard({

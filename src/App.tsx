@@ -22,6 +22,8 @@ import { getFormat } from './lib/formats'
 import { applyLayoutDensity } from './lib/layoutDensity'
 import { useHistory } from './lib/useHistory'
 import { applyImageHint } from './lib/applyImageHint'
+import { extendImageBackground } from './lib/imageBackgroundExtension'
+import { getActiveImageSrc } from './lib/projectImages'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
@@ -176,12 +178,13 @@ export default function App() {
   // sync image/logo into master scene
   const masterWithAssets = useMemo<Scene>(() => {
     const m = project.master
+    const imageSrc = getActiveImageSrc(project)
     return {
       ...m,
-      image: m.image ? { ...m.image, src: project.imageSrc } : m.image,
+      image: m.image ? { ...m.image, src: imageSrc } : m.image,
       logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
     }
-  }, [project.master, project.imageSrc, project.logoSrc])
+  }, [project])
 
   const selectedFormatScene = useMemo<Scene | null>(() => {
     if (!selectedFormat || !project.blockOverrides?.[selectedFormat]) return null
@@ -329,17 +332,49 @@ export default function App() {
 
   function setImage(dataUrl: string) {
     const gen = ++imageGenRef.current
-    setProject((p) => ({ ...p, imageSrc: dataUrl, enabled: { ...p.enabled, image: true } }))
+    setProject((p) => ({
+      ...p,
+      imageSrc: dataUrl,
+      originalImageSrc: dataUrl,
+      extendedImageSrc: null,
+      useExtendedImage: false,
+      backgroundExtension: undefined,
+      enabled: { ...p.enabled, image: true },
+    }))
     void analyzeImage(dataUrl)
       .then((hint) => {
         if (gen !== imageGenRef.current) return // a newer image is in flight
         setProject((p) => applyImageHint(p, hint))
       })
       .catch(() => {})
+    // Prepare a deterministic extended variant for simple uniform backgrounds.
+    // MVP: we keep the original active and store the processed candidate for
+    // diagnostics/future UI control instead of silently replacing the asset.
+    void extendImageBackground(dataUrl, { paddingPercent: 0.14, maxExpansionPercent: 0.45 })
+      .then((result) => {
+        if (gen !== imageGenRef.current) return
+        setProject((p) => ({
+          ...p,
+          extendedImageSrc: result.changed ? result.imageSrc : null,
+          backgroundExtension: {
+            changed: result.changed,
+            reason: result.reason,
+            originalSize: result.originalSize,
+            extendedSize: result.extendedSize,
+            subjectBounds: result.subjectBounds,
+            backgroundUniformity: result.backgroundUniformity,
+          },
+        }))
+      })
+      .catch(() => {})
   }
 
   function setLogo(dataUrl: string) {
     setProject((p) => ({ ...p, logoSrc: dataUrl, enabled: { ...p.enabled, logo: true } }))
+  }
+
+  function setUseExtendedImage(next: boolean) {
+    setProject((p) => ({ ...p, useExtendedImage: next && !!p.extendedImageSrc }))
   }
 
   const setFormatFocal = useCallback((key: FormatKey, focal: { x: number; y: number } | null) => {
@@ -786,6 +821,7 @@ export default function App() {
             onBrandChange={setBrand}
             onSetImage={setImage}
             onSetLogo={setLogo}
+            onToggleUseExtendedImage={setUseExtendedImage}
             onToggleFormat={toggleFormat}
             onSetFormatFocal={setFormatFocal}
             paletteAlternatives={paletteAlts}
@@ -971,9 +1007,10 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
 
 function sceneWithAssets(project: Project): Scene {
   const m = project.master
+  const imageSrc = getActiveImageSrc(project)
   return {
     ...m,
-    image: m.image ? { ...m.image, src: project.imageSrc } : m.image,
+    image: m.image ? { ...m.image, src: imageSrc } : m.image,
     logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
   }
 }

@@ -50,9 +50,13 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
       ref={ref}
       className={className}
       style={style}
+      width={W}
+      height={H}
       viewBox={`0 0 ${W} ${H}`}
       preserveAspectRatio="xMidYMid meet"
       xmlns="http://www.w3.org/2000/svg"
+      data-testid="format-preview-svg"
+      data-format-key={key}
     >
       <defs>
         <BackgroundDefs bg={scene.background} id={bgId} />
@@ -93,6 +97,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
 
       {scene.image ? (
         <ImageNode
+          role="image"
           block={scene.image}
           W={W}
           H={H}
@@ -105,11 +110,12 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
       {scene.scrim ? <ScrimNode scrim={scene.scrim} W={W} H={H} gradientId={scrimId} /> : null}
 
       {scene.badge ? (
-        <BadgeNode block={scene.badge} W={W} H={H} fontFamily={scene.badge.fontFamily ?? textFont} />
+        <BadgeNode role="badge" block={scene.badge} W={W} H={H} fontFamily={scene.badge.fontFamily ?? textFont} />
       ) : null}
 
       {scene.title ? (
         <TextNode
+          role="title"
           block={scene.title}
           W={W}
           H={H}
@@ -120,6 +126,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
 
       {scene.subtitle ? (
         <TextNode
+          role="subtitle"
           block={scene.subtitle}
           W={W}
           H={H}
@@ -128,10 +135,11 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
         />
       ) : null}
 
-      {scene.cta ? <CtaNode block={scene.cta} W={W} H={H} fontFamily={scene.cta.fontFamily ?? displayFont} /> : null}
+      {scene.cta ? <CtaNode role="cta" block={scene.cta} W={W} H={H} fontFamily={scene.cta.fontFamily ?? displayFont} /> : null}
 
       {scene.logo ? (
         <LogoNode
+          role="logo"
           block={scene.logo}
           W={W}
           H={H}
@@ -407,6 +415,7 @@ function cornerAnchor(
 // ---------------------------------------------------------------------------
 
 function ImageNode({
+  role,
   block,
   W,
   H,
@@ -414,6 +423,7 @@ function ImageNode({
   shadowId,
   imageAspectRatio,
 }: {
+  role: string
   block: ImageBlock
   W: number
   H: number
@@ -424,6 +434,7 @@ function ImageNode({
   if (!block.src) {
     return (
       <rect
+        data-role={role}
         x={pct(block.x, W)}
         y={pct(block.y, H)}
         width={pct(block.w, W)}
@@ -478,6 +489,7 @@ function ImageNode({
     // one dimension and would otherwise paint outside it.
     return (
       <image
+        data-role={role}
         href={block.src}
         crossOrigin="anonymous"
         x={bx + offsetX}
@@ -501,6 +513,7 @@ function ImageNode({
       : `${focalAlign(focalX, 'x')}${focalAlign(focalY, 'y')} slice`
   return (
     <image
+      data-role={role}
       href={block.src}
       crossOrigin="anonymous"
       x={pct(blockX, W)}
@@ -563,6 +576,7 @@ function ScrimNode({
 // ---------------------------------------------------------------------------
 
 function LogoNode({
+  role,
   block,
   W,
   H,
@@ -570,6 +584,7 @@ function LogoNode({
   initials,
   color,
 }: {
+  role: string
   block: LogoBlock
   W: number
   H: number
@@ -585,6 +600,7 @@ function LogoNode({
   if (block.src) {
     return (
       <image
+        data-role={role}
         href={block.src}
         crossOrigin="anonymous"
         x={x}
@@ -603,7 +619,7 @@ function LogoNode({
   const fontSize = Math.min(w, h) * 0.42
 
   return (
-    <g>
+    <g data-role={role}>
       <circle cx={cx} cy={cy} r={r} fill={color} />
       <text
         x={cx}
@@ -697,12 +713,14 @@ function splitLineIntoTokens(line: string, allTokens: TextToken[], cursor: numbe
 }
 
 function TextNode({
+  role,
   block,
   W,
   H,
   fontFamily,
   accent,
 }: {
+  role: string
   block: TextBlock
   W: number
   H: number
@@ -757,6 +775,7 @@ function TextNode({
   const allTokens = hasHighlight ? parseHighlightTokens(rawText) : null
   const textNode = (
     <text
+      data-role={role}
       x={anchorX}
       y={yTop + fontSizePx}
       fill={block.fill}
@@ -880,11 +899,13 @@ function cursorFor(lines: string[], allTokens: TextToken[], i: number): number {
 }
 
 function BadgeNode({
+  role,
   block,
   W,
   H,
   fontFamily,
 }: {
+  role: string
   block: TextBlock
   W: number
   H: number
@@ -911,7 +932,7 @@ function BadgeNode({
   const w = trackedTextWidth + padX * 2
   const h = fontSizePx + padY * 2
   return (
-    <g>
+    <g data-role={role}>
       <rect
         x={x}
         y={y}
@@ -941,11 +962,13 @@ function BadgeNode({
 }
 
 function CtaNode({
+  role,
   block,
   W,
   H,
   fontFamily,
 }: {
+  role: string
   block: TextBlock & { bg: string; rx: number }
   W: number
   H: number
@@ -962,7 +985,7 @@ function CtaNode({
   const fontSizePx = fitCtaFontSize(label, baseFontSizePx, Math.max(8, baseFontSizePx * 0.72), labelMaxWidth, block.weight, fontFamily)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
   return (
-    <g>
+    <g data-role={role}>
       <rect x={x} y={y} width={w} height={h} rx={rx} ry={rx} fill={block.bg} />
       <text
         x={x + w / 2}

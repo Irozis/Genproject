@@ -103,9 +103,25 @@ export function luminance(hex: string): number {
 export function contrastRatio(fg: string, bg: string): number {
   const l1 = luminance(fg)
   const l2 = luminance(bg)
+  return contrastRatioFromLuminance(l1, l2)
+}
+
+export function contrastRatioFromLuminance(fgLum: number, bgLum: number): number {
+  const l1 = clamp(fgLum, 0, 1)
+  const l2 = clamp(bgLum, 0, 1)
   const lighter = Math.max(l1, l2)
   const darker = Math.min(l1, l2)
   return (lighter + 0.05) / (darker + 0.05)
+}
+
+export function pickReadableInkForLuma(bgLum: number, light = '#FFFFFF', dark = '#0E1014'): string {
+  const lightContrast = contrastRatioFromLuminance(luminance(light), bgLum)
+  const darkContrast = contrastRatioFromLuminance(luminance(dark), bgLum)
+  return lightContrast >= darkContrast ? light : dark
+}
+
+export function pickReadableInk(bg: string, light = '#FFFFFF', dark = '#0E1014'): string {
+  return pickReadableInkForLuma(luminance(bg), light, dark)
 }
 
 export function wcagLevel(cr: number): 'AAA' | 'AA' | 'fail' {

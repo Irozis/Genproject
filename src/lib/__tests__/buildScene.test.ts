@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { buildScene } from '../buildScene'
+import { contrastRatio } from '../color'
 import { DEFAULT_MASTER, DEFAULT_BRAND_KIT, DEFAULT_ENABLED } from '../defaults'
 import { checkOverflow } from '../fixLayout'
 import { DEFAULT_COMPOSITION_BY_FORMAT, getFormat } from '../formats'
-import type { BlockKind, EnabledMap, Scene } from '../types'
+import type { AssetHint, BlockKind, EnabledMap, Scene } from '../types'
 
 const ALL_FORMATS = ['vk-square', 'vk-vertical', 'vk-landscape', 'instagram-story'] as const
 
@@ -203,5 +204,81 @@ describe('buildScene — locale', () => {
 describe('format defaults', () => {
   it('uses an image-bearing layout for Avito square by default', () => {
     expect(DEFAULT_COMPOSITION_BY_FORMAT['yandex-market-card']).toBe('split-right-image')
+  })
+})
+
+describe('buildScene readability guard', () => {
+  const imageHint = (luma: number, isDarkBackground = luma < 0.5): AssetHint => ({
+    width: 1200,
+    height: 1600,
+    aspectRatio: 0.75,
+    dominantColors: [isDarkBackground ? '#111827' : '#F8FAFC'],
+    isDarkBackground,
+    bottomBandBrightness: luma,
+    brightnessGrid: Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => luma)),
+  })
+
+  it('uses light title text for a dark image/background', () => {
+    const master: Scene = {
+      ...DEFAULT_MASTER,
+      background: { kind: 'solid', color: '#101214' },
+      title: DEFAULT_MASTER.title ? { ...DEFAULT_MASTER.title, fill: '#0E1014' } : undefined,
+      image: DEFAULT_MASTER.image ? { ...DEFAULT_MASTER.image, src: 'data:image/png;base64,dark' } : undefined,
+    }
+    const scene = buildScene(master, 'telegram-story', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: imageHint(0.12, true),
+      override: 'hero-overlay',
+    })
+
+    expect(scene.title?.fill).toBe('#FFFFFF')
+  })
+
+  it('keeps dark title text for a light image/background', () => {
+    const master: Scene = {
+      ...DEFAULT_MASTER,
+      background: { kind: 'solid', color: '#F8FAFC' },
+      title: DEFAULT_MASTER.title ? { ...DEFAULT_MASTER.title, fill: '#FFFFFF' } : undefined,
+      image: DEFAULT_MASTER.image ? { ...DEFAULT_MASTER.image, src: 'data:image/png;base64,light' } : undefined,
+    }
+    const scene = buildScene(master, 'yandex-market-card', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: imageHint(0.9, false),
+      override: 'split-right-image',
+    })
+
+    expect(scene.title?.fill).toBe('#0E1014')
+  })
+
+  it('keeps CTA text readable against the CTA background', () => {
+    const brand = {
+      ...DEFAULT_BRAND_KIT,
+      palette: { ...DEFAULT_BRAND_KIT.palette, accent: '#F2F4F7' },
+    }
+    const scene = buildScene(DEFAULT_MASTER, 'yandex-market-card', brand, DEFAULT_ENABLED)
+
+    expect(scene.cta).toBeDefined()
+    expect(contrastRatio(scene.cta!.fill, scene.cta!.bg)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('generates focused export formats without throwing', () => {
+    const formats = [
+      'telegram-story',
+      'instagram-story',
+      'vk-stories',
+      'avito-fullscreen',
+      'yandex-market-card',
+      'avito-listing',
+    ] as const
+    const master: Scene = {
+      ...DEFAULT_MASTER,
+      image: DEFAULT_MASTER.image ? { ...DEFAULT_MASTER.image, src: 'data:image/png;base64,export' } : undefined,
+    }
+
+    for (const format of formats) {
+      const scene = buildScene(master, format, DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+        assetHint: imageHint(0.18, true),
+      })
+      expect(scene.title).toBeDefined()
+      expect(scene.cta).toBeDefined()
+    }
   })
 })

@@ -1,0 +1,112 @@
+[
+  {
+    "id": "case-01-urban-cafe",
+    "title": "Fresh breakfast set before work",
+    "subtitle": "Coffee, croissant and fruit bowl with pickup in 10 minutes.",
+    "cta": "Order now",
+    "badge": "Morning deal",
+    "brand": {
+      "name": "North Bean",
+      "colors": {
+        "ink": "#1F2933",
+        "inkMuted": "#52606D",
+        "surface": "#FFF7ED",
+        "accent": "#E76F51",
+        "accentSoft": "#FAD4C8"
+      }
+    },
+    "image": {
+      "type": "food",
+      "placeholder": "warm cafe tabletop with breakfast products"
+    },
+    "notes": "Fast-service food campaign focused on morning conversion."
+  },
+  {
+    "id": "case-02-fitness-app",
+    "title": "Personal training plan in your pocket",
+    "subtitle": "Adaptive workouts, nutrition reminders and weekly progress tracking.",
+    "cta": "Start free",
+    "badge": "7 days",
+    "brand": {
+      "name": "PulseWay",
+      "colors": {
+        "ink": "#0B1220",
+        "inkMuted": "#475569",
+        "surface": "#F8FAFC",
+        "accent": "#14B8A6",
+        "accentSoft": "#CCFBF1"
+      }
+    },
+    "image": {
+      "type": "lifestyle",
+      "placeholder": "athlete stretching near city window"
+    },
+    "notes": "Digital subscription campaign with benefit-heavy copy."
+  },
+  {
+    "id": "case-03-home-decor",
+    "title": "Soft light for a calmer living room",
+    "subtitle": "Ceramic lamps and textured shades from the new home collection.",
+    "cta": "View collection",
+    "badge": "New season",
+    "brand": {
+      "name": "Luma Home",
+      "colors": {
+        "ink": "#2F241D",
+        "inkMuted": "#6B5B4F",
+        "surface": "#FBF5EF",
+        "accent": "#B7791F",
+        "accentSoft": "#F3D9A4"
+      }
+    },
+    "image": {
+      "type": "interior",
+      "placeholder": "minimal living room with ceramic lamp"
+    },
+    "notes": "Marketplace and social campaign for a home decor launch."
+  },
+  {
+    "id": "case-04-online-course",
+    "title": "Learn product analytics with real dashboards",
+    "subtitle": "Four-week cohort, live feedback and portfolio-ready case studies.",
+    "cta": "Reserve seat",
+    "badge": "Cohort starts",
+    "brand": {
+      "name": "Metric School",
+      "colors": {
+        "ink": "#111827",
+        "inkMuted": "#4B5563",
+        "surface": "#EFF6FF",
+        "accent": "#2563EB",
+        "accentSoft": "#BFDBFE"
+      }
+    },
+    "image": {
+      "type": "education",
+      "placeholder": "dashboard charts on laptop in classroom"
+    },
+    "notes": "Lead-generation campaign with longer informational text."
+  },
+  {
+    "id": "case-05-skincare",
+    "title": "Hydration serum for long winter days",
+    "subtitle": "Dermatologist-tested formula with ceramides and cloudberry extract.",
+    "cta": "Shop serum",
+    "badge": "Best seller",
+    "brand": {
+      "name": "Arctic Glow",
+      "colors": {
+        "ink": "#1E293B",
+        "inkMuted": "#64748B",
+        "surface": "#F8FAFC",
+        "accent": "#DB2777",
+        "accentSoft": "#FBCFE8"
+      }
+    },
+    "image": {
+      "type": "beauty",
+      "placeholder": "cosmetic serum bottle on frosted glass"
+    },
+    "notes": "Beauty product campaign intended to stress marketplace-card readability."
+  }
+]

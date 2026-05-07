@@ -2,7 +2,7 @@
 // from (master scene + format key + brand kit + enabled map).
 // No randomness. No side effects.
 
-import { contrastRatio, luminance } from './color'
+import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkForLuma } from './color'
 import { LAYOUTS, chooseModel, profile } from './composition'
 import { getFormat } from './formats'
 import { applyLayoutDensity } from './layoutDensity'
@@ -99,7 +99,11 @@ export function buildScene(
   const clamped = clampToFrame(localized, rules.safeZone)
 
   // 8. apply explicit per-format geometry overrides copied from another format.
-  return applyBlockOverrides(clamped, options.blockOverrides)
+  const overridden = applyBlockOverrides(clamped, options.blockOverrides)
+
+  // 9. final readability guard. This is intentionally small and deterministic:
+  // layout stays untouched; only text fills and existing scrim opacity can move.
+  return ensureReadableScene(overridden, rules, options.assetHint ?? null)
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {
@@ -211,7 +215,7 @@ function applyBrandKit(master: Scene, brand: BrandKit): Scene {
     const tone = TONE_DEFAULTS[brand.toneOfVoice]
     out.title = {
       ...master.title,
-      fill: master.title.fill ?? ink,
+      fill: ink,
       weight: master.title.weight ?? tone.titleWeight,
       letterSpacing: master.title.letterSpacing ?? tone.letterSpacing,
       maxLines: master.title.maxLines ?? tone.maxLines,
@@ -240,6 +244,110 @@ function applyBrandKit(master: Scene, brand: BrandKit): Scene {
   if (master.image) out.image = { ...master.image }
 
   return out
+}
+
+function ensureReadableScene(scene: Scene, rules: FormatRuleSet, hint: AssetHint | null): Scene {
+  const out: Scene = { ...scene }
+  const cta = scene.cta
+  if (cta) {
+    const ctaFill = contrastRatio(cta.fill, cta.bg) >= 4.5
+      ? cta.fill
+      : pickReadableInkForLuma(luminance(cta.bg))
+    out.cta = { ...cta, fill: ctaFill }
+  }
+
+  const needsScrimGuard = Boolean(scene.scrim && scene.image?.src && isOverlayLikeFormat(rules))
+  let strongestTextContrast = Number.POSITIVE_INFINITY
+
+  if (scene.title) {
+    const bgLum = estimatedBlockBackgroundLuminance(scene, scene.title, hint, false)
+    strongestTextContrast = Math.min(strongestTextContrast, contrastRatioFromLuminance(luminance(scene.title.fill), bgLum))
+    out.title = {
+      ...scene.title,
+      fill: readableTextFill(scene.title.fill, bgLum, false),
+    }
+  }
+
+  if (scene.subtitle) {
+    const bgLum = estimatedBlockBackgroundLuminance(scene, scene.subtitle, hint, true)
+    strongestTextContrast = Math.min(strongestTextContrast, contrastRatioFromLuminance(luminance(scene.subtitle.fill), bgLum))
+    out.subtitle = {
+      ...scene.subtitle,
+      fill: readableTextFill(scene.subtitle.fill, bgLum, true),
+    }
+  }
+
+  if (needsScrimGuard && scene.scrim && strongestTextContrast < 4.5) {
+    out.scrim = {
+      ...scene.scrim,
+      opacity: Math.min(0.92, Math.max(scene.scrim.opacity, 0.78)),
+    }
+  }
+
+  return out
+}
+
+function readableTextFill(current: string, bgLum: number, muted: boolean): string {
+  if (contrastRatioFromLuminance(luminance(current), bgLum) >= 4.5) return current
+  if (muted) return bgLum > 0.5 ? '#2A2D35' : '#E6E8EC'
+  return pickReadableInkForLuma(bgLum)
+}
+
+function estimatedBlockBackgroundLuminance(
+  scene: Scene,
+  block: { x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number },
+  hint: AssetHint | null,
+  muted: boolean,
+): number {
+  const fallback = hint ? (hint.isDarkBackground ? 0.18 : 0.82) : backgroundLuminance(scene.background)
+  const textH = block.h ?? ((block.fontSize ?? 4) * (block.lineHeight ?? 1.2) * (block.maxLines ?? 1))
+  let bgLum = backgroundLuminance(scene.background)
+  if (scene.image?.src && intersects(block.x, block.y, block.w, textH, scene.image.x, scene.image.y, scene.image.w, scene.image.h ?? 100)) {
+    bgLum = regionBrightness(hint?.brightnessGrid, block.x, block.y, block.w, textH, fallback)
+  }
+  if (scene.scrim && intersects(block.x, block.y, block.w, textH, 0, scene.scrim.y, 100, scene.scrim.h)) {
+    const scrimLum = luminance(scene.scrim.color)
+    const opacity = Math.min(1, Math.max(0, scene.scrim.opacity * (muted ? 0.72 : 0.82)))
+    bgLum = bgLum * (1 - opacity) + scrimLum * opacity
+  }
+  return Math.min(1, Math.max(0, bgLum))
+}
+
+function isOverlayLikeFormat(rules: FormatRuleSet): boolean {
+  return rules.aspectRatio < 0.9 || rules.key.includes('story') || rules.key.includes('fullscreen')
+}
+
+function regionBrightness(
+  grid: number[][] | undefined,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  fallback: number,
+): number {
+  const firstRow = grid?.[0]
+  if (!grid || grid.length === 0 || !firstRow || firstRow.length === 0) return fallback
+  const rows = grid.length
+  const cols = firstRow.length
+  const x0 = Math.max(0, Math.floor((x / 100) * cols))
+  const x1 = Math.min(cols - 1, Math.floor(((x + w) / 100) * cols))
+  const y0 = Math.max(0, Math.floor((y / 100) * rows))
+  const y1 = Math.min(rows - 1, Math.floor(((y + h) / 100) * rows))
+  let sum = 0
+  let count = 0
+  for (let row = y0; row <= y1; row += 1) {
+    for (let col = x0; col <= x1; col += 1) {
+      const value = grid[row]?.[col]
+      if (typeof value !== 'number' || !Number.isFinite(value)) continue
+      sum += value
+      count += 1
+    }
+  }
+  return count > 0 ? sum / count : fallback
+}
+
+function intersects(ax: number, ay: number, aw: number, ah: number, bx: number, by: number, bw: number, bh: number): boolean {
+  return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by
 }
 
 // Mean luminance of the background. Gradient → average of stops; solid →
