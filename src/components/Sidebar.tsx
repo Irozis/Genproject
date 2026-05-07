@@ -6,7 +6,7 @@ import { SidebarTabs, type SidebarTab } from './SidebarTabs'
 import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
 import { densityLabel } from '../lib/layoutDensity'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
-import type { BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, LayoutDensity, Project, Scene } from '../lib/types'
+import type { BackgroundExtensionMetadata, BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, LayoutDensity, Project, Scene } from '../lib/types'
 
 const ELEMENT_ROWS: { kind: BlockKind; label: string }[] = [
   { kind: 'title', label: 'Заголовок' },
@@ -80,7 +80,13 @@ export function Sidebar({
   const [customGutter, setCustomGutter] = useState('4')
   const selectedLabel = selectedKind ? labelForKind(selectedKind) : null
   const selectedFormatLabel = editingFormatKey ? getFormat(editingFormatKey, project.customFormats).label : null
-  const previewImageSrc = project.useExtendedImage && project.extendedImageSrc ? project.extendedImageSrc : project.imageSrc
+  const formatExtendedImageSrc = editingFormatKey ? project.extendedImageByFormat?.[editingFormatKey]?.imageSrc : null
+  const previewImageSrc = project.useExtendedImage && formatExtendedImageSrc
+    ? formatExtendedImageSrc
+    : project.useExtendedImage && project.extendedImageSrc
+      ? project.extendedImageSrc
+      : project.imageSrc
+  const hasPreparedExtendedImage = hasAnyFormatExtension(project) || !!project.extendedImageSrc
 
   return (
     <aside className="sidebar">
@@ -334,14 +340,14 @@ export function Sidebar({
                   <label className="format-row" style={{ marginTop: 8 }}>
                     <input
                       type="checkbox"
-                      checked={!!project.useExtendedImage && !!project.extendedImageSrc}
-                      disabled={!project.extendedImageSrc}
+                      checked={!!project.useExtendedImage && hasPreparedExtendedImage}
+                      disabled={project.backgroundExtensionStatus !== 'done' || !hasPreparedExtendedImage}
                       onChange={(e) => onToggleUseExtendedImage(e.target.checked)}
                     />
                     <span className="format-row__label">Сохранять объект целиком</span>
                   </label>
                   <div style={{ fontSize: 12, opacity: 0.72, marginTop: 6 }}>
-                    {backgroundExtensionStatus(project)}
+                    {backgroundExtensionStatus(project, editingFormatKey)}
                   </div>
                   <div className="focal-label">Фокус master</div>
                   <FocalGrid
@@ -389,12 +395,78 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   return <div className="section-header">{children}</div>
 }
 
-function backgroundExtensionStatus(project: Project): string {
-  const result = project.backgroundExtension
-  if (!result) return 'Расширение фона ещё не рассчитано'
-  if (result.changed && project.extendedImageSrc) return 'Фон расширен'
-  if (result.reason === 'no-extension-needed') return 'Расширение не требуется'
-  return `Расширение не применено: ${result.reason}`
+function backgroundExtensionStatus(project: Project, formatKey?: FormatKey | null): string {
+  const formatResult = formatKey ? project.backgroundExtensionByFormat?.[formatKey] : undefined
+  const result = formatResult ?? project.backgroundExtension
+  const status = project.backgroundExtensionStatus ?? 'idle'
+  if (status === 'idle') return 'Расширение фона не запускалось'
+  if (status === 'calculating') return `Расширение рассчитывается для ${project.selectedFormats.length} форматов`
+  if (status === 'failed') return 'Расширение не рассчитано: ошибка анализа'
+  if (formatKey && formatResult) return backgroundExtensionResultStatus(formatResult, project, true)
+  if (status === 'done' && project.backgroundExtensionByFormat && Object.keys(project.backgroundExtensionByFormat).length > 0) {
+    return backgroundExtensionAggregateStatus(project)
+  }
+  return result ? backgroundExtensionResultStatus(result, project, false) : 'Расширение не рассчитано: ошибка анализа'
+}
+
+function backgroundExtensionResultStatus(
+  result: BackgroundExtensionMetadata,
+  project: Project,
+  isCurrentFormat: boolean,
+): string {
+  const prefix = isCurrentFormat ? 'Текущий формат: ' : ''
+  const hasImage = result.targetFormatKey
+    ? !!project.extendedImageByFormat?.[result.targetFormatKey]?.imageSrc
+    : !!project.extendedImageSrc
+  if (result.changed && hasImage) {
+    return result.targetFormatKey
+      ? `${prefix}Фон расширен под формат ${formatLabel(result.targetFormatKey, project)}`
+      : `${prefix}Фон расширен`
+  }
+  if (result.reason === 'no-extension-needed') return `${prefix}Расширение не требуется`
+  if (result.reason === 'background-not-uniform') return `${prefix}Расширение не применено: фон неоднородный`
+  if (result.reason === 'object-not-detected') return `${prefix}Объект не найден`
+  if (result.reason === 'extension-would-over-shrink-subject') return `${prefix}Расширение не применено: объект стал бы слишком маленьким`
+  if (result.reason === 'extension-exceeds-max-expansion') return `${prefix}Расширение не применено: требуется слишком сильное расширение`
+  if (result.reason === 'extension-would-distort-image' || result.aspectRatioPreserved === false) {
+    return `${prefix}Расширение не применено: могло бы исказить изображение`
+  }
+  return `${prefix}Расширение не применено: ${result.reason}`
+}
+
+function backgroundExtensionAggregateStatus(project: Project): string {
+  const entries = project.selectedFormats
+    .map((key) => project.backgroundExtensionByFormat?.[key])
+    .filter((entry): entry is BackgroundExtensionMetadata => !!entry)
+  if (entries.length === 0) return 'Расширение фона ещё не рассчитано'
+  const changed = entries.filter((entry) => entry.changed).length
+  const reasons = countReasons(entries.filter((entry) => !entry.changed).map((entry) => entry.reason))
+  const parts = [`Расширение подготовлено: ${changed} из ${project.selectedFormats.length} форматов`]
+  const overShrink = reasons.get('extension-would-over-shrink-subject') ?? 0
+  const nonUniform = reasons.get('background-not-uniform') ?? 0
+  const tooLarge = reasons.get('extension-exceeds-max-expansion') ?? 0
+  if (overShrink > 0) parts.push(`не применено для ${overShrink}: объект стал бы слишком маленьким`)
+  if (nonUniform > 0) parts.push(`фон неоднородный для ${nonUniform}`)
+  if (tooLarge > 0) parts.push(`слишком сильное расширение для ${tooLarge}`)
+  return parts.join('. ')
+}
+
+function countReasons(reasons: string[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const reason of reasons) counts.set(reason, (counts.get(reason) ?? 0) + 1)
+  return counts
+}
+
+function hasAnyFormatExtension(project: Project): boolean {
+  return Object.values(project.extendedImageByFormat ?? {}).some((entry) => entry.metadata.changed && !!entry.imageSrc)
+}
+
+function formatLabel(formatKey: string, project: Project): string {
+  try {
+    return getFormat(formatKey as FormatKey, project.customFormats).label
+  } catch {
+    return formatKey
+  }
 }
 
 function EditContextCard({

@@ -150,6 +150,49 @@ describe('projectSchema — round trip', () => {
     const result = projectSchema.safeParse(JSON.parse(JSON.stringify(withCustom)))
     expect(result.success).toBe(true)
   })
+
+  it('preserves per-format background extension entries', () => {
+    const p: Project = {
+      ...newProject('per-format-bg'),
+      useExtendedImage: true,
+      extendedImageByFormat: {
+        'vk-square': {
+          imageSrc: 'data:image/png;base64,extended-square',
+          metadata: {
+            changed: true,
+            reason: 'extended',
+            originalSize: { width: 100, height: 100 },
+            extendedSize: { width: 140, height: 140 },
+            targetFormatKey: 'vk-square',
+            targetAspectRatioRaw: 1,
+            targetAspectRatioUsed: 1,
+            aspectRatioPreserved: true,
+            drawScaleX: 1,
+            drawScaleY: 1,
+            drawOffsetX: 20,
+            drawOffsetY: 20,
+            backgroundUniformity: 0.95,
+          },
+        },
+      },
+      backgroundExtensionByFormat: {
+        'vk-square': {
+          changed: true,
+          reason: 'extended',
+          originalSize: { width: 100, height: 100 },
+          extendedSize: { width: 140, height: 140 },
+          targetFormatKey: 'vk-square',
+          backgroundUniformity: 0.95,
+        },
+      },
+    }
+    const result = projectSchema.safeParse(JSON.parse(JSON.stringify(p)))
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.extendedImageByFormat?.['vk-square']?.imageSrc).toBe('data:image/png;base64,extended-square')
+      expect(result.data.backgroundExtensionByFormat?.['vk-square']?.changed).toBe(true)
+    }
+  })
 })
 
 describe('importJson', () => {

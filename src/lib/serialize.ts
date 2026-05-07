@@ -232,8 +232,27 @@ const backgroundExtensionSchema = z.object({
   reason: z.string(),
   originalSize: z.object({ width: z.number(), height: z.number() }),
   extendedSize: z.object({ width: z.number(), height: z.number() }),
+  objectBounds: z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }).optional(),
   subjectBounds: z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }).optional(),
+  targetAspectRatio: z.number().optional(),
+  targetAspectRatioRaw: z.number().optional(),
+  targetAspectRatioUsed: z.number().optional(),
+  subjectCoverageBefore: z.object({ width: z.number(), height: z.number() }).optional(),
+  subjectCoverageAfter: z.object({ width: z.number(), height: z.number() }).optional(),
+  maxExpansionApplied: z.boolean().optional(),
+  originalAspectRatio: z.number().optional(),
+  drawnAspectRatio: z.number().optional(),
+  aspectRatioPreserved: z.boolean().optional(),
+  drawScaleX: z.number().optional(),
+  drawScaleY: z.number().optional(),
+  drawOffsetX: z.number().optional(),
+  drawOffsetY: z.number().optional(),
+  targetFormatKey: z.string().optional(),
   backgroundUniformity: z.number(),
+})
+const backgroundExtensionByFormatEntrySchema = z.object({
+  imageSrc: z.string(),
+  metadata: backgroundExtensionSchema,
 })
 
 const formatKeySchema = z.enum([
@@ -295,7 +314,10 @@ export const projectSchema = z.object({
   originalImageSrc: z.string().nullable().optional(),
   extendedImageSrc: z.string().nullable().optional(),
   useExtendedImage: z.boolean().optional(),
+  backgroundExtensionStatus: z.enum(['idle', 'calculating', 'done', 'failed']).optional(),
   backgroundExtension: backgroundExtensionSchema.optional(),
+  extendedImageByFormat: z.record(z.string(), backgroundExtensionByFormatEntrySchema).optional(),
+  backgroundExtensionByFormat: z.record(z.string(), backgroundExtensionSchema).optional(),
   logoSrc: z.string().nullable(),
   selectedFormats: z.array(anyFormatKeySchema),
   formatOverrides: z.record(anyFormatKeySchema, compositionModelSchema).optional(),
@@ -356,6 +378,9 @@ export function assertPortableProjectAssets(project: Project): void {
   if (project.imageSrc?.startsWith('blob:')) bad.push('imageSrc')
   if (project.originalImageSrc?.startsWith('blob:')) bad.push('originalImageSrc')
   if (project.extendedImageSrc?.startsWith('blob:')) bad.push('extendedImageSrc')
+  for (const [formatKey, entry] of Object.entries(project.extendedImageByFormat ?? {})) {
+    if (entry.imageSrc.startsWith('blob:')) bad.push(`extendedImageByFormat.${formatKey}.imageSrc`)
+  }
   if (project.logoSrc?.startsWith('blob:')) bad.push('logoSrc')
   if (project.master.image?.src?.startsWith('blob:')) bad.push('master.image.src')
   if (project.master.logo?.src?.startsWith('blob:')) bad.push('master.logo.src')

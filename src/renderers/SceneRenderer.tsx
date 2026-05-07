@@ -496,7 +496,7 @@ function ImageNode({
         y={by + offsetY}
         width={dispW}
         height={dispH}
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         clipPath={`url(#${clipId})`}
         filter={block.rx > 0 ? `url(#${shadowId})` : undefined}
       />

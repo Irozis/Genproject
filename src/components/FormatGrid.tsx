@@ -16,6 +16,7 @@ import type {
 type Props = {
   formats: FormatKey[]
   master: Scene
+  imageSrcByFormat?: Partial<Record<FormatKey, string | null>>
   brandKit: BrandKit
   enabled: EnabledMap
   /** Per-format composition override (template preferredModels merged with user overrides). */
@@ -54,6 +55,7 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
   {
     formats,
     master,
+    imageSrcByFormat,
     brandKit,
     enabled,
     overrides,
@@ -102,39 +104,45 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
       className="format-grid"
       style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))' }}
     >
-      {formats.map((k) => (
-        <FormatPreview
-          key={k}
-          ref={(el) => {
-            previewRefs.current[k] = el
-          }}
-          formatKey={k}
-          master={master}
-          brandKit={brandKit}
-          enabled={enabled}
-          override={overrides?.[k]}
-          blockOverride={blockOverrides?.[k]}
-          density={formatDensities?.[k] ?? layoutDensity}
-          focal={imageFocals?.[k]}
-          assetHint={assetHint}
-          isCustom={!!blockOverrides?.[k]}
-          onEnableCustom={onEnableCustom}
-          onDisableCustom={onDisableCustom}
-          onPickElement={(kind) => onPickElement(kind, k)}
-          onFix={onFix}
-          onSetFocal={onSetFocal}
-          onSetBlockText={onSetBlockText ? (kind, text) => onSetBlockText(k, kind, text) : undefined}
-          onCopyLayout={onCopyLayout}
-          onPasteLayout={layoutClipboard ? () => onPasteLayout?.(k) : undefined}
-          canPaste={!!layoutClipboard}
-          locale={locale}
-          customFormats={customFormats}
-          onCompositionChange={
-            onFormatComposition ? (model) => onFormatComposition(k, model) : undefined
-          }
-          onOpenLayoutEditor={onOpenLayoutEditor}
-        />
-      ))}
+      {formats.map((k) => {
+        const imageSrc = imageSrcByFormat?.[k]
+        const previewMaster = imageSrc !== undefined && master.image
+          ? { ...master, image: { ...master.image, src: imageSrc } }
+          : master
+        return (
+          <FormatPreview
+            key={k}
+            ref={(el) => {
+              previewRefs.current[k] = el
+            }}
+            formatKey={k}
+            master={previewMaster}
+            brandKit={brandKit}
+            enabled={enabled}
+            override={overrides?.[k]}
+            blockOverride={blockOverrides?.[k]}
+            density={formatDensities?.[k] ?? layoutDensity}
+            focal={imageFocals?.[k]}
+            assetHint={assetHint}
+            isCustom={!!blockOverrides?.[k]}
+            onEnableCustom={onEnableCustom}
+            onDisableCustom={onDisableCustom}
+            onPickElement={(kind) => onPickElement(kind, k)}
+            onFix={onFix}
+            onSetFocal={onSetFocal}
+            onSetBlockText={onSetBlockText ? (kind, text) => onSetBlockText(k, kind, text) : undefined}
+            onCopyLayout={onCopyLayout}
+            onPasteLayout={layoutClipboard ? () => onPasteLayout?.(k) : undefined}
+            canPaste={!!layoutClipboard}
+            locale={locale}
+            customFormats={customFormats}
+            onCompositionChange={
+              onFormatComposition ? (model) => onFormatComposition(k, model) : undefined
+            }
+            onOpenLayoutEditor={onOpenLayoutEditor}
+          />
+        )
+      })}
     </div>
   )
 })

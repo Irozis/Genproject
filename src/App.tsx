@@ -22,7 +22,7 @@ import { getFormat } from './lib/formats'
 import { applyLayoutDensity } from './lib/layoutDensity'
 import { useHistory } from './lib/useHistory'
 import { applyImageHint } from './lib/applyImageHint'
-import { extendImageBackground } from './lib/imageBackgroundExtension'
+import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
 import { getActiveImageSrc } from './lib/projectImages'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
@@ -44,7 +44,7 @@ import type {
 export default function App() {
   const [view, setView] = useState<View>('onboarding')
   const [project, setProject, history] = useHistory<Project>(
-    () => loadProject() ?? newProject(),
+    () => normalizeBackgroundExtensionState(loadProject() ?? newProject()),
     350,
   )
   const [selectedKind, setSelectedKind] = useState<BlockKind | null>(null)
@@ -66,6 +66,7 @@ export default function App() {
   // before the previous analysis resolves — we drop any hint that isn't from the
   // most recent upload so a stale palette can't clobber the current one.
   const imageGenRef = useRef(0)
+  const bgAutoStartedForRef = useRef<string | null>(null)
   const toastIdRef = useRef(0)
 
   const dismissToast = useCallback((id: number) => {
@@ -86,6 +87,30 @@ export default function App() {
     const saved = loadProject()
     if (saved) setView('editor')
   }, [])
+
+  useEffect(() => {
+    if (!project.imageSrc) return
+    if (project.backgroundExtensionStatus === 'calculating') return
+    const missingFormats = project.selectedFormats.filter((key) => !project.backgroundExtensionByFormat?.[key])
+    if (missingFormats.length === 0) return
+    const batchKey = `${project.imageSrc}:${missingFormats.join('|')}`
+    if (bgAutoStartedForRef.current === batchKey) return
+    bgAutoStartedForRef.current = batchKey
+    const gen = ++imageGenRef.current
+    setProject((p) => ({
+      ...p,
+      originalImageSrc: p.originalImageSrc ?? p.imageSrc,
+      backgroundExtensionStatus: 'calculating',
+    }))
+    prepareBackgroundExtensionsForFormats(project.imageSrc, gen, project, missingFormats)
+  }, [
+    project.backgroundExtensionByFormat,
+    project.backgroundExtensionStatus,
+    project.customFormats,
+    project.imageSrc,
+    project.selectedFormats,
+    setProject,
+  ])
 
   // Theme propagation: apply data-theme to <html> and persist user choice.
   // The editor chrome uses [data-theme="dark"] overrides; rendered scenes
@@ -178,12 +203,16 @@ export default function App() {
   // sync image/logo into master scene
   const masterWithAssets = useMemo<Scene>(() => {
     const m = project.master
-    const imageSrc = getActiveImageSrc(project)
+    const imageSrc = selectedFormat ? getActiveImageSrc(project, selectedFormat) : getActiveImageSrc(project)
     return {
       ...m,
       image: m.image ? { ...m.image, src: imageSrc } : m.image,
       logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
     }
+  }, [project, selectedFormat])
+
+  const imageSrcByFormat = useMemo<Partial<Record<FormatKey, string | null>>>(() => {
+    return Object.fromEntries(project.selectedFormats.map((key) => [key, getActiveImageSrc(project, key)])) as Partial<Record<FormatKey, string | null>>
   }, [project])
 
   const selectedFormatScene = useMemo<Scene | null>(() => {
@@ -338,7 +367,10 @@ export default function App() {
       originalImageSrc: dataUrl,
       extendedImageSrc: null,
       useExtendedImage: false,
+      backgroundExtensionStatus: 'calculating',
       backgroundExtension: undefined,
+      extendedImageByFormat: {},
+      backgroundExtensionByFormat: {},
       enabled: { ...p.enabled, image: true },
     }))
     void analyzeImage(dataUrl)
@@ -347,26 +379,91 @@ export default function App() {
         setProject((p) => applyImageHint(p, hint))
       })
       .catch(() => {})
-    // Prepare a deterministic extended variant for simple uniform backgrounds.
-    // MVP: we keep the original active and store the processed candidate for
-    // diagnostics/future UI control instead of silently replacing the asset.
-    void extendImageBackground(dataUrl, { paddingPercent: 0.14, maxExpansionPercent: 0.45 })
-      .then((result) => {
-        if (gen !== imageGenRef.current) return
-        setProject((p) => ({
-          ...p,
-          extendedImageSrc: result.changed ? result.imageSrc : null,
-          backgroundExtension: {
-            changed: result.changed,
-            reason: result.reason,
-            originalSize: result.originalSize,
-            extendedSize: result.extendedSize,
-            subjectBounds: result.subjectBounds,
-            backgroundUniformity: result.backgroundUniformity,
+    prepareBackgroundExtensionsForFormats(dataUrl, gen, project, project.selectedFormats)
+  }
+
+  function prepareBackgroundExtensionsForFormats(
+    dataUrl: string,
+    gen: number,
+    projectSnapshot: Project,
+    formatKeys: FormatKey[],
+  ) {
+    const uniqueKeys = [...new Set(formatKeys)]
+    console.debug('[bg-extension] start', { gen, formats: uniqueKeys })
+    void Promise.all(uniqueKeys.map(async (formatKey) => {
+      try {
+        const rules = getFormat(formatKey, projectSnapshot.customFormats)
+        const result = await extendImageBackgroundForFormat({
+          imageSrc: dataUrl,
+          targetWidth: rules.width,
+          targetHeight: rules.height,
+          targetFormatKey: formatKey,
+          paddingRatio: 0.08,
+          maxExpansionPercent: 0.5,
+          maxWidthExpansionPercent: 0.5,
+          maxHeightExpansionPercent: 0.5,
+          minSubjectWidthCoverage: 0.25,
+          minSubjectHeightCoverage: 0.45,
+        })
+        return { formatKey, result }
+      } catch (error) {
+        console.error('[bg-extension] failed', { formatKey, error })
+        let aspectRatio = 1
+        try {
+          aspectRatio = getFormat(formatKey, projectSnapshot.customFormats).aspectRatio
+        } catch {
+          aspectRatio = 1
+        }
+        return {
+          formatKey,
+          result: {
+            imageSrc: dataUrl,
+            changed: false,
+            reason: 'calculation-failed',
+            originalSize: { width: 0, height: 0 },
+            extendedSize: { width: 0, height: 0 },
+            targetAspectRatio: aspectRatio,
+            targetAspectRatioRaw: aspectRatio,
+            targetAspectRatioUsed: Math.max(0.75, Math.min(1.8, aspectRatio)),
+            targetFormatKey: formatKey,
+            backgroundUniformity: 0,
+            aspectRatioPreserved: true,
+            drawScaleX: 1,
+            drawScaleY: 1,
+            drawOffsetX: 0,
+            drawOffsetY: 0,
           },
-        }))
+        } as const
+      }
+    }))
+      .then((entries) => {
+        if (gen !== imageGenRef.current) return
+        console.debug('[bg-extension] done', entries)
+        setProject((p) => {
+          const extendedImageByFormat = { ...(p.extendedImageByFormat ?? {}) }
+          const backgroundExtensionByFormat = { ...(p.backgroundExtensionByFormat ?? {}) }
+          let firstChanged: typeof entries[number]['result'] | null = null
+          for (const { formatKey, result } of entries) {
+            backgroundExtensionByFormat[formatKey] = { ...result }
+            if (result.changed) {
+              extendedImageByFormat[formatKey] = { imageSrc: result.imageSrc, metadata: { ...result } }
+              firstChanged ??= result
+            } else {
+              delete extendedImageByFormat[formatKey]
+            }
+          }
+          return {
+            ...p,
+            extendedImageByFormat,
+            backgroundExtensionByFormat,
+            extendedImageSrc: firstChanged?.imageSrc ?? p.extendedImageSrc ?? null,
+            backgroundExtension: firstChanged ? { ...firstChanged } : entries[0] ? { ...entries[0].result } : p.backgroundExtension,
+            backgroundExtensionStatus: entries.some(({ result }) => result.reason === 'calculation-failed' || result.reason === 'load-failed' || result.reason === 'canvas-unavailable')
+              ? 'failed'
+              : 'done',
+          }
+        })
       })
-      .catch(() => {})
   }
 
   function setLogo(dataUrl: string) {
@@ -374,7 +471,7 @@ export default function App() {
   }
 
   function setUseExtendedImage(next: boolean) {
-    setProject((p) => ({ ...p, useExtendedImage: next && !!p.extendedImageSrc }))
+    setProject((p) => ({ ...p, useExtendedImage: next }))
   }
 
   const setFormatFocal = useCallback((key: FormatKey, focal: { x: number; y: number } | null) => {
@@ -722,10 +819,23 @@ export default function App() {
 
   async function handleImportJson(file: File) {
     try {
-      const imported = await importJson(file)
+      const imported = normalizeBackgroundExtensionState(await importJson(file))
       // Replacing the entire project from a file shouldn't be a tiny undo
       // step — reset history so Ctrl+Z doesn't surface a previous project.
-      history.reset(imported)
+      const hasImportedBackgroundExtension = !!imported.backgroundExtension || Object.keys(imported.backgroundExtensionByFormat ?? {}).length > 0
+      if (imported.imageSrc && !hasImportedBackgroundExtension) {
+        const gen = ++imageGenRef.current
+        history.reset({
+          ...imported,
+          originalImageSrc: imported.originalImageSrc ?? imported.imageSrc,
+          extendedImageSrc: null,
+          useExtendedImage: false,
+          backgroundExtensionStatus: 'calculating',
+        })
+        prepareBackgroundExtensionsForFormats(imported.imageSrc, gen, imported, imported.selectedFormats)
+      } else {
+        history.reset(imported)
+      }
       setView('editor')
     } catch (e) {
       pushToast(e instanceof Error ? e.message : 'Не удалось импортировать проект.')
@@ -864,6 +974,7 @@ export default function App() {
               ref={gridRef}
               formats={project.selectedFormats}
               master={masterWithAssets}
+              imageSrcByFormat={imageSrcByFormat}
               brandKit={project.brandKit}
               enabled={project.enabled}
               overrides={project.formatOverrides}
@@ -982,7 +1093,7 @@ function ToastStack({ toasts, onDismiss }: { toasts: ToastEntry[]; onDismiss: (i
 
 function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
   const focal = project.imageFocals?.[formatKey]
-  const master = sceneWithAssets(project)
+  const master = sceneWithAssetsForFormat(project, formatKey)
   const masterForFormat: Scene = focal && master.image
     ? {
         ...master,
@@ -1005,13 +1116,30 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
   )
 }
 
-function sceneWithAssets(project: Project): Scene {
+function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene {
   const m = project.master
-  const imageSrc = getActiveImageSrc(project)
+  const imageSrc = getActiveImageSrc(project, formatKey)
   return {
     ...m,
     image: m.image ? { ...m.image, src: imageSrc } : m.image,
     logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
+  }
+}
+
+function normalizeBackgroundExtensionState(project: Project): Project {
+  const hasPerFormatMetadata = Object.keys(project.backgroundExtensionByFormat ?? {}).length > 0
+  const hasPerFormatImage = Object.values(project.extendedImageByFormat ?? {}).some((entry) => entry.metadata.changed && !!entry.imageSrc)
+  if (project.backgroundExtension || hasPerFormatMetadata) {
+    return {
+      ...project,
+      backgroundExtensionStatus: project.backgroundExtensionStatus === 'failed' ? 'failed' : 'done',
+      useExtendedImage: !!project.useExtendedImage && (hasPerFormatImage || !!project.extendedImageSrc),
+    }
+  }
+  return {
+    ...project,
+    backgroundExtensionStatus: project.backgroundExtensionStatus === 'calculating' ? 'idle' : project.backgroundExtensionStatus ?? 'idle',
+    useExtendedImage: false,
   }
 }
 

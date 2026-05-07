@@ -239,14 +239,10 @@ export type Project = {
   originalImageSrc?: string | null
   extendedImageSrc?: string | null
   useExtendedImage?: boolean
-  backgroundExtension?: {
-    changed: boolean
-    reason: string
-    originalSize: { width: number; height: number }
-    extendedSize: { width: number; height: number }
-    subjectBounds?: { x: number; y: number; w: number; h: number }
-    backgroundUniformity: number
-  }
+  backgroundExtensionStatus?: 'idle' | 'calculating' | 'done' | 'failed'
+  backgroundExtension?: BackgroundExtensionMetadata
+  extendedImageByFormat?: Record<string, BackgroundExtensionByFormatEntry>
+  backgroundExtensionByFormat?: Record<string, BackgroundExtensionMetadata>
   logoSrc: string | null
   selectedFormats: FormatKey[]
   // Optional per-format override: force a specific composition model for a given
@@ -266,6 +262,35 @@ export type Project = {
   activeLocale?: string
   availableLocales?: string[]
   customFormats?: FormatRuleSet[]
+}
+
+export type BackgroundExtensionByFormatEntry = {
+  imageSrc: string
+  metadata: BackgroundExtensionMetadata
+}
+
+export type BackgroundExtensionMetadata = {
+  changed: boolean
+  reason: string
+  originalSize: { width: number; height: number }
+  extendedSize: { width: number; height: number }
+  objectBounds?: { x: number; y: number; w: number; h: number }
+  subjectBounds?: { x: number; y: number; w: number; h: number }
+  targetAspectRatio?: number
+  targetAspectRatioRaw?: number
+  targetAspectRatioUsed?: number
+  subjectCoverageBefore?: { width: number; height: number }
+  subjectCoverageAfter?: { width: number; height: number }
+  maxExpansionApplied?: boolean
+  originalAspectRatio?: number
+  drawnAspectRatio?: number
+  aspectRatioPreserved?: boolean
+  drawScaleX?: number
+  drawScaleY?: number
+  drawOffsetX?: number
+  drawOffsetY?: number
+  targetFormatKey?: string
+  backgroundUniformity: number
 }
 
 export type FormatRuleSet = {

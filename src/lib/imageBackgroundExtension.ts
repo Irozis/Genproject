@@ -21,15 +21,24 @@ export type BackgroundExtensionOptions = {
   paddingPercent?: number
   mode?: BackgroundExtensionMode
   maxExpansionPercent?: number
+  maxWidthExpansionPercent?: number
+  maxHeightExpansionPercent?: number
+  minSubjectWidthCoverage?: number
+  minSubjectHeightCoverage?: number
   backgroundUniformityThreshold?: number
   targetAspectRatio?: number
   targetWidth?: number
   targetHeight?: number
+  targetFormatKey?: string
 }
 
 export type BackgroundExtensionReason =
   | 'extended'
   | 'background-not-uniform'
+  | 'object-not-detected'
+  | 'extension-would-over-shrink-subject'
+  | 'extension-exceeds-max-expansion'
+  | 'extension-would-distort-image'
   | 'no-subject-detected'
   | 'no-extension-needed'
   | 'canvas-unavailable'
@@ -41,14 +50,33 @@ export type BackgroundExtensionResult = {
   reason: BackgroundExtensionReason
   originalSize: { width: number; height: number }
   extendedSize: { width: number; height: number }
+  objectBounds?: Bounds
   subjectBounds?: Bounds
+  targetAspectRatio?: number
+  targetAspectRatioRaw?: number
+  targetAspectRatioUsed?: number
+  targetFormatKey?: string
+  subjectCoverageBefore?: { width: number; height: number }
+  subjectCoverageAfter?: { width: number; height: number }
+  maxExpansionApplied?: boolean
+  originalAspectRatio?: number
+  drawnAspectRatio?: number
+  aspectRatioPreserved?: boolean
+  drawScaleX?: number
+  drawScaleY?: number
+  drawOffsetX?: number
+  drawOffsetY?: number
   backgroundUniformity: number
 }
 
 export const DEFAULT_BACKGROUND_EXTENSION_OPTIONS = {
   paddingPercent: 0.14,
   mode: 'auto' as BackgroundExtensionMode,
-  maxExpansionPercent: 0.45,
+  maxExpansionPercent: 0.5,
+  maxWidthExpansionPercent: 0.5,
+  maxHeightExpansionPercent: 0.5,
+  minSubjectWidthCoverage: 0.25,
+  minSubjectHeightCoverage: 0.45,
   backgroundUniformityThreshold: 0.78,
 }
 
@@ -103,6 +131,97 @@ export function estimateSubjectBounds(
   return { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 }
 }
 
+export const estimateObjectBounds = estimateSubjectBounds
+
+export type FitAwareCanvas = {
+  width: number
+  height: number
+  offsetX: number
+  offsetY: number
+  changed: boolean
+  maxExpansionApplied: boolean
+  exceededMaxExpansion: boolean
+  subjectCoverageBefore: { width: number; height: number }
+  subjectCoverageAfter: { width: number; height: number }
+  targetAspectRatioRaw: number
+  targetAspectRatioUsed: number
+  originalAspectRatio: number
+  drawnAspectRatio: number
+  aspectRatioPreserved: boolean
+  drawScaleX: number
+  drawScaleY: number
+  drawOffsetX: number
+  drawOffsetY: number
+}
+
+export function calculateFitAwareCanvas(
+  imageSize: { width: number; height: number },
+  objectBounds: Bounds,
+  targetAspectRatio: number,
+  paddingRatio = 0.08,
+  maxExpansionPercent = DEFAULT_BACKGROUND_EXTENSION_OPTIONS.maxExpansionPercent,
+  maxWidthExpansionPercent = maxExpansionPercent,
+  maxHeightExpansionPercent = maxExpansionPercent,
+): FitAwareCanvas {
+  const safePadding = Math.max(0, Math.min(0.45, paddingRatio))
+  const targetAspectRatioRaw = Number.isFinite(targetAspectRatio) && targetAspectRatio > 0
+    ? targetAspectRatio
+    : imageSize.width / imageSize.height
+  const targetAspectRatioUsed = clamp(targetAspectRatioRaw, 0.75, 1.8)
+  const aspect = targetAspectRatioUsed
+  const safeObjW = objectBounds.w / Math.max(0.1, 1 - 2 * safePadding)
+  const safeObjH = objectBounds.h / Math.max(0.1, 1 - 2 * safePadding)
+  const objectCenterX = objectBounds.x + objectBounds.w / 2
+  const objectCenterY = objectBounds.y + objectBounds.h / 2
+  const centeredW = 2 * Math.max(objectCenterX, imageSize.width - objectCenterX)
+  const centeredH = 2 * Math.max(objectCenterY, imageSize.height - objectCenterY)
+  let canvasW = Math.max(imageSize.width, Math.ceil(safeObjW), Math.ceil(safeObjH * aspect))
+  let canvasH = Math.max(imageSize.height, Math.ceil(canvasW / aspect), Math.ceil(safeObjH))
+  canvasW = Math.max(canvasW, Math.ceil(centeredW))
+  canvasH = Math.max(canvasH, Math.ceil(centeredH))
+  canvasW = Math.max(canvasW, Math.ceil(canvasH * aspect))
+
+  const requestedW = canvasW
+  const requestedH = canvasH
+  const maxW = Math.round(imageSize.width * (1 + maxWidthExpansionPercent))
+  const maxH = Math.round(imageSize.height * (1 + maxHeightExpansionPercent))
+  canvasW = Math.min(maxW, requestedW)
+  canvasH = Math.min(maxH, requestedH)
+  const maxExpansionApplied = canvasW < requestedW || canvasH < requestedH
+  const exceededMaxExpansion = requestedW > maxW || requestedH > maxH
+
+  const idealOffsetX = canvasW / 2 - objectCenterX
+  const idealOffsetY = canvasH / 2 - objectCenterY
+  const offsetX = Math.round(clamp(idealOffsetX, 0, canvasW - imageSize.width))
+  const offsetY = Math.round(clamp(idealOffsetY, 0, canvasH - imageSize.height))
+  const drawScaleX = 1
+  const drawScaleY = 1
+  const originalAspectRatio = imageSize.width / imageSize.height
+  const drawnAspectRatio = (imageSize.width * drawScaleX) / (imageSize.height * drawScaleY)
+  const aspectRatioPreserved = nearlyEqual(originalAspectRatio, drawnAspectRatio) && nearlyEqual(drawScaleX, drawScaleY)
+  const changed = canvasW > imageSize.width || canvasH > imageSize.height || offsetX !== 0 || offsetY !== 0
+  return {
+    width: canvasW,
+    height: canvasH,
+    offsetX,
+    offsetY,
+    changed,
+    maxExpansionApplied,
+    exceededMaxExpansion,
+    subjectCoverageBefore: coverage(objectBounds, imageSize.width, imageSize.height),
+    subjectCoverageAfter: coverage(objectBounds, canvasW, canvasH),
+    targetAspectRatioRaw,
+    targetAspectRatioUsed,
+    originalAspectRatio,
+    drawnAspectRatio,
+    aspectRatioPreserved,
+    drawScaleX,
+    drawScaleY,
+    drawOffsetX: offsetX,
+    drawOffsetY: offsetY,
+  }
+}
+
 export function needsBackgroundExtension(
   source: { width: number; height: number },
   subjectBounds: Bounds,
@@ -121,7 +240,7 @@ export async function extendImageBackground(
   options: BackgroundExtensionOptions = {},
 ): Promise<BackgroundExtensionResult> {
   if (typeof document === 'undefined') {
-    return emptyResult(imageSrc, 'canvas-unavailable')
+    return emptyResult(imageSrc, 'canvas-unavailable', 0, 0, options.targetFormatKey)
   }
   try {
     const img = await loadImage(imageSrc)
@@ -129,13 +248,40 @@ export async function extendImageBackground(
     canvas.width = img.naturalWidth
     canvas.height = img.naturalHeight
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return emptyResult(imageSrc, 'canvas-unavailable', img.naturalWidth, img.naturalHeight)
+    if (!ctx) return emptyResult(imageSrc, 'canvas-unavailable', img.naturalWidth, img.naturalHeight, options.targetFormatKey)
     ctx.drawImage(img, 0, 0)
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
     return extendImageDataToDataUrl(imageSrc, imageData, options)
   } catch {
-    return emptyResult(imageSrc, 'load-failed')
+    return emptyResult(imageSrc, 'load-failed', 0, 0, options.targetFormatKey)
   }
+}
+
+export async function extendImageBackgroundForFormat(input: {
+  imageSrc: string
+  targetWidth: number
+  targetHeight: number
+  targetFormatKey: string
+  paddingRatio?: number
+  maxExpansionPercent?: number
+  maxWidthExpansionPercent?: number
+  maxHeightExpansionPercent?: number
+  minSubjectWidthCoverage?: number
+  minSubjectHeightCoverage?: number
+  backgroundUniformityThreshold?: number
+}): Promise<BackgroundExtensionResult> {
+  return extendImageBackground(input.imageSrc, {
+    targetWidth: input.targetWidth,
+    targetHeight: input.targetHeight,
+    targetFormatKey: input.targetFormatKey,
+    paddingPercent: input.paddingRatio,
+    maxExpansionPercent: input.maxExpansionPercent,
+    maxWidthExpansionPercent: input.maxWidthExpansionPercent,
+    maxHeightExpansionPercent: input.maxHeightExpansionPercent,
+    minSubjectWidthCoverage: input.minSubjectWidthCoverage,
+    minSubjectHeightCoverage: input.minSubjectHeightCoverage,
+    backgroundUniformityThreshold: input.backgroundUniformityThreshold,
+  })
 }
 
 export function extendImageDataToDataUrl(
@@ -144,41 +290,59 @@ export function extendImageDataToDataUrl(
   options: BackgroundExtensionOptions = {},
 ): BackgroundExtensionResult {
   if (typeof document === 'undefined') {
-    return emptyResult(originalSrc, 'canvas-unavailable', imageData.width, imageData.height)
+    return emptyResult(originalSrc, 'canvas-unavailable', imageData.width, imageData.height, options.targetFormatKey)
   }
   const source = { width: imageData.width, height: imageData.height, data: imageData.data }
   const analysis = analyzeEdgeBackground(source)
   const threshold = options.backgroundUniformityThreshold ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.backgroundUniformityThreshold
+  const targetAspectRatio = resolveTargetAspect(source.width, source.height, options)
   if (!canExtendBackground(analysis, threshold)) {
-    return unchanged(originalSrc, 'background-not-uniform', source, analysis.uniformity)
+    return unchanged(originalSrc, 'background-not-uniform', source, analysis.uniformity, undefined, targetAspectRatio, undefined, options.targetFormatKey)
   }
   const subjectBounds = estimateSubjectBounds(source, analysis.averageColor, {
     colorDistanceThreshold: Math.max(28, analysis.standardDeviation * 2.2),
   })
-  if (!subjectBounds) return unchanged(originalSrc, 'no-subject-detected', source, analysis.uniformity)
+  if (!subjectBounds) return unchanged(originalSrc, 'object-not-detected', source, analysis.uniformity, undefined, targetAspectRatio, undefined, options.targetFormatKey)
   if (!needsBackgroundExtension(source, subjectBounds, options)) {
-    return unchanged(originalSrc, 'no-extension-needed', source, analysis.uniformity, subjectBounds)
+    return unchanged(originalSrc, 'no-extension-needed', source, analysis.uniformity, subjectBounds, targetAspectRatio, undefined, options.targetFormatKey)
   }
 
-  const size = computeExtendedSize(source.width, source.height, subjectBounds, options)
-  if (size.width === source.width && size.height === source.height) {
-    return unchanged(originalSrc, 'no-extension-needed', source, analysis.uniformity, subjectBounds)
+  const size = calculateFitAwareCanvas(
+    { width: source.width, height: source.height },
+    subjectBounds,
+    targetAspectRatio,
+    options.paddingPercent ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.paddingPercent,
+    options.maxExpansionPercent ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.maxExpansionPercent,
+    options.maxWidthExpansionPercent ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.maxWidthExpansionPercent,
+    options.maxHeightExpansionPercent ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.maxHeightExpansionPercent,
+  )
+  const minWidthCoverage = options.minSubjectWidthCoverage ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.minSubjectWidthCoverage
+  const minHeightCoverage = options.minSubjectHeightCoverage ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.minSubjectHeightCoverage
+  if (size.exceededMaxExpansion) {
+    return unchanged(originalSrc, 'extension-exceeds-max-expansion', source, analysis.uniformity, subjectBounds, targetAspectRatio, size, options.targetFormatKey)
+  }
+  if (!size.aspectRatioPreserved) {
+    return unchanged(originalSrc, 'extension-would-distort-image', source, analysis.uniformity, subjectBounds, targetAspectRatio, size, options.targetFormatKey)
+  }
+  if (size.subjectCoverageAfter.width < minWidthCoverage || size.subjectCoverageAfter.height < minHeightCoverage) {
+    return unchanged(originalSrc, 'extension-would-over-shrink-subject', source, analysis.uniformity, subjectBounds, targetAspectRatio, size, options.targetFormatKey)
+  }
+  if (!size.changed) {
+    return unchanged(originalSrc, 'no-extension-needed', source, analysis.uniformity, subjectBounds, targetAspectRatio, undefined, options.targetFormatKey)
   }
 
   const out = document.createElement('canvas')
   out.width = size.width
   out.height = size.height
   const ctx = out.getContext('2d')
-  if (!ctx) return unchanged(originalSrc, 'canvas-unavailable', source, analysis.uniformity, subjectBounds)
+  if (!ctx) return unchanged(originalSrc, 'canvas-unavailable', source, analysis.uniformity, subjectBounds, targetAspectRatio, undefined, options.targetFormatKey)
   ctx.fillStyle = rgbCss(analysis.averageColor)
   ctx.fillRect(0, 0, out.width, out.height)
   const original = document.createElement('canvas')
   original.width = source.width
   original.height = source.height
   original.getContext('2d')?.putImageData(imageData, 0, 0)
-  const dx = Math.round((out.width - source.width) / 2)
-  const dy = Math.round((out.height - source.height) / 2)
-  ctx.drawImage(original, dx, dy)
+  ctx.drawImage(original, size.offsetX, size.offsetY)
 
   return {
     imageSrc: out.toDataURL('image/png'),
@@ -186,39 +350,23 @@ export function extendImageDataToDataUrl(
     reason: 'extended',
     originalSize: { width: source.width, height: source.height },
     extendedSize: { width: out.width, height: out.height },
+    objectBounds: subjectBounds,
     subjectBounds,
+    targetAspectRatio,
+    targetAspectRatioRaw: size.targetAspectRatioRaw,
+    targetAspectRatioUsed: size.targetAspectRatioUsed,
+    targetFormatKey: options.targetFormatKey,
+    subjectCoverageBefore: size.subjectCoverageBefore,
+    subjectCoverageAfter: size.subjectCoverageAfter,
+    maxExpansionApplied: size.maxExpansionApplied,
+    originalAspectRatio: size.originalAspectRatio,
+    drawnAspectRatio: size.drawnAspectRatio,
+    aspectRatioPreserved: size.aspectRatioPreserved,
+    drawScaleX: size.drawScaleX,
+    drawScaleY: size.drawScaleY,
+    drawOffsetX: size.drawOffsetX,
+    drawOffsetY: size.drawOffsetY,
     backgroundUniformity: analysis.uniformity,
-  }
-}
-
-function computeExtendedSize(
-  width: number,
-  height: number,
-  subject: Bounds,
-  options: BackgroundExtensionOptions,
-): { width: number; height: number } {
-  const padding = options.paddingPercent ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.paddingPercent
-  const maxExpansion = options.maxExpansionPercent ?? DEFAULT_BACKGROUND_EXTENSION_OPTIONS.maxExpansionPercent
-  const targetAspect = resolveTargetAspect(width, height, options)
-  const maxW = Math.round(width * (1 + maxExpansion))
-  const maxH = Math.round(height * (1 + maxExpansion))
-  let nextW = width
-  let nextH = height
-
-  if (targetAspect > width / height) nextW = Math.max(nextW, Math.ceil(height * targetAspect))
-  if (targetAspect < width / height) nextH = Math.max(nextH, Math.ceil(width / targetAspect))
-
-  const neededW = Math.ceil(subject.w / Math.max(0.1, 1 - padding * 2))
-  const neededH = Math.ceil(subject.h / Math.max(0.1, 1 - padding * 2))
-  nextW = Math.max(nextW, neededW)
-  nextH = Math.max(nextH, neededH)
-
-  if (nextW / nextH < targetAspect) nextW = Math.ceil(nextH * targetAspect)
-  if (nextW / nextH > targetAspect) nextH = Math.ceil(nextW / targetAspect)
-
-  return {
-    width: Math.max(width, Math.min(maxW, nextW)),
-    height: Math.max(height, Math.min(maxH, nextH)),
   }
 }
 
@@ -275,6 +423,9 @@ function unchanged(
   source: { width: number; height: number },
   backgroundUniformity: number,
   subjectBounds?: Bounds,
+  targetAspectRatio = source.width / source.height,
+  fit?: FitAwareCanvas,
+  targetFormatKey?: string,
 ): BackgroundExtensionResult {
   return {
     imageSrc,
@@ -282,9 +433,36 @@ function unchanged(
     reason,
     originalSize: { width: source.width, height: source.height },
     extendedSize: { width: source.width, height: source.height },
+    objectBounds: subjectBounds,
     subjectBounds,
+    targetAspectRatio,
+    targetAspectRatioRaw: fit?.targetAspectRatioRaw ?? targetAspectRatio,
+    targetAspectRatioUsed: fit?.targetAspectRatioUsed ?? clamp(targetAspectRatio, 0.75, 1.8),
+    targetFormatKey,
+    subjectCoverageBefore: fit?.subjectCoverageBefore ?? (subjectBounds ? coverage(subjectBounds, source.width, source.height) : undefined),
+    subjectCoverageAfter: fit?.subjectCoverageAfter ?? (subjectBounds ? coverage(subjectBounds, source.width, source.height) : undefined),
+    maxExpansionApplied: fit?.maxExpansionApplied ?? false,
+    originalAspectRatio: fit?.originalAspectRatio ?? source.width / source.height,
+    drawnAspectRatio: fit?.drawnAspectRatio ?? source.width / source.height,
+    aspectRatioPreserved: fit?.aspectRatioPreserved ?? true,
+    drawScaleX: fit?.drawScaleX ?? 1,
+    drawScaleY: fit?.drawScaleY ?? 1,
+    drawOffsetX: fit?.drawOffsetX ?? 0,
+    drawOffsetY: fit?.drawOffsetY ?? 0,
     backgroundUniformity,
   }
+}
+
+function coverage(bounds: Bounds, width: number, height: number): { width: number; height: number } {
+  return { width: bounds.w / width, height: bounds.h / height }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function nearlyEqual(a: number, b: number): boolean {
+  return Math.abs(a - b) < 1e-9
 }
 
 function emptyResult(
@@ -292,6 +470,7 @@ function emptyResult(
   reason: BackgroundExtensionReason,
   width = 0,
   height = 0,
+  targetFormatKey?: string,
 ): BackgroundExtensionResult {
   return {
     imageSrc,
@@ -299,6 +478,14 @@ function emptyResult(
     reason,
     originalSize: { width, height },
     extendedSize: { width, height },
+    originalAspectRatio: height > 0 ? width / height : undefined,
+    drawnAspectRatio: height > 0 ? width / height : undefined,
+    aspectRatioPreserved: true,
+    drawScaleX: 1,
+    drawScaleY: 1,
+    drawOffsetX: 0,
+    drawOffsetY: 0,
+    targetFormatKey,
     backgroundUniformity: 0,
   }
 }

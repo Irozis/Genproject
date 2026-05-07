@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   analyzeEdgeBackground,
+  calculateFitAwareCanvas,
   canExtendBackground,
+  estimateObjectBounds,
   estimateSubjectBounds,
+  extendImageBackgroundForFormat,
   needsBackgroundExtension,
   type PixelSource,
 } from '../imageBackgroundExtension'
@@ -85,5 +88,230 @@ describe('imageBackgroundExtension pure heuristics', () => {
     expect(estimateSubjectBounds(a, analyzeEdgeBackground(a).averageColor)).toEqual(
       estimateSubjectBounds(b, analyzeEdgeBackground(b).averageColor),
     )
+  })
+
+  it('estimates object bounds on a uniform background', () => {
+    const s = source(100, 80, [250, 250, 250])
+    rect(s, 12, 18, 40, 30, [20, 60, 140])
+    const analysis = analyzeEdgeBackground(s)
+
+    expect(estimateObjectBounds(s, analysis.averageColor)).toEqual({ x: 12, y: 18, w: 40, h: 30 })
+  })
+
+  it('fit-aware calculation leaves an already fitting object unchanged', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 200, height: 200 },
+      { x: 60, y: 60, w: 80, h: 80 },
+      1,
+      0.08,
+      1,
+    )
+
+    expect(fit.changed).toBe(false)
+    expect(fit.width).toBe(200)
+    expect(fit.height).toBe(200)
+  })
+
+  it('fit-aware calculation expands for a too-wide object', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 1, y: 35, w: 116, h: 40 },
+      1,
+      0.08,
+      1,
+    )
+
+    expect(fit.changed).toBe(true)
+    expect(fit.width).toBeGreaterThanOrEqual(139)
+    expect(fit.height).toBeGreaterThanOrEqual(139)
+  })
+
+  it('fit-aware calculation expands for a too-tall object', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 42, y: 1, w: 36, h: 116 },
+      1,
+      0.08,
+      1,
+    )
+
+    expect(fit.changed).toBe(true)
+    expect(fit.height).toBeGreaterThanOrEqual(139)
+  })
+
+  it('fit-aware calculation adapts a square object to a portrait format', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 20, y: 20, w: 80, h: 80 },
+      1080 / 1920,
+      0.08,
+      2,
+    )
+
+    expect(fit.changed).toBe(true)
+    expect(fit.height).toBeGreaterThan(fit.width)
+    expect(fit.width / fit.height).toBeCloseTo(0.75, 2)
+    expect(fit.targetAspectRatioRaw).toBeCloseTo(1080 / 1920, 4)
+    expect(fit.targetAspectRatioUsed).toBe(0.75)
+  })
+
+  it('marks portrait extension as over-shrinking when subject coverage gets too small', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 40, y: 25, w: 40, h: 70 },
+      1080 / 1920,
+      0.08,
+      1,
+      1,
+      1,
+    )
+
+    expect(fit.subjectCoverageAfter.height).toBeLessThan(0.45)
+  })
+
+  it('marks excessive expansion when max expansion is too small', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 1, y: 1, w: 118, h: 118 },
+      1,
+      0.08,
+      0.02,
+      0.02,
+      0.02,
+    )
+
+    expect(fit.maxExpansionApplied).toBe(true)
+    expect(fit.exceededMaxExpansion).toBe(true)
+  })
+
+  it('keeps ordinary uniform-background extension available', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 2, y: 28, w: 96, h: 64 },
+      1,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+
+    expect(fit.changed).toBe(true)
+    expect(fit.exceededMaxExpansion).toBe(false)
+    expect(fit.subjectCoverageAfter.height).toBeGreaterThanOrEqual(0.45)
+  })
+
+  it('preserves drawn aspect ratio for an 800x600 image after extension', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 800, height: 600 },
+      { x: 8, y: 160, w: 430, h: 280 },
+      1,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+
+    expect(fit.originalAspectRatio).toBeCloseTo(800 / 600, 8)
+    expect(fit.drawnAspectRatio).toBeCloseTo(800 / 600, 8)
+    expect(fit.aspectRatioPreserved).toBe(true)
+  })
+
+  it('uses equal draw scales when scaling metadata is present', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 800, height: 600 },
+      { x: 8, y: 160, w: 430, h: 280 },
+      1,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+
+    expect(fit.drawScaleX).toBe(fit.drawScaleY)
+  })
+
+  it('does not scale the original image in the MVP draw plan', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 800, height: 600 },
+      { x: 8, y: 160, w: 430, h: 280 },
+      1,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+
+    expect(fit.drawScaleX).toBe(1)
+    expect(fit.drawScaleY).toBe(1)
+  })
+
+  it('allows extended canvas aspect ratio to differ without distorting the inserted image', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 800, height: 600 },
+      { x: 8, y: 160, w: 430, h: 280 },
+      0.75,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+
+    expect(fit.width / fit.height).not.toBeCloseTo(fit.drawnAspectRatio, 2)
+    expect(fit.aspectRatioPreserved).toBe(true)
+  })
+
+  it('keeps object bounds ratio unchanged after extension', () => {
+    const object = { x: 4, y: 18, w: 64, h: 64 }
+    const fit = calculateFitAwareCanvas(
+      { width: 100, height: 100 },
+      object,
+      0.75,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+    const originalObjectRatio = object.w / object.h
+    const drawnObjectRatio = (object.w * fit.drawScaleX) / (object.h * fit.drawScaleY)
+
+    expect(drawnObjectRatio).toBeCloseTo(originalObjectRatio, 8)
+  })
+
+  it('never uses non-uniform scale in fit-aware calculations', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 320, height: 900 },
+      { x: 2, y: 20, w: 180, h: 760 },
+      1.8,
+      0.08,
+      0.5,
+      0.5,
+      0.5,
+    )
+
+    expect(fit.drawScaleX).toBe(fit.drawScaleY)
+    expect(fit.aspectRatioPreserved).toBe(true)
+  })
+
+  it('keeps targetFormatKey in headless metadata', async () => {
+    const result = await extendImageBackgroundForFormat({
+      imageSrc: 'data:image/png;base64,input',
+      targetWidth: 1080,
+      targetHeight: 1920,
+      targetFormatKey: 'telegram-story',
+    })
+
+    expect(result.targetFormatKey).toBe('telegram-story')
+    expect(result.aspectRatioPreserved).toBe(true)
+    expect(result.drawScaleX).toBe(result.drawScaleY)
+  })
+
+  it('calculates independent canvas plans for different format aspects', () => {
+    const subject = { x: 2, y: 28, w: 96, h: 64 }
+    const square = calculateFitAwareCanvas({ width: 120, height: 120 }, subject, 1, 0.08, 1, 1, 1)
+    const portrait = calculateFitAwareCanvas({ width: 120, height: 120 }, subject, 0.75, 0.08, 1, 1, 1)
+
+    expect({ width: square.width, height: square.height }).not.toEqual({ width: portrait.width, height: portrait.height })
+    expect(square.aspectRatioPreserved).toBe(true)
+    expect(portrait.aspectRatioPreserved).toBe(true)
   })
 })

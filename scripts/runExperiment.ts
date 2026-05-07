@@ -9,6 +9,7 @@ import { runCompliance } from '../src/lib/compliance'
 import { checkOverflow, fixLayout } from '../src/lib/fixLayout'
 import { groupOf } from '../src/lib/formatGroups'
 import { getFormat } from '../src/lib/formats'
+import { getActiveImageSrc } from '../src/lib/projectImages'
 import { projectSchema } from '../src/lib/serialize'
 import type { BlockKind, BlockOverride, FormatKey, FormatRuleSet, Project, Scene, TextBlock } from '../src/lib/types'
 import { SceneRenderer } from '../src/renderers/SceneRenderer'
@@ -241,7 +242,7 @@ function generateAsset(project: Project, formatKey: FormatKey): GeneratedAsset {
 function createInputScene(project: Project, formatKey: FormatKey): Scene {
   const next: Scene = cloneScene(project.master)
   if (next.image) {
-    next.image.src = resolveProjectImageSrc(project)
+    next.image.src = resolveProjectImageSrc(project, formatKey)
     const focal = project.imageFocals?.[formatKey]
     if (focal) {
       next.image.focalX = focal.x
@@ -266,7 +267,7 @@ function cloneScene(scene: Scene): Scene {
 
 function collectIssues(scene: Scene, svg: string, rules: FormatRuleSet, project: Project): Issue[] {
   const issues: Issue[] = []
-  issues.push(...collectAssetSourceIssues(project))
+  issues.push(...collectAssetSourceIssues(project, rules.key))
   issues.push(...collectSvgIssues(svg, rules))
 
   const compliance = runCompliance(scene, rules, project.brandKit)
@@ -292,13 +293,13 @@ function collectIssues(scene: Scene, svg: string, rules: FormatRuleSet, project:
   return dedupeIssues(issues)
 }
 
-function resolveProjectImageSrc(project: Project): string | null {
-  return project.imageSrc ?? project.master.image?.src ?? null
+function resolveProjectImageSrc(project: Project, formatKey?: FormatKey): string | null {
+  return getActiveImageSrc(project, formatKey)
 }
 
-function collectAssetSourceIssues(project: Project): Issue[] {
+function collectAssetSourceIssues(project: Project, formatKey: FormatKey): Issue[] {
   const issues: Issue[] = []
-  const imageSrc = resolveProjectImageSrc(project)
+  const imageSrc = resolveProjectImageSrc(project, formatKey)
   if (!imageSrc) {
     issues.push({
       message: 'imageSrc: missing reproducible project image source',
