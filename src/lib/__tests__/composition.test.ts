@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { chooseLayoutArchetype, chooseModel, profile, LAYOUTS } from '../composition'
+import { chooseLayoutArchetype, chooseModel, isCompactTextFormat, profile, LAYOUTS } from '../composition'
 import { buildScene } from '../buildScene'
 import { getFormat } from '../formats'
 import { DEFAULT_MASTER, DEFAULT_ENABLED, DEFAULT_BRAND_KIT } from '../defaults'
@@ -459,10 +459,16 @@ describe('chooseLayoutArchetype', () => {
   })
 
   it('yandex-rsy-728x90 hides subtitle and keeps readable title/CTA', () => {
+    const decision = select(masterWithImage, 'yandex-rsy-728x90', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-rsy-728x90', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
     })
 
+    expect(isCompactTextFormat('yandex-rsy-728x90')).toBe(true)
+    expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
+    expect(decision.selectionDebug.subtitleHiddenForCompactFormat).toBe(true)
+    expect(decision.selectionDebug.minFontGuardApplied).toBe(true)
+    expect(decision.selectionDebug.smallTextRisk).not.toBe('low')
     expect(scene.subtitle).toBeUndefined()
     expect(scene.image?.x).toBeLessThan(10)
     expect(scene.cta?.x).toBeGreaterThan(70)
@@ -471,10 +477,13 @@ describe('chooseLayoutArchetype', () => {
   })
 
   it('yandex-rsy-240x400 uses compact vertical policy', () => {
+    const decision = select(masterWithImage, 'yandex-rsy-240x400', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-rsy-240x400', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
     })
 
+    expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
+    expect(decision.selectionDebug.smallTextRiskPenalty).toBeGreaterThan(0)
     expect(scene.subtitle).toBeUndefined()
     expect(scene.image?.y).toBeLessThan(10)
     expect(scene.image?.fit).toBe('contain')
@@ -484,29 +493,63 @@ describe('chooseLayoutArchetype', () => {
   })
 
   it('avito-skyscraper uses compact policy', () => {
+    const decision = select(masterWithImage, 'avito-skyscraper', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'avito-skyscraper', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
     })
 
+    expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
     expect(scene.subtitle).toBeUndefined()
     expect(scene.image?.fit).toBe('contain')
     expect(fontPx(scene.title!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(22)
     expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(14)
   })
 
-  it('product card with objectBounds uses contain image fit', () => {
+  it('yandex-market-stretch hides subtitle and prioritizes title/CTA', () => {
+    const decision = select(masterWithImage, 'yandex-market-stretch', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
+    const scene = buildScene(masterWithImage, 'yandex-market-stretch', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
+    })
+
+    expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.title?.maxLines).toBe(1)
+    expect(scene.cta).toBeDefined()
+    expect(fontPx(scene.title!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(18)
+    expect(fontPx(scene.cta!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(14)
+  })
+
+  it.each(['vk-square', 'ozon-fresh-square', 'yandex-market-card'] as const)(
+    '%s product card with objectBounds uses contain image fit',
+    (formatKey) => {
+      const hint: AssetHint = {
+        ...hintWithGrid([[0.5]]),
+        aspectRatio: 2.2,
+        objectBounds: { x: 0.01, y: 0.18, w: 0.72, h: 0.62 },
+      }
+      const scene = buildScene(masterWithImage, formatKey, DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+        assetHint: hint,
+      })
+
+      expect(scene.image?.fit).toBe('contain')
+      expect(scene.image?.x).toBeGreaterThan(10)
+      expect(scene.image?.w).toBeLessThan(84)
+    },
+  )
+
+  it('yandex-rsy-300x250 product card with objectBounds uses contain image fit', () => {
     const hint: AssetHint = {
       ...hintWithGrid([[0.5]]),
       aspectRatio: 2.2,
       objectBounds: { x: 0.01, y: 0.18, w: 0.72, h: 0.62 },
     }
-    const scene = buildScene(masterWithImage, 'yandex-market-card', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+    const scene = buildScene(masterWithImage, 'yandex-rsy-300x250', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: hint,
     })
 
     expect(scene.image?.fit).toBe('contain')
-    expect(scene.image?.x).toBeGreaterThan(10)
-    expect(scene.image?.w).toBeLessThan(84)
+    expect(scene.image?.x).toBeGreaterThan(8)
+    expect(scene.image?.w).toBeLessThan(82)
   })
 
   it('vk-square with high crop risk prefers product-safe over tight split', () => {
@@ -532,5 +575,6 @@ describe('chooseLayoutArchetype', () => {
 
     expect(a).toEqual(b)
     expect(a.selectionDebug.selectedArchetype).toBe(a.selected)
+    expect(a.selectionDebug.scores).toEqual(a.selectionDebug.archetypeScores)
   })
 })

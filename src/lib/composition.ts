@@ -37,16 +37,20 @@ export type FormatProfile = {
 
 export type LayoutArchetypeSelectionDebug = {
   archetypeScores: Record<CompositionModel, number>
+  scores: Record<CompositionModel, number>
   chosen: CompositionModel
   selectedArchetype: CompositionModel
   formatFamily: FormatProfile['family']
   textDensity: ContentProfile['textDensity']
   imageImportance: ContentProfile['imageImportance']
+  smallTextRisk: 'low' | 'medium' | 'high'
   cropRisk: 'low' | 'medium' | 'high'
   compactTextPolicyApplied: boolean
   subtitleHiddenForCompactFormat: boolean
   imageFitMode: 'cover' | 'contain'
   cropRiskPenalty: number
+  smallTextRiskPenalty: number
+  tooManyBlocksForCompactFormat: boolean
   minFontGuardApplied: boolean
 }
 
@@ -141,7 +145,10 @@ function chooseLayoutArchetypeFromProfiles(
   const cropRisk = cropRiskScore >= 0.72 ? 'high' : cropRiskScore >= 0.42 ? 'medium' : 'low'
   const compactTextPolicyApplied = isCompactTextFormatKey(format.key)
   const productSafeFormat = isProductSafeFormatKey(format.key)
+  const tooManyBlocksForCompactFormat = compactTextPolicyApplied && content.totalEnabledBlocks >= 5
+  const smallTextRisk = estimateSmallTextRisk(content, format)
   const cropRiskPenalty = cropRisk === 'high' ? 24 : cropRisk === 'medium' ? 8 : 0
+  const smallTextRiskPenalty = smallTextRisk === 'high' ? 22 : smallTextRisk === 'medium' ? 10 : 0
   const scores: Record<CompositionModel, number> = {
     'hero-overlay': 0,
     'split-right-image': 0,
@@ -166,7 +173,7 @@ function chooseLayoutArchetypeFromProfiles(
   scoreCenteredCard(scores, content, format)
 
   if (compactTextPolicyApplied) {
-    const compactPenalty = content.totalEnabledBlocks >= 5 ? 22 : content.textDensity === 'high' ? 18 : 8
+    const compactPenalty = Math.max(smallTextRiskPenalty, content.textDensity === 'high' ? 18 : 8)
     scores['hero-overlay'] -= compactPenalty
     scores['centered-card'] -= compactPenalty
     scores['split-left-image'] -= format.aspectRatio > 4 ? 20 : 8
@@ -192,19 +199,30 @@ function chooseLayoutArchetypeFromProfiles(
     selected: chosen,
     selectionDebug: {
       archetypeScores: scores,
+      scores,
       chosen,
       selectedArchetype: chosen,
       formatFamily: format.family,
       textDensity: content.textDensity,
       imageImportance: content.imageImportance,
+      smallTextRisk,
       cropRisk,
       compactTextPolicyApplied,
       subtitleHiddenForCompactFormat: compactTextPolicyApplied && content.hasSubtitle,
       imageFitMode,
       cropRiskPenalty,
+      smallTextRiskPenalty,
+      tooManyBlocksForCompactFormat,
       minFontGuardApplied: compactTextPolicyApplied,
     },
   }
+}
+
+function estimateSmallTextRisk(content: ContentProfile, format: FormatProfile): 'low' | 'medium' | 'high' {
+  if (!isCompactTextFormatKey(format.key)) return 'low'
+  if (content.textDensity === 'high' || content.totalEnabledBlocks >= 5) return 'high'
+  if (content.textDensity === 'medium' || content.hasSubtitle) return 'medium'
+  return 'low'
 }
 
 function scoreHeroOverlay(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile, cropRisk: 'low' | 'medium' | 'high'): void {
@@ -449,6 +467,10 @@ const PRODUCT_SAFE_FORMAT_KEYS = new Set<FormatKey>([
   'yandex-market-card',
   'yandex-rsy-300x250',
 ])
+
+export function isCompactTextFormat(formatKey: FormatKey): boolean {
+  return isCompactTextFormatKey(formatKey)
+}
 
 function isCompactTextFormatKey(key: FormatKey): boolean {
   return COMPACT_TEXT_FORMAT_KEYS.has(key)

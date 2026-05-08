@@ -1,10 +1,62 @@
 import { describe, it, expect } from 'vitest'
-import { buildScene } from '../buildScene'
+import { buildScene, resolveCompositionSelection } from '../buildScene'
 import { contrastRatio } from '../color'
-import { DEFAULT_MASTER, DEFAULT_BRAND_KIT, DEFAULT_ENABLED } from '../defaults'
+import { DEFAULT_MASTER, DEFAULT_BRAND_KIT, DEFAULT_ENABLED, newProject } from '../defaults'
 import { checkOverflow } from '../fixLayout'
 import { DEFAULT_COMPOSITION_BY_FORMAT, getFormat } from '../formats'
 import type { AssetHint, BlockKind, EnabledMap, Scene } from '../types'
+
+describe('buildScene composition auto mode', () => {
+  it('auto mode with no override uses deterministic selector', () => {
+    const selection = resolveCompositionSelection(DEFAULT_MASTER, 'vk-square', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+
+    expect(selection.autoSelectorUsed).toBe(true)
+    expect(selection.manualOverride).toBeUndefined()
+    expect(selection.selectionDebug?.scores).toBeDefined()
+    expect(selection.selectedArchetype).toBe(selection.selectionDebug?.selectedArchetype)
+  })
+
+  it('runtime auto override is normalized and still uses selector', () => {
+    const selection = resolveCompositionSelection(DEFAULT_MASTER, 'vk-square', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      override: 'auto',
+    })
+
+    expect(selection.autoSelectorUsed).toBe(true)
+    expect(selection.manualOverride).toBeUndefined()
+    expect(selection.selectionDebug?.scores).toBeDefined()
+  })
+
+  it('manual layout override bypasses selector', () => {
+    const selection = resolveCompositionSelection(DEFAULT_MASTER, 'vk-square', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      override: 'text-dominant',
+    })
+
+    expect(selection.autoSelectorUsed).toBe(false)
+    expect(selection.manualOverride).toBe('text-dominant')
+    expect(selection.selectedArchetype).toBe('text-dominant')
+    expect(selection.selectionDebug).toBeUndefined()
+  })
+
+  it('newProject has no default per-format overrides', () => {
+    expect(newProject('auto-test').formatOverrides).toBeUndefined()
+  })
+
+  it('compact format in auto mode still uses selector and policy', () => {
+    const selection = resolveCompositionSelection(DEFAULT_MASTER, 'yandex-rsy-728x90', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+
+    expect(selection.autoSelectorUsed).toBe(true)
+    expect(selection.selectionDebug?.compactTextPolicyApplied).toBe(true)
+    expect(selection.selectedArchetype).toBeDefined()
+  })
+
+  it('non-compact format in auto mode is not forced to compact policy', () => {
+    const selection = resolveCompositionSelection(DEFAULT_MASTER, 'vk-landscape', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+
+    expect(selection.autoSelectorUsed).toBe(true)
+    expect(selection.selectionDebug?.compactTextPolicyApplied).toBe(false)
+    expect(selection.selectionDebug?.smallTextRisk).toBe('low')
+  })
+})
 
 const ALL_FORMATS = ['vk-square', 'vk-vertical', 'vk-landscape', 'instagram-story'] as const
 

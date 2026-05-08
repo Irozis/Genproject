@@ -25,6 +25,7 @@ import { applyImageHint } from './lib/applyImageHint'
 import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
 import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
 import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
+import { normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
@@ -689,15 +690,9 @@ export default function App() {
 
   const setFormatComposition = useCallback((formatKey: FormatKey, model: CompositionModel | null) => {
     setProject((p) => {
-      const next = { ...(p.formatOverrides ?? {}) }
-      if (model === null) {
-        delete next[formatKey]
-      } else {
-        next[formatKey] = model
-      }
       return {
         ...p,
-        formatOverrides: Object.keys(next).length > 0 ? next : undefined,
+        formatOverrides: setFormatCompositionOverride(p.formatOverrides, formatKey, model),
       }
     })
   }, [setProject])
@@ -1230,11 +1225,13 @@ function hasBackgroundExtensionMetadataForAllFormats(project: Project): boolean 
 }
 
 function normalizeBackgroundExtensionState(project: Project): Project {
+  const formatOverrides = normalizeFormatOverrides(project.formatOverrides)
   const hasPerFormatMetadata = Object.keys(project.backgroundExtensionByFormat ?? {}).length > 0
   const hasPerFormatImage = Object.values(project.extendedImageByFormat ?? {}).some((entry) => entry.metadata.changed && !!entry.imageSrc)
   if (project.backgroundExtension || hasPerFormatMetadata) {
     return {
       ...project,
+      formatOverrides,
       backgroundExtensionStatus: project.backgroundExtensionStatus === 'failed' ? 'failed' : 'done',
       useExtendedImage: !!project.useExtendedImage && (hasPerFormatImage || !!project.extendedImageSrc),
       imageFitPreference: project.imageFitPreference ?? 'auto',
@@ -1243,6 +1240,7 @@ function normalizeBackgroundExtensionState(project: Project): Project {
   }
   return {
     ...project,
+    formatOverrides,
     backgroundExtensionStatus: project.backgroundExtensionStatus === 'calculating' ? 'idle' : project.backgroundExtensionStatus ?? 'idle',
     useExtendedImage: false,
     imageFitPreference: project.imageFitPreference ?? 'auto',

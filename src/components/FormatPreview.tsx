@@ -11,7 +11,7 @@ import {
   type WheelEvent,
 } from 'react'
 import { SceneRenderer } from '../renderers/SceneRenderer'
-import { buildScene, resolveCompositionModel } from '../lib/buildScene'
+import { buildScene, normalizeCompositionOverride, resolveCompositionSelection } from '../lib/buildScene'
 import { COMPOSITION_MODEL_LABELS } from '../lib/composition'
 import { checkOverflow, type LayoutIssue } from '../lib/fixLayout'
 import { getFormat } from '../lib/formats'
@@ -75,7 +75,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     master,
     brandKit,
     enabled,
-    override,
+    override: rawOverride,
     focal,
     assetHint,
     onPickElement,
@@ -242,27 +242,50 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
       image: { ...master.image, focalX: focal.x, focalY: focal.y },
     }
   }, [master, focal])
+  const manualOverride = normalizeCompositionOverride(rawOverride)
+  const override = manualOverride as CompositionModel
   const scene = useMemo(
     () =>
       buildScene(effectiveMaster, formatKey, brandKit, enabled, {
-        ...(override ? { override } : {}),
+        ...(manualOverride ? { override: manualOverride } : {}),
         assetHint,
         blockOverrides: blockOverride,
         locale,
         customFormats,
         density,
       }),
-    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, blockOverride, locale, customFormats, density],
+    [effectiveMaster, formatKey, brandKit, enabled, manualOverride, assetHint, blockOverride, locale, customFormats, density],
   )
   /** Что выберет авто-подбор (для подписи пункта «Авто» в списке). */
-  const autoPreviewModel = useMemo(
+  const compositionSelection = useMemo(
     () =>
-      resolveCompositionModel(effectiveMaster, formatKey, brandKit, enabled, {
+      resolveCompositionSelection(effectiveMaster, formatKey, brandKit, enabled, {
+        override: manualOverride,
+        assetHint,
         density,
         customFormats,
       }),
-    [effectiveMaster, formatKey, brandKit, enabled, density, customFormats],
+    [effectiveMaster, formatKey, brandKit, enabled, manualOverride, assetHint, density, customFormats],
   )
+  const autoPreviewModel = useMemo(
+    () =>
+      resolveCompositionSelection(effectiveMaster, formatKey, brandKit, enabled, {
+        assetHint,
+        density,
+        customFormats,
+      }).selectedArchetype,
+    [effectiveMaster, formatKey, brandKit, enabled, assetHint, density, customFormats],
+  )
+  useEffect(() => {
+    console.debug('[layout-auto]', {
+      formatKey,
+      uiSelectedMode: manualOverride ?? 'auto',
+      manualOverride,
+      autoSelectorUsed: compositionSelection.autoSelectorUsed,
+      selectedArchetype: compositionSelection.selectedArchetype,
+      scores: compositionSelection.selectionDebug?.scores,
+    })
+  }, [formatKey, manualOverride, compositionSelection])
   const issues = useMemo(() => checkOverflow(scene, rules), [scene, rules])
 
   return (
@@ -276,13 +299,13 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
           <select
             className="preview__composition-select"
             aria-label="Схема размещения блоков"
-            value={override ?? 'auto'}
+            value={manualOverride ?? 'auto'}
             disabled={!onCompositionChange}
             title={
-              override === undefined
+              manualOverride === undefined
                 ? `Авто-подбор по контенту и пропорциям. Сейчас: «${COMPOSITION_MODEL_LABELS[autoPreviewModel].short}».`
-                : autoPreviewModel === override
-                  ? COMPOSITION_MODEL_LABELS[override].title
+                : autoPreviewModel === manualOverride
+                  ? COMPOSITION_MODEL_LABELS[manualOverride].title
                   : `${COMPOSITION_MODEL_LABELS[override].title} При «Авто» вместо этого: «${COMPOSITION_MODEL_LABELS[autoPreviewModel].short}».`
             }
             onChange={(e) => {

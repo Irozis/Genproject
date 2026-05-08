@@ -24,7 +24,7 @@ import type {
 export type BuildOptions = {
   /** Force a specific composition model for this build. Overrides the profile
    *  chooser. Templates' preferredModels + user formatOverrides land here. */
-  override?: CompositionModel
+  override?: CompositionModel | 'auto' | null
   /** Analyzed image stats. Optional — when present, lets layouts auto-tune
    *  things like scrim opacity under overlaid text. */
   assetHint?: AssetHint | null
@@ -43,14 +43,50 @@ const TONE_DEFAULTS: Record<BrandKit['toneOfVoice'], { titleWeight: number; lett
   editorial: { titleWeight: 800, letterSpacing: -0.03, maxLines: 2, align: 'center' },
 }
 
+export type CompositionSelectionDebug = {
+  manualOverride?: CompositionModel
+  autoSelectorUsed: boolean
+  selectedArchetype: CompositionModel
+  selectionDebug?: ReturnType<typeof chooseLayoutArchetype>['selectionDebug']
+}
+
+export function normalizeCompositionOverride(
+  override: CompositionModel | 'auto' | null | undefined,
+): CompositionModel | undefined {
+  return override && override !== 'auto' ? override : undefined
+}
+
+function pickCompositionSelection(
+  branded: Scene,
+  rules: FormatRuleSet,
+  enabled: EnabledMap,
+  override: CompositionModel | 'auto' | null | undefined,
+  assetHint?: AssetHint | null,
+): CompositionSelectionDebug {
+  const manualOverride = normalizeCompositionOverride(override)
+  if (manualOverride) {
+    return {
+      manualOverride,
+      autoSelectorUsed: false,
+      selectedArchetype: manualOverride,
+    }
+  }
+  const selection = chooseLayoutArchetype({ format: rules, scene: branded, enabled, assetHint })
+  return {
+    autoSelectorUsed: true,
+    selectedArchetype: selection.selected,
+    selectionDebug: selection.selectionDebug,
+  }
+}
+
 function pickCompositionModel(
   branded: Scene,
   rules: FormatRuleSet,
   enabled: EnabledMap,
-  override: CompositionModel | undefined,
+  override: CompositionModel | 'auto' | null | undefined,
   assetHint?: AssetHint | null,
 ): CompositionModel {
-  return override ?? chooseLayoutArchetype({ format: rules, scene: branded, enabled, assetHint }).selected
+  return pickCompositionSelection(branded, rules, enabled, override, assetHint).selectedArchetype
 }
 
 /** Same composition decision as `buildScene` — for UI (picker labels, tooltips). */
@@ -66,6 +102,18 @@ export function resolveCompositionModel(
   return pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
 }
 
+export function resolveCompositionSelection(
+  master: Scene,
+  formatKey: FormatKey,
+  brandKit: BrandKit,
+  enabled: EnabledMap,
+  options: BuildOptions = {},
+): CompositionSelectionDebug {
+  const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
+  const branded = applyBrandKit(master, brandKit)
+  return pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
+}
+
 export function buildScene(
   master: Scene,
   formatKey: FormatKey,
@@ -79,7 +127,8 @@ export function buildScene(
   const branded = applyBrandKit(master, brandKit)
 
   // 2. profile content + choose layout (or honour override)
-  const model = pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
+  const selection = pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
+  const model = selection.selectedArchetype
 
   // 3. compute positioned scene
   const positioned = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
