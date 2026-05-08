@@ -213,7 +213,11 @@ export const brandSnapshotListSchema = z.array(brandSnapshotSchema)
 const compositionModelSchema = z.enum([
   'text-dominant',
   'split-right-image',
+  'split-left-image',
   'hero-overlay',
+  'image-top-stack',
+  'product-card-safe',
+  'centered-card',
   'image-top-text-bottom',
 ])
 
@@ -225,6 +229,7 @@ const assetHintSchema = z.object({
   isDarkBackground: z.boolean(),
   bottomBandBrightness: z.number().optional(),
   brightnessGrid: z.array(z.array(z.number())).optional(),
+  objectBounds: z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }).optional(),
 })
 
 const backgroundExtensionSchema = z.object({
@@ -253,6 +258,21 @@ const backgroundExtensionSchema = z.object({
 const backgroundExtensionByFormatEntrySchema = z.object({
   imageSrc: z.string(),
   metadata: backgroundExtensionSchema,
+})
+
+const imageFitDecisionSchema = z.object({
+  usedSource: z.enum(['original', 'extended']),
+  fitMode: z.enum(['cover', 'contain']),
+  objectFullyVisible: z.boolean(),
+  objectCropped: z.boolean(),
+  reason: z.enum([
+    'original-cover-ok',
+    'extended-cover-ok',
+    'forced-contain-object-cropped',
+    'manual-cover',
+    'manual-contain',
+    'no-object-bounds',
+  ]),
 })
 
 const formatKeySchema = z.enum([
@@ -314,6 +334,8 @@ export const projectSchema = z.object({
   originalImageSrc: z.string().nullable().optional(),
   extendedImageSrc: z.string().nullable().optional(),
   useExtendedImage: z.boolean().optional(),
+  imageFitPreference: z.enum(['auto', 'cover', 'contain']).optional(),
+  imageFitDecisionByFormat: z.record(z.string(), imageFitDecisionSchema).optional(),
   backgroundExtensionStatus: z.enum(['idle', 'calculating', 'done', 'failed']).optional(),
   backgroundExtension: backgroundExtensionSchema.optional(),
   extendedImageByFormat: z.record(z.string(), backgroundExtensionByFormatEntrySchema).optional(),

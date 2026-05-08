@@ -40,3 +40,54 @@ describe('SceneRenderer snapshots', () => {
     })
   }
 })
+
+describe('SceneRenderer image fit modes', () => {
+  test('contain renders with meet and keeps uniform aspect', () => {
+    const scene = {
+      ...FIXTURE_MASTER,
+      image: {
+        ...FIXTURE_MASTER.image!,
+        src: 'data:image/png;base64,input',
+        x: 0,
+        y: 0,
+        w: 100,
+        h: 100,
+        fit: 'contain' as const,
+      },
+    }
+    const html = renderToStaticMarkup(
+      createElement(SceneRenderer, {
+        scene,
+        rules: getFormat('vk-square'),
+        displayFont: 'sans-serif',
+        textFont: 'sans-serif',
+        imageAspectRatio: 2,
+      }),
+    )
+
+    expect(html).toContain('preserveAspectRatio="xMidYMid meet"')
+    expect(html).not.toContain('preserveAspectRatio="none"')
+  })
+
+  test('cover path keeps slice semantics', () => {
+    const scene = {
+      ...FIXTURE_MASTER,
+      image: {
+        ...FIXTURE_MASTER.image!,
+        src: 'data:image/png;base64,input',
+        fit: 'cover' as const,
+      },
+    }
+    const html = renderToStaticMarkup(
+      createElement(SceneRenderer, {
+        scene,
+        rules: getFormat('vk-square'),
+        displayFont: 'sans-serif',
+        textFont: 'sans-serif',
+      }),
+    )
+
+    expect(html).toContain('preserveAspectRatio="xMidYMid slice"')
+    expect(html).not.toContain('preserveAspectRatio="none"')
+  })
+})

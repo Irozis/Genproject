@@ -9,6 +9,8 @@ import {
   needsBackgroundExtension,
   type PixelSource,
 } from '../imageBackgroundExtension'
+import { resolveImageFitDecisionForFormat } from '../imageFitDecision'
+import type { BackgroundExtensionMetadata, ImageFitPreference } from '../types'
 
 function source(width: number, height: number, fill: [number, number, number]): PixelSource {
   const data = new Uint8ClampedArray(width * height * 4)
@@ -313,5 +315,129 @@ describe('imageBackgroundExtension pure heuristics', () => {
     expect({ width: square.width, height: square.height }).not.toEqual({ width: portrait.width, height: portrait.height })
     expect(square.aspectRatioPreserved).toBe(true)
     expect(portrait.aspectRatioPreserved).toBe(true)
+  })
+
+  it('keeps background extension metadata unchanged across image fit preferences', () => {
+    const fit = calculateFitAwareCanvas(
+      { width: 120, height: 120 },
+      { x: 10, y: 10, w: 100, h: 100 },
+      2,
+      0.08,
+      1,
+      1,
+      1,
+    )
+    const extension: BackgroundExtensionMetadata = {
+      changed: true,
+      reason: 'extended',
+      originalSize: { width: 120, height: 120 },
+      extendedSize: { width: fit.width, height: fit.height },
+      objectBounds: { x: 10, y: 10, w: 100, h: 100 },
+      targetAspectRatio: 2,
+      targetAspectRatioRaw: fit.targetAspectRatioRaw,
+      targetAspectRatioUsed: fit.targetAspectRatioUsed,
+      drawScaleX: fit.drawScaleX,
+      drawScaleY: fit.drawScaleY,
+      drawOffsetX: fit.drawOffsetX,
+      drawOffsetY: fit.drawOffsetY,
+      backgroundUniformity: 1,
+    }
+    const before = JSON.stringify(extension)
+
+    for (const preference of ['auto', 'cover', 'contain'] satisfies ImageFitPreference[]) {
+      resolveImageFitDecisionForFormat({
+        originalImageSrc: 'original',
+        extendedImageSrc: 'extended',
+        originalMetadata: extension,
+        extendedMetadata: extension,
+        formatKey: 'wide',
+        imageBoxWidth: 240,
+        imageBoxHeight: 120,
+        preference,
+      })
+    }
+
+    expect(JSON.stringify(extension)).toBe(before)
+    expect(extension.targetAspectRatioRaw).toBe(2)
+    expect(extension.targetAspectRatioUsed).toBe(1.8)
+    expect(extension.drawScaleX).toBe(1)
+    expect(extension.drawScaleY).toBe(1)
+  })
+
+  it('lets image fit decision choose contain without changing extension canvas metadata', () => {
+    const extension: BackgroundExtensionMetadata = {
+      changed: false,
+      reason: 'extension-exceeds-max-expansion',
+      originalSize: { width: 100, height: 100 },
+      extendedSize: { width: 100, height: 100 },
+      objectBounds: { x: 10, y: 10, w: 80, h: 80 },
+      targetAspectRatio: 2,
+      targetAspectRatioRaw: 2,
+      targetAspectRatioUsed: 1.8,
+      drawScaleX: 1,
+      drawScaleY: 1,
+      drawOffsetX: 0,
+      drawOffsetY: 0,
+      backgroundUniformity: 1,
+    }
+    const before = { ...extension, originalSize: { ...extension.originalSize }, extendedSize: { ...extension.extendedSize }, objectBounds: { ...extension.objectBounds! } }
+    const decision = resolveImageFitDecisionForFormat({
+      originalImageSrc: 'original',
+      extendedImageSrc: undefined,
+      originalMetadata: extension,
+      extendedMetadata: undefined,
+      formatKey: 'wide',
+      imageBoxWidth: 200,
+      imageBoxHeight: 100,
+      preference: 'auto',
+    })
+
+    expect(decision.fitMode).toBe('contain')
+    expect(decision.reason).toBe('forced-contain-object-cropped')
+    expect(extension).toEqual(before)
+    expect(extension.drawScaleX).toBe(1)
+    expect(extension.drawScaleY).toBe(1)
+  })
+
+  it('contain decisions do not recalculate fit-aware canvas values', () => {
+    const canvas = calculateFitAwareCanvas(
+      { width: 100, height: 100 },
+      { x: 10, y: 10, w: 80, h: 80 },
+      2,
+      0.08,
+      0.1,
+      0.1,
+      0.1,
+    )
+    const extension: BackgroundExtensionMetadata = {
+      changed: false,
+      reason: 'extension-exceeds-max-expansion',
+      originalSize: { width: 100, height: 100 },
+      extendedSize: { width: canvas.width, height: canvas.height },
+      objectBounds: { x: 10, y: 10, w: 80, h: 80 },
+      targetAspectRatioRaw: canvas.targetAspectRatioRaw,
+      targetAspectRatioUsed: canvas.targetAspectRatioUsed,
+      maxExpansionApplied: canvas.maxExpansionApplied,
+      drawScaleX: canvas.drawScaleX,
+      drawScaleY: canvas.drawScaleY,
+      drawOffsetX: canvas.drawOffsetX,
+      drawOffsetY: canvas.drawOffsetY,
+      backgroundUniformity: 1,
+    }
+    const decision = resolveImageFitDecisionForFormat({
+      originalImageSrc: 'original',
+      originalMetadata: extension,
+      formatKey: 'wide',
+      imageBoxWidth: 200,
+      imageBoxHeight: 100,
+      preference: 'contain',
+    })
+
+    expect(decision.fitMode).toBe('contain')
+    expect(extension.extendedSize).toEqual({ width: canvas.width, height: canvas.height })
+    expect(extension.targetAspectRatioUsed).toBe(canvas.targetAspectRatioUsed)
+    expect(extension.maxExpansionApplied).toBe(canvas.maxExpansionApplied)
+    expect(extension.drawScaleX).toBe(1)
+    expect(extension.drawScaleY).toBe(1)
   })
 })

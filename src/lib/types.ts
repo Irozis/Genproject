@@ -27,7 +27,12 @@ export type FormatKey = BuiltinFormatKey | `custom:${string}`
 export type CompositionModel =
   | 'text-dominant'
   | 'split-right-image'
+  | 'split-left-image'
   | 'hero-overlay'
+  | 'image-top-stack'
+  | 'product-card-safe'
+  | 'centered-card'
+  /** Legacy alias retained for saved projects. New selector emits image-top-stack. */
   | 'image-top-text-bottom'
 
 export type CtaStyle = 'pill' | 'rounded' | 'sharp'
@@ -88,7 +93,7 @@ export type CtaBlock = TextBlock & {
 export type ImageBlock = Block & {
   src: string | null
   rx: number
-  fit: 'cover' | 'contain'
+  fit: ImageFitMode
   // Focal point in normalized [0..1] coords. Controls where the image gets
   // anchored when the block aspect differs from the source aspect (i.e. which
   // part stays in frame when cover-cropping). Default 0.5/0.5 = center.
@@ -97,6 +102,23 @@ export type ImageBlock = Block & {
   cropZoom?: number
   cropX?: number
   cropY?: number
+}
+
+export type ImageFitMode = 'cover' | 'contain'
+export type ImageFitPreference = 'auto' | 'cover' | 'contain'
+
+export type ImageFitDecision = {
+  usedSource: 'original' | 'extended'
+  fitMode: ImageFitMode
+  objectFullyVisible: boolean
+  objectCropped: boolean
+  reason:
+    | 'original-cover-ok'
+    | 'extended-cover-ok'
+    | 'forced-contain-object-cropped'
+    | 'manual-cover'
+    | 'manual-contain'
+    | 'no-object-bounds'
 }
 
 export type LogoBlock = Block & {
@@ -224,6 +246,7 @@ export type AssetHint = {
    *  patch behind this text" queries so halos / scrims can be local, not
    *  just rectangular bands. */
   brightnessGrid?: number[][]
+  objectBounds?: { x: number; y: number; w: number; h: number }
 }
 
 export type Project = {
@@ -239,6 +262,8 @@ export type Project = {
   originalImageSrc?: string | null
   extendedImageSrc?: string | null
   useExtendedImage?: boolean
+  imageFitPreference?: ImageFitPreference
+  imageFitDecisionByFormat?: Record<string, ImageFitDecision>
   backgroundExtensionStatus?: 'idle' | 'calculating' | 'done' | 'failed'
   backgroundExtension?: BackgroundExtensionMetadata
   extendedImageByFormat?: Record<string, BackgroundExtensionByFormatEntry>

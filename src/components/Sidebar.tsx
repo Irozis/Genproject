@@ -6,7 +6,8 @@ import { SidebarTabs, type SidebarTab } from './SidebarTabs'
 import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
 import { densityLabel } from '../lib/layoutDensity'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
-import type { BackgroundExtensionMetadata, BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, LayoutDensity, Project, Scene } from '../lib/types'
+import { getActiveImageSrc } from '../lib/projectImages'
+import type { BackgroundExtensionMetadata, BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, ImageFitPreference, LayoutDensity, Project, Scene } from '../lib/types'
 
 const ELEMENT_ROWS: { kind: BlockKind; label: string }[] = [
   { kind: 'title', label: 'Заголовок' },
@@ -29,7 +30,7 @@ type Props = {
   onBrandChange: (next: BrandKit) => void
   onSetImage: (dataUrl: string) => void
   onSetLogo: (dataUrl: string) => void
-  onToggleUseExtendedImage: (next: boolean) => void
+  onSetImageFitPreference: (next: ImageFitPreference) => void
   onToggleFormat: (key: FormatKey) => void
   /** Per-format focal override. Pass null to clear (inherit master). */
   onSetFormatFocal: (key: FormatKey, focal: { x: number; y: number } | null) => void
@@ -58,7 +59,7 @@ export function Sidebar({
   onBrandChange,
   onSetImage,
   onSetLogo,
-  onToggleUseExtendedImage,
+  onSetImageFitPreference,
   onToggleFormat,
   onSetFormatFocal,
   paletteAlternatives,
@@ -80,12 +81,7 @@ export function Sidebar({
   const [customGutter, setCustomGutter] = useState('4')
   const selectedLabel = selectedKind ? labelForKind(selectedKind) : null
   const selectedFormatLabel = editingFormatKey ? getFormat(editingFormatKey, project.customFormats).label : null
-  const formatExtendedImageSrc = editingFormatKey ? project.extendedImageByFormat?.[editingFormatKey]?.imageSrc : null
-  const previewImageSrc = project.useExtendedImage && formatExtendedImageSrc
-    ? formatExtendedImageSrc
-    : project.useExtendedImage && project.extendedImageSrc
-      ? project.extendedImageSrc
-      : project.imageSrc
+  const previewImageSrc = getActiveImageSrc(project, editingFormatKey ?? undefined)
   const hasPreparedExtendedImage = hasAnyFormatExtension(project) || !!project.extendedImageSrc
 
   return (
@@ -337,17 +333,20 @@ export function Sidebar({
               {project.imageSrc ? (
                 <>
                   <img className="asset-thumb" src={previewImageSrc ?? ''} alt="" />
-                  <label className="format-row" style={{ marginTop: 8 }}>
-                    <input
-                      type="checkbox"
-                      checked={!!project.useExtendedImage && hasPreparedExtendedImage}
-                      disabled={project.backgroundExtensionStatus !== 'done' || !hasPreparedExtendedImage}
-                      onChange={(e) => onToggleUseExtendedImage(e.target.checked)}
-                    />
-                    <span className="format-row__label">Сохранять объект целиком</span>
+                  <label className="field" style={{ marginTop: 8 }}>
+                    <span>Режим размещения изображения</span>
+                    <select
+                      value={project.imageFitPreference ?? 'auto'}
+                      onChange={(e) => onSetImageFitPreference(e.target.value as ImageFitPreference)}
+                    >
+                      <option value="auto">Авто</option>
+                      <option value="cover">Заполнять область</option>
+                      <option value="contain">Вместить целиком</option>
+                    </select>
                   </label>
                   <div style={{ fontSize: 12, opacity: 0.72, marginTop: 6 }}>
-                    {backgroundExtensionStatus(project, editingFormatKey)}
+                    {imageFitStatus(project, editingFormatKey)}
+                    {hasPreparedExtendedImage ? ` · ${backgroundExtensionStatus(project, editingFormatKey)}` : ''}
                   </div>
                   <div className="focal-label">Фокус master</div>
                   <FocalGrid
@@ -393,6 +392,40 @@ export function Sidebar({
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return <div className="section-header">{children}</div>
+}
+
+function imageFitStatus(project: Project, formatKey?: FormatKey | null): string {
+  const decision = formatKey ? project.imageFitDecisionByFormat?.[formatKey] : undefined
+  if (decision) return `Текущий формат: ${humanImageFitDecision(decision.reason)}`
+  const decisions = project.selectedFormats
+    .map((key) => project.imageFitDecisionByFormat?.[key])
+    .filter((decision): decision is NonNullable<Project['imageFitDecisionByFormat']>[string] => !!decision)
+  if (decisions.length === 0) return 'Авто-режим ожидает анализа объекта'
+  const originalCover = decisions.filter((d) => d.reason === 'original-cover-ok' || d.reason === 'manual-cover').length
+  const extendedCover = decisions.filter((d) => d.reason === 'extended-cover-ok').length
+  const contain = decisions.filter((d) => d.fitMode === 'contain').length
+  const parts: string[] = []
+  if (originalCover > 0) parts.push(`Для ${originalCover} форматов используется original + cover`)
+  if (extendedCover > 0) parts.push(`Для ${extendedCover} форматов используется extended + cover`)
+  if (contain > 0) parts.push(`Для ${contain} форматов включён contain`)
+  return parts.join('. ') || 'Авто-режим использует обычное заполнение'
+}
+
+function humanImageFitDecision(reason: NonNullable<Project['imageFitDecisionByFormat']>[string]['reason']): string {
+  switch (reason) {
+    case 'original-cover-ok':
+      return 'используется original + cover'
+    case 'extended-cover-ok':
+      return 'используется расширенный фон'
+    case 'forced-contain-object-cropped':
+      return 'включено вместить целиком, так как объект обрезается'
+    case 'manual-cover':
+      return 'вручную включено заполнение области'
+    case 'manual-contain':
+      return 'вручную включено вместить целиком'
+    case 'no-object-bounds':
+      return 'объект не найден, используется обычное заполнение'
+  }
 }
 
 function backgroundExtensionStatus(project: Project, formatKey?: FormatKey | null): string {

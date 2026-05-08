@@ -17,6 +17,7 @@ type Props = {
   formats: FormatKey[]
   master: Scene
   imageSrcByFormat?: Partial<Record<FormatKey, string | null>>
+  imageFitByFormat?: Partial<Record<FormatKey, 'cover' | 'contain'>>
   brandKit: BrandKit
   enabled: EnabledMap
   /** Per-format composition override (template preferredModels merged with user overrides). */
@@ -56,6 +57,7 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     formats,
     master,
     imageSrcByFormat,
+    imageFitByFormat,
     brandKit,
     enabled,
     overrides,
@@ -106,8 +108,9 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     >
       {formats.map((k) => {
         const imageSrc = imageSrcByFormat?.[k]
+        const imageFit = imageFitByFormat?.[k]
         const previewMaster = imageSrc !== undefined && master.image
-          ? { ...master, image: { ...master.image, src: imageSrc } }
+          ? { ...master, image: { ...master.image, src: imageSrc, fit: imageFit ?? master.image.fit } }
           : master
         return (
           <FormatPreview

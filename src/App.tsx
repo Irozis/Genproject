@@ -23,7 +23,8 @@ import { applyLayoutDensity } from './lib/layoutDensity'
 import { useHistory } from './lib/useHistory'
 import { applyImageHint } from './lib/applyImageHint'
 import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
-import { getActiveImageSrc } from './lib/projectImages'
+import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
+import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
@@ -34,6 +35,7 @@ import type {
   CompositionModel,
   FormatKey,
   FormatRuleSet,
+  ImageFitPreference,
   LayoutDensity,
   OnboardingMode,
   Project,
@@ -89,11 +91,12 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!project.imageSrc) return
+    const sourceImageSrc = project.originalImageSrc ?? project.imageSrc
+    if (!sourceImageSrc) return
     if (project.backgroundExtensionStatus === 'calculating') return
     const missingFormats = project.selectedFormats.filter((key) => !project.backgroundExtensionByFormat?.[key])
     if (missingFormats.length === 0) return
-    const batchKey = `${project.imageSrc}:${missingFormats.join('|')}`
+    const batchKey = `${sourceImageSrc}:${missingFormats.join('|')}`
     if (bgAutoStartedForRef.current === batchKey) return
     bgAutoStartedForRef.current = batchKey
     const gen = ++imageGenRef.current
@@ -102,12 +105,47 @@ export default function App() {
       originalImageSrc: p.originalImageSrc ?? p.imageSrc,
       backgroundExtensionStatus: 'calculating',
     }))
-    prepareBackgroundExtensionsForFormats(project.imageSrc, gen, project, missingFormats)
+    prepareBackgroundExtensionsForFormats(sourceImageSrc, gen, project, missingFormats)
   }, [
     project.backgroundExtensionByFormat,
     project.backgroundExtensionStatus,
     project.customFormats,
     project.imageSrc,
+    project.originalImageSrc,
+    project.selectedFormats,
+    setProject,
+  ])
+
+  useEffect(() => {
+    if (!project.imageSrc || !project.master.image) {
+      if (Object.keys(project.imageFitDecisionByFormat ?? {}).length === 0) return
+      setProject((p) => ({ ...p, imageFitDecisionByFormat: {} }))
+      return
+    }
+    if (!hasBackgroundExtensionMetadataForAllFormats(project)) {
+      if (Object.keys(project.imageFitDecisionByFormat ?? {}).length === 0) return
+      setProject((p) => ({ ...p, imageFitDecisionByFormat: {} }))
+      return
+    }
+    const next = computeImageFitDecisions(project)
+    if (JSON.stringify(next) === JSON.stringify(project.imageFitDecisionByFormat ?? {})) return
+    setProject((p) => ({ ...p, imageFitDecisionByFormat: next }))
+  }, [
+    project.backgroundExtensionByFormat,
+    project.blockOverrides,
+    project.brandKit,
+    project.customFormats,
+    project.enabled,
+    project.extendedImageByFormat,
+    project.formatDensities,
+    project.formatOverrides,
+    project.imageFitDecisionByFormat,
+    project.imageFitPreference,
+    project.imageFocals,
+    project.imageSrc,
+    project.layoutDensity,
+    project.master,
+    project.activeLocale,
     project.selectedFormats,
     setProject,
   ])
@@ -204,15 +242,20 @@ export default function App() {
   const masterWithAssets = useMemo<Scene>(() => {
     const m = project.master
     const imageSrc = selectedFormat ? getActiveImageSrc(project, selectedFormat) : getActiveImageSrc(project)
+    const imageFit = selectedFormat ? getActiveImageFitMode(project, selectedFormat) : getActiveImageFitMode(project)
     return {
       ...m,
-      image: m.image ? { ...m.image, src: imageSrc } : m.image,
+      image: m.image ? { ...m.image, src: imageSrc, fit: imageFit } : m.image,
       logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
     }
   }, [project, selectedFormat])
 
   const imageSrcByFormat = useMemo<Partial<Record<FormatKey, string | null>>>(() => {
     return Object.fromEntries(project.selectedFormats.map((key) => [key, getActiveImageSrc(project, key)])) as Partial<Record<FormatKey, string | null>>
+  }, [project])
+
+  const imageFitByFormat = useMemo<Partial<Record<FormatKey, 'cover' | 'contain'>>>(() => {
+    return Object.fromEntries(project.selectedFormats.map((key) => [key, getActiveImageFitMode(project, key)])) as Partial<Record<FormatKey, 'cover' | 'contain'>>
   }, [project])
 
   const selectedFormatScene = useMemo<Scene | null>(() => {
@@ -367,6 +410,7 @@ export default function App() {
       originalImageSrc: dataUrl,
       extendedImageSrc: null,
       useExtendedImage: false,
+      imageFitDecisionByFormat: {},
       backgroundExtensionStatus: 'calculating',
       backgroundExtension: undefined,
       extendedImageByFormat: {},
@@ -470,8 +514,8 @@ export default function App() {
     setProject((p) => ({ ...p, logoSrc: dataUrl, enabled: { ...p.enabled, logo: true } }))
   }
 
-  function setUseExtendedImage(next: boolean) {
-    setProject((p) => ({ ...p, useExtendedImage: next }))
+  function setImageFitPreference(next: ImageFitPreference) {
+    setProject((p) => ({ ...p, imageFitPreference: next }))
   }
 
   const setFormatFocal = useCallback((key: FormatKey, focal: { x: number; y: number } | null) => {
@@ -931,7 +975,7 @@ export default function App() {
             onBrandChange={setBrand}
             onSetImage={setImage}
             onSetLogo={setLogo}
-            onToggleUseExtendedImage={setUseExtendedImage}
+            onSetImageFitPreference={setImageFitPreference}
             onToggleFormat={toggleFormat}
             onSetFormatFocal={setFormatFocal}
             paletteAlternatives={paletteAlts}
@@ -975,6 +1019,7 @@ export default function App() {
               formats={project.selectedFormats}
               master={masterWithAssets}
               imageSrcByFormat={imageSrcByFormat}
+              imageFitByFormat={imageFitByFormat}
               brandKit={project.brandKit}
               enabled={project.enabled}
               overrides={project.formatOverrides}
@@ -1119,11 +1164,69 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
 function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene {
   const m = project.master
   const imageSrc = getActiveImageSrc(project, formatKey)
+  const imageFit = getActiveImageFitMode(project, formatKey)
   return {
     ...m,
-    image: m.image ? { ...m.image, src: imageSrc } : m.image,
+    image: m.image ? { ...m.image, src: imageSrc, fit: imageFit } : m.image,
     logo: m.logo ? { ...m.logo, src: project.logoSrc } : m.logo,
   }
+}
+
+function computeImageFitDecisions(project: Project): NonNullable<Project['imageFitDecisionByFormat']> {
+  const decisions: NonNullable<Project['imageFitDecisionByFormat']> = {}
+  const preference = project.imageFitPreference ?? 'auto'
+  for (const formatKey of project.selectedFormats) {
+    const measurementScene = buildMeasurementSceneForImageFit(project, formatKey)
+    const rules = applyLayoutDensity(
+      getFormat(formatKey, project.customFormats),
+      project.formatDensities?.[formatKey] ?? project.layoutDensity,
+    )
+    const image = measurementScene.image
+    const imageBoxWidth = image ? (image.w / 100) * rules.width : rules.width
+    const imageBoxHeight = image ? ((image.h ?? 100) / 100) * rules.height : rules.height
+    const metadata = project.backgroundExtensionByFormat?.[formatKey] ?? project.backgroundExtension
+    const extendedEntry = project.extendedImageByFormat?.[formatKey]
+    decisions[formatKey] = resolveImageFitDecisionForFormat({
+      originalImageSrc: project.imageSrc,
+      extendedImageSrc: extendedEntry?.imageSrc,
+      originalMetadata: metadata,
+      extendedMetadata: extendedEntry?.metadata ?? metadata,
+      formatKey,
+      imageBoxWidth,
+      imageBoxHeight,
+      preference,
+    })
+  }
+  return decisions
+}
+
+function buildMeasurementSceneForImageFit(project: Project, formatKey: FormatKey): Scene {
+  const focal = project.imageFocals?.[formatKey]
+  const m = project.master
+  const master: Scene = {
+    ...m,
+    image: m.image
+      ? {
+          ...m.image,
+          src: project.imageSrc ?? m.image.src,
+          fit: 'cover',
+          ...(focal ? { focalX: focal.x, focalY: focal.y } : {}),
+        }
+      : m.image,
+  }
+  return buildScene(master, formatKey, project.brandKit, project.enabled, {
+    ...(project.formatOverrides?.[formatKey] ? { override: project.formatOverrides[formatKey] } : {}),
+    assetHint: project.assetHint,
+    blockOverrides: project.blockOverrides?.[formatKey],
+    locale: project.activeLocale,
+    customFormats: project.customFormats,
+    density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+  })
+}
+
+function hasBackgroundExtensionMetadataForAllFormats(project: Project): boolean {
+  const byFormat = project.backgroundExtensionByFormat ?? {}
+  return project.selectedFormats.every((formatKey) => !!byFormat[formatKey])
 }
 
 function normalizeBackgroundExtensionState(project: Project): Project {
@@ -1134,12 +1237,16 @@ function normalizeBackgroundExtensionState(project: Project): Project {
       ...project,
       backgroundExtensionStatus: project.backgroundExtensionStatus === 'failed' ? 'failed' : 'done',
       useExtendedImage: !!project.useExtendedImage && (hasPerFormatImage || !!project.extendedImageSrc),
+      imageFitPreference: project.imageFitPreference ?? 'auto',
+      imageFitDecisionByFormat: project.imageFitDecisionByFormat ?? {},
     }
   }
   return {
     ...project,
     backgroundExtensionStatus: project.backgroundExtensionStatus === 'calculating' ? 'idle' : project.backgroundExtensionStatus ?? 'idle',
     useExtendedImage: false,
+    imageFitPreference: project.imageFitPreference ?? 'auto',
+    imageFitDecisionByFormat: project.imageFitDecisionByFormat ?? {},
   }
 }
 

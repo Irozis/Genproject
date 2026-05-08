@@ -1,4 +1,4 @@
-// Four deterministic composition models. No randomization.
+// Deterministic composition models. No randomization.
 // Each function takes (master scene, format rules) and returns positioned blocks
 // in % units. The chooser is also deterministic — same inputs → same output.
 
@@ -18,6 +18,48 @@ export type ContentProfile = {
   imageIsLarge: boolean       // master.image && image.w >= 30%
   isPortrait: boolean         // aspectRatio < 0.85
   isWide: boolean             // aspectRatio > 2
+  textDensity: 'low' | 'medium' | 'high'
+  hasSubtitle: boolean
+  hasCTA: boolean
+  hasBadge: boolean
+  imageImportance: 'low' | 'medium' | 'high'
+  totalEnabledBlocks: number
+}
+
+export type FormatProfile = {
+  key: FormatKey
+  family: 'wide' | 'square' | 'portrait' | 'tall'
+  aspectRatio: number
+  safeAreaPct: number
+  isNarrow: boolean
+  isCompact: boolean
+}
+
+export type LayoutArchetypeSelectionDebug = {
+  archetypeScores: Record<CompositionModel, number>
+  chosen: CompositionModel
+  selectedArchetype: CompositionModel
+  formatFamily: FormatProfile['family']
+  textDensity: ContentProfile['textDensity']
+  imageImportance: ContentProfile['imageImportance']
+  cropRisk: 'low' | 'medium' | 'high'
+  compactTextPolicyApplied: boolean
+  subtitleHiddenForCompactFormat: boolean
+  imageFitMode: 'cover' | 'contain'
+  cropRiskPenalty: number
+  minFontGuardApplied: boolean
+}
+
+export type LayoutArchetypeSelection = {
+  selected: CompositionModel
+  selectionDebug: LayoutArchetypeSelectionDebug
+}
+
+export type LayoutArchetypeInput = {
+  format: FormatRuleSet
+  scene: Scene
+  enabled: EnabledMap
+  assetHint?: AssetHint | null
 }
 
 export function profile(scene: Scene, rules: FormatRuleSet, enabled: EnabledMap): ContentProfile {
@@ -27,19 +69,216 @@ export function profile(scene: Scene, rules: FormatRuleSet, enabled: EnabledMap)
   const isPortrait = rules.aspectRatio < 0.9
   // "Horizontal" for split layout. Real-world ad banners are often only mildly wide.
   const isWide = rules.aspectRatio > 1.1
-  return { hasImage, imageIsLarge, isPortrait, isWide }
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle?.text
+  const hasCTA = enabled.cta && !!scene.cta?.text
+  const hasBadge = enabled.badge && !!scene.badge?.text
+  const totalEnabledBlocks = (['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const)
+    .filter((kind) => enabled[kind] && !!scene[kind]).length
+  const titleLen = enabled.title ? (scene.title?.text.length ?? 0) : 0
+  const subtitleLen = hasSubtitle ? (scene.subtitle?.text.length ?? 0) : 0
+  const textLoad = titleLen + subtitleLen * 0.75 + (hasCTA ? 18 : 0) + (hasBadge ? 12 : 0)
+  const textDensity: ContentProfile['textDensity'] = textLoad >= 125 || totalEnabledBlocks >= 6
+    ? 'high'
+    : textLoad >= 58 || totalEnabledBlocks >= 4
+      ? 'medium'
+      : 'low'
+  const imageImportance: ContentProfile['imageImportance'] = !hasImage
+    ? 'low'
+    : imageIsLarge && textDensity === 'low'
+      ? 'high'
+      : imageIsLarge || textDensity === 'medium'
+        ? 'medium'
+        : 'low'
+  return { hasImage, imageIsLarge, isPortrait, isWide, textDensity, hasSubtitle, hasCTA, hasBadge, imageImportance, totalEnabledBlocks }
+}
+
+export function profileFormat(rules: FormatRuleSet): FormatProfile {
+  const safeAreaPct = Math.max(0, 100 - rules.safeZone.left - rules.safeZone.right)
+    * Math.max(0, 100 - rules.safeZone.top - rules.safeZone.bottom)
+    / 100
+  const family: FormatProfile['family'] = rules.aspectRatio >= 1.35
+    ? 'wide'
+    : rules.aspectRatio >= 0.9
+      ? 'square'
+      : rules.aspectRatio >= 0.68
+        ? 'portrait'
+        : 'tall'
+  return {
+    key: rules.key,
+    family,
+    aspectRatio: rules.aspectRatio,
+    safeAreaPct,
+    isNarrow: rules.width <= 360 || rules.aspectRatio < 0.68,
+    isCompact: rules.width <= 360 || rules.height <= 250 || safeAreaPct < 74,
+  }
 }
 
 export function chooseModel(p: ContentProfile): CompositionModel {
-  // Strict, explicit decision tree. No scoring, no fallback chain.
   if (!p.hasImage) return 'text-dominant'
-  // Horizontal formats read best as text column + media column.
   if (p.isWide) return 'split-right-image'
-  // Portrait formats keep image-first storytelling, then text stack.
-  if (p.isPortrait) return 'image-top-text-bottom'
-  // Square / near-square formats use text overlay with a protective scrim.
+  if (p.isPortrait) return 'image-top-stack'
   if (p.imageIsLarge) return 'hero-overlay'
   return 'hero-overlay'
+}
+
+export function chooseLayoutArchetype(input: LayoutArchetypeInput): LayoutArchetypeSelection {
+  const content = profile(input.scene, input.format, input.enabled)
+  const format = profileFormat(input.format)
+  return chooseLayoutArchetypeFromProfiles(
+    content,
+    format,
+    estimateCropRisk(input.scene, input.format, input.assetHint),
+    input.scene.image?.focalX,
+  )
+}
+
+function chooseLayoutArchetypeFromProfiles(
+  content: ContentProfile,
+  format: FormatProfile,
+  cropRiskScore: number,
+  focalX: number | undefined,
+): LayoutArchetypeSelection {
+  const cropRisk = cropRiskScore >= 0.72 ? 'high' : cropRiskScore >= 0.42 ? 'medium' : 'low'
+  const compactTextPolicyApplied = isCompactTextFormatKey(format.key)
+  const productSafeFormat = isProductSafeFormatKey(format.key)
+  const cropRiskPenalty = cropRisk === 'high' ? 24 : cropRisk === 'medium' ? 8 : 0
+  const scores: Record<CompositionModel, number> = {
+    'hero-overlay': 0,
+    'split-right-image': 0,
+    'split-left-image': 0,
+    'image-top-stack': 0,
+    'product-card-safe': 0,
+    'text-dominant': 0,
+    'centered-card': 0,
+    'image-top-text-bottom': Number.NEGATIVE_INFINITY,
+  }
+
+  if (!content.hasImage) {
+    scores['text-dominant'] += 100
+    scores['centered-card'] += 20
+  }
+
+  scoreHeroOverlay(scores, content, format, cropRisk)
+  scoreSplit(scores, content, format, focalX)
+  scoreImageTopStack(scores, content, format)
+  scoreProductCardSafe(scores, content, format, cropRisk)
+  scoreTextDominant(scores, content, format)
+  scoreCenteredCard(scores, content, format)
+
+  if (compactTextPolicyApplied) {
+    const compactPenalty = content.totalEnabledBlocks >= 5 ? 22 : content.textDensity === 'high' ? 18 : 8
+    scores['hero-overlay'] -= compactPenalty
+    scores['centered-card'] -= compactPenalty
+    scores['split-left-image'] -= format.aspectRatio > 4 ? 20 : 8
+    scores['split-right-image'] += format.aspectRatio > 4 ? 22 : 0
+    scores['image-top-stack'] += format.aspectRatio < 0.75 ? 28 : 0
+    scores['text-dominant'] += content.textDensity === 'high' ? 24 : 8
+  }
+
+  if (productSafeFormat && content.hasImage && cropRisk === 'high') {
+    scores['split-right-image'] -= cropRiskPenalty
+    scores['split-left-image'] -= cropRiskPenalty
+    scores['hero-overlay'] -= cropRiskPenalty
+    scores['product-card-safe'] += 36
+    scores['image-top-stack'] += 18
+  }
+
+  const chosen = (Object.keys(scores) as CompositionModel[])
+    .filter((model) => model !== 'image-top-text-bottom')
+    .sort((a, b) => scores[b] - scores[a] || archetypeTieRank(a) - archetypeTieRank(b))[0] ?? 'text-dominant'
+  const imageFitMode = chosen === 'product-card-safe' ? 'contain' : 'cover'
+
+  return {
+    selected: chosen,
+    selectionDebug: {
+      archetypeScores: scores,
+      chosen,
+      selectedArchetype: chosen,
+      formatFamily: format.family,
+      textDensity: content.textDensity,
+      imageImportance: content.imageImportance,
+      cropRisk,
+      compactTextPolicyApplied,
+      subtitleHiddenForCompactFormat: compactTextPolicyApplied && content.hasSubtitle,
+      imageFitMode,
+      cropRiskPenalty,
+      minFontGuardApplied: compactTextPolicyApplied,
+    },
+  }
+}
+
+function scoreHeroOverlay(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile, cropRisk: 'low' | 'medium' | 'high'): void {
+  scores['hero-overlay'] += content.hasImage ? 12 : -40
+  scores['hero-overlay'] += format.family === 'wide' || format.family === 'square' ? 24 : -12
+  scores['hero-overlay'] += content.textDensity === 'low' ? 24 : content.textDensity === 'medium' ? 2 : -28
+  scores['hero-overlay'] += content.imageImportance === 'high' ? 24 : content.imageImportance === 'medium' ? 8 : -18
+  scores['hero-overlay'] -= cropRisk === 'high' ? 24 : cropRisk === 'medium' ? 8 : 0
+  if (content.hasSubtitle) scores['hero-overlay'] -= 4
+  if (content.totalEnabledBlocks >= 5) scores['hero-overlay'] -= 16
+}
+
+function scoreSplit(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile, focalX: number | undefined): void {
+  const base = (format.family === 'wide' ? 28 : format.family === 'square' ? 24 : -18)
+    + (content.textDensity === 'medium' ? 24 : content.textDensity === 'low' ? 6 : -24)
+    + (content.imageImportance === 'medium' ? 20 : content.imageImportance === 'high' ? 8 : -8)
+    + (content.hasImage ? 12 : -40)
+    - (format.isNarrow ? 24 : 0)
+  scores['split-right-image'] += base
+  scores['split-left-image'] += base
+  if (focalX !== undefined && focalX < 0.42) scores['split-right-image'] += 14
+  if (focalX !== undefined && focalX > 0.58) scores['split-left-image'] += 14
+}
+
+function scoreImageTopStack(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile): void {
+  scores['image-top-stack'] += content.hasImage ? 12 : -35
+  scores['image-top-stack'] += format.family === 'portrait' || format.family === 'tall' ? 32 : format.family === 'square' ? 4 : -24
+  scores['image-top-stack'] += content.textDensity === 'medium' ? 22 : content.textDensity === 'low' ? 4 : -8
+  scores['image-top-stack'] += content.imageImportance === 'high' || content.imageImportance === 'medium' ? 12 : -8
+}
+
+function scoreProductCardSafe(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile, cropRisk: 'low' | 'medium' | 'high'): void {
+  scores['product-card-safe'] += content.hasImage ? 12 : -45
+  scores['product-card-safe'] += isProductSafeFormatKey(format.key) ? 18 : format.family === 'square' ? 8 : -12
+  scores['product-card-safe'] += content.imageImportance === 'high' || content.imageImportance === 'medium' ? 14 : -4
+  scores['product-card-safe'] += content.textDensity === 'medium' ? 12 : content.textDensity === 'low' ? 6 : -20
+  scores['product-card-safe'] += cropRisk === 'high' ? 28 : cropRisk === 'medium' ? 0 : -10
+  scores['product-card-safe'] -= format.family === 'wide' ? 20 : 0
+}
+
+function scoreTextDominant(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile): void {
+  scores['text-dominant'] += content.textDensity === 'high' ? 42 : content.textDensity === 'medium' ? 8 : -14
+  scores['text-dominant'] += content.imageImportance === 'low' ? 24 : content.imageImportance === 'medium' ? 4 : -18
+  scores['text-dominant'] += format.isCompact || format.isNarrow ? 10 : 0
+  scores['text-dominant'] -= format.family === 'wide' && content.hasImage ? 14 : 0
+}
+
+function scoreCenteredCard(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile): void {
+  scores['centered-card'] += format.family === 'square' || format.isCompact ? 18 : -6
+  scores['centered-card'] += content.textDensity === 'low' ? 16 : content.textDensity === 'medium' ? 4 : -24
+  scores['centered-card'] += content.hasCTA ? 6 : 0
+  scores['centered-card'] += content.hasBadge ? 4 : 0
+}
+
+function estimateCropRisk(scene: Scene, rules: FormatRuleSet, hint?: AssetHint | null): number {
+  if (!scene.image?.src) return 0
+  const imageAspect = hint?.aspectRatio
+  const bounds = hint?.objectBounds
+  const edgeRisk = bounds
+    ? Math.max(
+        bounds.x < 0.08 ? 0.8 : 0,
+        bounds.y < 0.08 ? 0.7 : 0,
+        bounds.x + bounds.w > 0.92 ? 0.8 : 0,
+        bounds.y + bounds.h > 0.92 ? 0.7 : 0,
+      )
+    : 0
+  if (!imageAspect || !Number.isFinite(imageAspect) || imageAspect <= 0) return Math.max(0.45, edgeRisk)
+  const boxAspect = ((scene.image.w || 100) * rules.width) / (((scene.image.h ?? 100) || 100) * rules.height)
+  const aspectRisk = clamp(Math.abs(Math.log(imageAspect / Math.max(0.01, boxAspect))) / Math.log(3), 0, 1)
+  return Math.max(aspectRisk, edgeRisk)
+}
+
+function archetypeTieRank(model: CompositionModel): number {
+  return ['hero-overlay', 'split-right-image', 'split-left-image', 'product-card-safe', 'image-top-stack', 'text-dominant', 'centered-card', 'image-top-text-bottom'].indexOf(model)
 }
 
 /** Short labels for UI (composition picker + tooltips). */
@@ -55,9 +294,25 @@ export const COMPOSITION_MODEL_LABELS: Record<
     short: 'Сплит',
     title: 'Текст и изображение в двух колонках (удобно для широких форматов)',
   },
+  'split-left-image': {
+    short: 'Сплит слева',
+    title: 'Изображение слева, текст справа',
+  },
   'hero-overlay': {
     short: 'Герой',
     title: 'Текст поверх изображения со скримом',
+  },
+  'image-top-stack': {
+    short: 'Фото сверху',
+    title: 'Изображение сверху, текстовый стек снизу',
+  },
+  'product-card-safe': {
+    short: 'Safe card',
+    title: 'Product-safe card: contain image with readable title and CTA',
+  },
+  'centered-card': {
+    short: 'Карта',
+    title: 'Центрированная промо-карта для простого контента',
   },
   'image-top-text-bottom': {
     short: 'Фото сверху',
@@ -181,6 +436,28 @@ export const fitTitleFontSize = fitFontSize
 // unreadable at thumbnail scale, so we clamp here instead of shrinking forever.
 const MIN_SUBTITLE_SIZE = 2.0
 
+const COMPACT_TEXT_FORMAT_KEYS = new Set<FormatKey>([
+  'avito-skyscraper',
+  'yandex-market-stretch',
+  'yandex-rsy-240x400',
+  'yandex-rsy-728x90',
+])
+
+const PRODUCT_SAFE_FORMAT_KEYS = new Set<FormatKey>([
+  'ozon-fresh-square',
+  'vk-square',
+  'yandex-market-card',
+  'yandex-rsy-300x250',
+])
+
+function isCompactTextFormatKey(key: FormatKey): boolean {
+  return COMPACT_TEXT_FORMAT_KEYS.has(key)
+}
+
+function isProductSafeFormatKey(key: FormatKey): boolean {
+  return PRODUCT_SAFE_FORMAT_KEYS.has(key)
+}
+
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
 }
@@ -204,8 +481,33 @@ function pxToWidthPct(px: number, rules: FormatRuleSet): number {
   return (px / rules.width) * 100
 }
 
+function compactTitleMinFont(rules: FormatRuleSet): number {
+  const minPx = rules.key === 'avito-skyscraper'
+    ? 22
+    : rules.key === 'yandex-rsy-240x400'
+      ? 18
+      : rules.key === 'yandex-rsy-728x90'
+        ? 14
+        : rules.key === 'yandex-market-stretch'
+          ? 18
+          : Math.max(12, rules.minTitleSize)
+  return Math.max(rules.minTitleSize, pxToWidthPct(minPx, rules))
+}
+
 function readableCtaFont(block: TextBlock | undefined, base: number, rules: FormatRuleSet): number {
-  const minPx = rules.width <= 320 || rules.key === 'avito-skyscraper' ? 11 : rules.aspectRatio > 4 ? 10 : 12
+  const minPx = rules.key === 'avito-skyscraper'
+    ? 14
+    : rules.key === 'yandex-rsy-240x400'
+      ? 13
+      : rules.key === 'yandex-rsy-728x90'
+        ? 12
+        : rules.key === 'yandex-market-stretch'
+          ? 14
+          : rules.width <= 320
+            ? 11
+            : rules.aspectRatio > 4
+              ? 10
+              : 12
   return Math.max(capFontSize(block, base), pxToWidthPct(minPx, rules))
 }
 
@@ -581,23 +883,18 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
   const left = sz.left
   const out: Scene = { background: scene.background, accent: scene.accent }
 
-  const imageW = enabled.image && scene.image ? 18 : 0
+  const imageW = enabled.image && scene.image ? 18 : enabled.logo && scene.logo ? 8 : 0
   const ctaW = enabled.cta && scene.cta ? 22 : 0
   const gap = Math.max(rules.gutter, 2)
-  const titleW = 100 - sz.left - sz.right - imageW - ctaW - gap * 2
+  const titleX = left + imageW + (imageW ? gap : 0)
+  const titleW = 100 - sz.left - sz.right - imageW - ctaW - (imageW ? gap : 0) - (ctaW ? gap : 0)
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, titleW, 1, 3.6, rules.minTitleSize)
+    ? fitFontSize(scene.title.text, titleW, 1, 3.6, compactTitleMinFont(rules))
     : 3.6
-  const actualTitleFont = capFontSize(scene.title, titleFont)
-  const subW = Math.max(18, titleW * 0.7)
-  const subFont = capFontSize(scene.subtitle, 1.36)
+  const actualTitleFont = Math.max(capFontSize(scene.title, titleFont), compactTitleMinFont(rules))
   const titleLines = scene.title ? measuredLines(scene.title.text, actualTitleFont, titleW, 1, rules, TITLE_TOKENS.weight) : 0
-  const subLines = scene.subtitle ? measuredLines(scene.subtitle.text, subFont, subW, 1, rules, SUBTITLE_TOKENS.weight) : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
-  const supportGap = enabled.subtitle && scene.subtitle ? Math.max(pxToHeightPct(6, rules), rules.gutter * 0.55) : 0
-  const copyStackH = titleH + supportGap + subH
-  const copyY = clamp((100 - copyStackH) / 2, sz.top, 100 - sz.bottom - copyStackH)
+  const copyY = clamp((100 - titleH) / 2, sz.top, 100 - sz.bottom - titleH)
   const ctaH = readableCtaHeight(46, rules)
   const ctaY = clamp((100 - ctaH) / 2, sz.top, 100 - sz.bottom - ctaH)
 
@@ -605,7 +902,7 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
     out.title = apply(
       {
         ...scene.title,
-        x: left,
+        x: titleX,
         y: copyY,
         w: titleW,
         fontSize: actualTitleFont,
@@ -615,25 +912,11 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
     )
   }
 
-  if (enabled.subtitle && scene.subtitle) {
-    out.subtitle = apply(
-      {
-        ...scene.subtitle,
-        x: left,
-        y: copyY + titleH + supportGap,
-        w: subW,
-        fontSize: subFont,
-        maxLines: 1,
-      },
-      { ...SUBTITLE_TOKENS, opacity: 0.65 },
-    )
-  }
-
   if (enabled.cta && scene.cta) {
     out.cta = {
       ...scene.cta,
       ...CTA_TOKENS,
-      x: left + titleW + gap,
+      x: 100 - sz.right - ctaW,
       y: ctaY,
       w: ctaW,
       h: ctaH,
@@ -645,19 +928,19 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
   if (enabled.image && scene.image) {
     out.image = {
       ...scene.image,
-      x: 100 - sz.right - imageW,
+      x: left,
       y: 8,
       w: imageW,
       h: 84,
       rx: scene.image.rx ?? 12,
-      fit: scene.image.fit ?? 'cover',
+      fit: 'contain',
     }
   }
 
   if (enabled.logo && scene.logo && !out.image) {
     out.logo = {
       ...scene.logo,
-      x: 100 - sz.right - 5,
+      x: left,
       y: 22,
       w: 5,
       h: 40,
@@ -772,29 +1055,25 @@ const layoutSmallVerticalAd: Layout = (scene, rules, enabled) => {
       w: innerW,
       h: imageH - sz.top,
       rx: scene.image.rx ?? 14,
-      fit: scene.image.fit ?? 'cover',
+      fit: 'contain',
     }
   }
 
   const titleMaxLines = maxLinesFor(scene.title, 2, 2)
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 6.4, rules.minTitleSize)
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 6.4, compactTitleMinFont(rules))
     : 6.4
-  const actualTitleFont = capFontSize(scene.title, titleFont)
-  const subFont = readableSubtitleFont(scene.subtitle, 2.45, rules)
+  const actualTitleFont = Math.max(capFontSize(scene.title, titleFont), compactTitleMinFont(rules))
   const titleLines = scene.title
     ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
     : 0
-  const subLines = scene.subtitle
-    ? measuredLines(scene.subtitle.text, subFont, innerW * 0.92, 1, rules, SUBTITLE_TOKENS.weight)
-    : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
+  const subH = 0
   const ctaH = readableCtaHeight(8.2, rules)
   const hasBadge = enabled.badge && !!scene.badge
   const badgeH = hasBadge ? 3 : 0
   const badgeGap = hasBadge ? g * 0.8 : 0
-  const textGap = titleH && subH ? Math.max(g * 0.65, pxToHeightPct(10, rules)) : 0
+  const textGap = 0
   const ctaGap = enabled.cta && scene.cta ? Math.max(g * 1.1, pxToHeightPct(16, rules)) : 0
   const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (enabled.cta && scene.cta ? ctaH : 0)
   const panelTop = (imageH || sz.top) + g * 1.2
@@ -826,20 +1105,6 @@ const layoutSmallVerticalAd: Layout = (scene, rules, enabled) => {
         maxLines: Math.max(1, titleLines),
       },
       TITLE_TOKENS,
-    )
-  }
-
-  if (enabled.subtitle && scene.subtitle) {
-    out.subtitle = apply(
-      {
-        ...scene.subtitle,
-        x: left,
-        y: subY,
-        w: innerW * 0.92,
-        fontSize: subFont,
-        maxLines: Math.max(1, subLines),
-      },
-      { ...SUBTITLE_TOKENS, opacity: 0.76 },
     )
   }
 
@@ -1273,23 +1538,19 @@ const layoutAvitoSkyscraper: Layout = (scene, rules, enabled) => {
 
   const titleMaxLines = maxLinesFor(scene.title, 2, 2)
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 7.4, rules.minTitleSize)
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 7.4, compactTitleMinFont(rules))
     : 7.4
-  const actualTitleFont = capFontSize(scene.title, titleFont)
-  const subFont = readableSubtitleFont(scene.subtitle, 2.45, rules)
+  const actualTitleFont = Math.max(capFontSize(scene.title, titleFont), compactTitleMinFont(rules))
   const ctaH = readableCtaHeight(7.6, rules)
   const titleLines = scene.title
     ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
     : 0
-  const subLines = scene.subtitle
-    ? measuredLines(scene.subtitle.text, subFont, innerW * 0.92, 1, rules, SUBTITLE_TOKENS.weight)
-    : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
+  const subH = 0
   const hasBadge = enabled.badge && !!scene.badge
   const badgeH = hasBadge ? 3 : 0
   const badgeGap = hasBadge ? g * 0.85 : 0
-  const textGap = titleH && subH ? Math.max(g * 0.75, pxToHeightPct(12, rules)) : 0
+  const textGap = 0
   const ctaGap = enabled.cta && scene.cta ? Math.max(g * 1.1, pxToHeightPct(20, rules)) : 0
   const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (enabled.cta && scene.cta ? ctaH : 0)
   const panelTop = imageH + g * 1.2
@@ -1321,20 +1582,6 @@ const layoutAvitoSkyscraper: Layout = (scene, rules, enabled) => {
         maxLines: Math.max(1, titleLines),
       },
       TITLE_TOKENS,
-    )
-  }
-
-  if (enabled.subtitle && scene.subtitle) {
-    out.subtitle = apply(
-      {
-        ...scene.subtitle,
-        x: left,
-        y: subY,
-        w: innerW * 0.92,
-        fontSize: subFont,
-        maxLines: Math.max(1, subLines),
-      },
-      { ...SUBTITLE_TOKENS, opacity: 0.78 },
     )
   }
 
@@ -1526,9 +1773,155 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   return out
 }
 
+const layoutImageTopStack: Layout = layoutImageTopTextBottom
+
+const layoutProductCardSafe: Layout = (scene, rules, enabled) => {
+  const sz = rules.safeZone
+  const left = sz.left
+  const innerW = 100 - sz.left - sz.right
+  const g = rules.gutter
+  const out: Scene = { background: scene.background, accent: scene.accent }
+
+  const pad = rules.key === 'yandex-rsy-300x250' ? 6 : 8
+  const imageH = rules.key === 'yandex-rsy-300x250' ? 46 : 52
+  if (enabled.image && scene.image) {
+    out.image = {
+      ...scene.image,
+      x: left + pad,
+      y: sz.top + pad,
+      w: Math.max(10, innerW - pad * 2),
+      h: Math.max(10, imageH - pad),
+      rx: scene.image.rx ?? 14,
+      fit: 'contain',
+    }
+  }
+
+  const textTop = sz.top + imageH + g * 0.8
+  const textBottom = 100 - sz.bottom
+  const titleMaxLines = maxLinesFor(scene.title, Math.min(2, rules.maxTitleLines), 2)
+  const minTitle = Math.max(rules.minTitleSize, pxToWidthPct(rules.width <= 320 ? 15 : 22, rules))
+  const titleFont = scene.title
+    ? fitFontSize(scene.title.text, innerW, titleMaxLines, 5.8 * tscale(rules), minTitle)
+    : 5.8 * tscale(rules)
+  const actualTitleFont = capFontSize(scene.title, titleFont)
+  const titleLines = scene.title
+    ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
+    : 0
+  const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
+
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle && rules.key !== 'yandex-rsy-300x250'
+  const subFont = hasSubtitle && scene.subtitle
+    ? fitFontSize(scene.subtitle.text, innerW * 0.94, 1, 2.55 * tscale(rules), MIN_SUBTITLE_SIZE)
+    : 0
+  const actualSubFont = capFontSize(scene.subtitle, subFont)
+  const subLines = hasSubtitle && scene.subtitle
+    ? measuredLines(scene.subtitle.text, actualSubFont, innerW * 0.94, 1, rules, SUBTITLE_TOKENS.weight)
+    : 0
+  const subH = subLines ? textBlockHeight(actualSubFont, subLines, 1.35, rules) : 0
+  const hasCta = enabled.cta && !!scene.cta
+  const ctaH = hasCta ? readableCtaHeight(6.4, rules) : 0
+  const titleSubGap = titleH && subH ? Math.max(g * 0.55, pxToHeightPct(8, rules)) : 0
+  const ctaGap = hasCta ? Math.max(g * 0.9, pxToHeightPct(12, rules)) : 0
+  const stackH = titleH + titleSubGap + subH + ctaGap + ctaH
+  const titleY = clamp(textTop, textTop, Math.max(textTop, textBottom - stackH))
+  const subY = titleY + titleH + titleSubGap
+  const ctaY = subY + subH + ctaGap
+
+  if (enabled.badge && scene.badge) {
+    out.badge = apply(
+      { ...scene.badge, x: left, y: sz.top, w: 24, h: 3, fontSize: 2.1 },
+      BADGE_TOKENS,
+    )
+  }
+
+  if (enabled.title && scene.title) {
+    out.title = apply(
+      {
+        ...scene.title,
+        x: left,
+        y: titleY,
+        w: innerW,
+        fontSize: actualTitleFont,
+        maxLines: Math.max(1, titleLines),
+      },
+      TITLE_TOKENS,
+    )
+  }
+
+  if (hasSubtitle && scene.subtitle) {
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: subY,
+        w: innerW * 0.94,
+        fontSize: actualSubFont,
+        maxLines: 1,
+      },
+      SUBTITLE_TOKENS,
+    )
+  }
+
+  if (hasCta && scene.cta) {
+    out.cta = {
+      ...scene.cta,
+      ...CTA_TOKENS,
+      x: left,
+      y: ctaY,
+      w: Math.min(52, innerW),
+      h: ctaH,
+      fontSize: readableCtaFont(scene.cta, 2.45, rules),
+      maxLines: 1,
+    }
+  }
+
+  if (enabled.logo && scene.logo) {
+    out.logo = {
+      ...scene.logo,
+      x: 100 - sz.right - 6,
+      y: sz.top,
+      w: 6,
+      h: 6,
+    }
+  }
+
+  return out
+}
+
+const layoutSplitLeftImage: Layout = (scene, rules, enabled, hint) => {
+  const right = layoutSplitRightImage(scene, rules, enabled, hint)
+  const mirrorBlock = <T extends { x: number; w: number }>(block: T | undefined): T | undefined =>
+    block ? { ...block, x: 100 - block.x - block.w } : undefined
+  return {
+    ...right,
+    title: mirrorBlock(right.title),
+    subtitle: mirrorBlock(right.subtitle),
+    cta: mirrorBlock(right.cta),
+    badge: mirrorBlock(right.badge),
+    logo: mirrorBlock(right.logo),
+    image: mirrorBlock(right.image),
+  }
+}
+
+const layoutCenteredCard: Layout = (scene, rules, enabled, hint) => {
+  const base = layoutTextDominant(scene, rules, enabled, hint)
+  return {
+    ...base,
+    title: base.title ? { ...base.title, x: 14, w: 72, align: 'center' } : undefined,
+    subtitle: base.subtitle ? { ...base.subtitle, x: 18, w: 64, align: 'center' } : undefined,
+    cta: base.cta ? { ...base.cta, x: 34, w: 32 } : undefined,
+    badge: base.badge ? { ...base.badge, x: 38, w: 24, align: 'center' } : undefined,
+    logo: base.logo,
+  }
+}
+
 export const LAYOUTS: Record<CompositionModel, Layout> = {
   'text-dominant': layoutTextDominant,
   'split-right-image': layoutSplitRightImage,
+  'split-left-image': layoutSplitLeftImage,
   'hero-overlay': layoutHeroOverlay,
+  'image-top-stack': layoutImageTopStack,
+  'product-card-safe': layoutProductCardSafe,
+  'centered-card': layoutCenteredCard,
   'image-top-text-bottom': layoutImageTopTextBottom,
 }

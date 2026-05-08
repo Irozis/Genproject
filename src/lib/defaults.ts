@@ -8,7 +8,6 @@ import type {
   Project,
   Scene,
 } from './types'
-import { DEFAULT_COMPOSITION_BY_FORMAT } from './formats'
 import { compactCopyOverrides } from './formatCopy'
 
 const DEFAULT_PALETTE: Palette = {
@@ -148,13 +147,14 @@ export function newProject(name = 'novyy-proekt'): Project {
     originalImageSrc: null,
     extendedImageSrc: null,
     useExtendedImage: false,
+    imageFitPreference: 'auto',
+    imageFitDecisionByFormat: {},
     backgroundExtensionStatus: 'idle',
     backgroundExtension: undefined,
     extendedImageByFormat: {},
     backgroundExtensionByFormat: {},
     logoSrc: null,
     selectedFormats: [...DEFAULT_FORMATS],
-    formatOverrides: { ...DEFAULT_COMPOSITION_BY_FORMAT },
     blockOverrides: compactCopyOverrides({
       title: 'Готовые макеты',
       subtitle: 'Для маркетплейсов и рекламы',

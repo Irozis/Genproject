@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { chooseModel, profile, LAYOUTS } from '../composition'
+import { chooseLayoutArchetype, chooseModel, profile, LAYOUTS } from '../composition'
+import { buildScene } from '../buildScene'
 import { getFormat } from '../formats'
-import { DEFAULT_MASTER, DEFAULT_ENABLED } from '../defaults'
+import { DEFAULT_MASTER, DEFAULT_ENABLED, DEFAULT_BRAND_KIT } from '../defaults'
 import type { AssetHint, EnabledMap, Scene } from '../types'
 
 // Helpers for the smart-anchor tests below. We only ever care about
@@ -18,6 +19,10 @@ function hintWithGrid(grid: number[][], bottomBand = 0.5): AssetHint {
     bottomBandBrightness: bottomBand,
     brightnessGrid: grid,
   }
+}
+
+function fontPx(fontSize: number, formatKey: Parameters<typeof getFormat>[0]): number {
+  return (fontSize / 100) * getFormat(formatKey).width
 }
 
 // Master without an image src (src is null → hasImage = false)
@@ -93,7 +98,13 @@ describe('chooseModel', () => {
       imageIsLarge: true,
       isPortrait: false,
       isWide: true,
-    }
+      textDensity: 'medium',
+      hasSubtitle: true,
+      hasCTA: true,
+      hasBadge: false,
+      imageImportance: 'medium',
+      totalEnabledBlocks: 4,
+    } as const
     expect(chooseModel(p)).toBe('split-right-image')
   })
 
@@ -101,7 +112,7 @@ describe('chooseModel', () => {
     for (const fmt of ['vk-vertical', 'instagram-story'] as const) {
       const rules = getFormat(fmt)
       const p = profile(masterWithImage, rules, DEFAULT_ENABLED)
-      expect(chooseModel(p)).toBe('image-top-text-bottom')
+      expect(chooseModel(p)).toBe('image-top-stack')
     }
   })
 
@@ -119,7 +130,10 @@ describe('LAYOUTS', () => {
     for (const model of [
       'text-dominant',
       'split-right-image',
+      'split-left-image',
       'hero-overlay',
+      'image-top-stack',
+      'centered-card',
       'image-top-text-bottom',
     ] as const) {
       const result = LAYOUTS[model](masterWithImage, rules, DEFAULT_ENABLED)
@@ -186,9 +200,9 @@ describe('LAYOUTS', () => {
     const result = LAYOUTS['split-right-image'](masterWithImage, rules, DEFAULT_ENABLED)
 
     expect(result.title?.maxLines).toBe(1)
-    expect(result.subtitle?.maxLines).toBe(1)
+    expect(result.subtitle).toBeUndefined()
     expect(result.cta?.x).toBeGreaterThan((result.title?.x ?? 0) + (result.title?.w ?? 0))
-    expect(result.image?.x).toBeGreaterThan(result.cta?.x ?? 0)
+    expect(result.image?.x).toBeLessThan(result.title?.x ?? 100)
   })
 
   it('avito skyscraper uses a dedicated listing-style vertical layout', () => {
@@ -352,5 +366,171 @@ describe('LAYOUTS', () => {
     const result = LAYOUTS['hero-overlay'](masterWithImage, rules, DEFAULT_ENABLED, hint)
     expect(result.title!.y).toBeGreaterThan(40)
     expect(result.scrim?.direction ?? 'down').toBe('down')
+  })
+})
+
+describe('chooseLayoutArchetype', () => {
+  function select(scene: Scene, formatKey: Parameters<typeof getFormat>[0], hint?: AssetHint | null) {
+    return chooseLayoutArchetype({
+      format: getFormat(formatKey),
+      scene,
+      enabled: DEFAULT_ENABLED,
+      assetHint: hint,
+    })
+  }
+
+  it('wide + low text + strong image selects hero-overlay', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      title: { ...masterWithImage.title!, text: 'Летняя распродажа', maxLines: 1 },
+      subtitle: undefined,
+      cta: undefined,
+      badge: undefined,
+      image: { ...masterWithImage.image!, w: 70, h: 70 },
+    }
+    const result = select(scene, 'vk-landscape', { ...hintWithGrid([[0.4]]), aspectRatio: 16 / 9 })
+
+    expect(result.selected).toBe('hero-overlay')
+    expect(result.selectionDebug.formatFamily).toBe('wide')
+    expect(result.selectionDebug.textDensity).toBe('low')
+  })
+
+  it('square + medium text + image selects split archetype', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      title: { ...masterWithImage.title!, text: 'Новая коллекция для дома' },
+      subtitle: { ...masterWithImage.subtitle!, text: 'Практичные товары и готовые наборы для уютного сезона.' },
+    }
+    const result = select(scene, 'vk-square', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
+
+    expect(['split-right-image', 'split-left-image']).toContain(result.selected)
+  })
+
+  it('portrait + medium text + product image selects image-top-stack', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      title: { ...masterWithImage.title!, text: 'Набор для ухода' },
+      subtitle: { ...masterWithImage.subtitle!, text: 'Три средства в одном комплекте для ежедневного ухода.' },
+    }
+    const result = select(scene, 'wb-card', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
+
+    expect(result.selected).toBe('image-top-stack')
+  })
+
+  it('high text density selects text-dominant', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      title: { ...masterWithImage.title!, text: 'Большой сезонный набор с подробным описанием преимуществ, условий доставки и ограниченного предложения' },
+      subtitle: { ...masterWithImage.subtitle!, text: 'Подходит для маркетплейсов, социальных сетей, промо-баннеров и карточек товара с длинным описанием.' },
+      badge: { ...masterWithImage.badge!, text: 'Только сегодня' },
+    }
+    const result = chooseLayoutArchetype({
+      format: getFormat('vk-square'),
+      scene,
+      enabled: { ...DEFAULT_ENABLED, badge: true },
+      assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
+    })
+
+    expect(result.selected).toBe('text-dominant')
+  })
+
+  it('left focal image prefers split-right-image', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      image: { ...masterWithImage.image!, focalX: 0.2 },
+      title: { ...masterWithImage.title!, text: 'Новая коллекция для дома' },
+      subtitle: { ...masterWithImage.subtitle!, text: 'Практичные товары для уютного сезона.' },
+    }
+    const result = select(scene, 'vk-square', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
+
+    expect(result.selected).toBe('split-right-image')
+  })
+
+  it('right focal image prefers split-left-image', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      image: { ...masterWithImage.image!, focalX: 0.8 },
+      title: { ...masterWithImage.title!, text: 'Новая коллекция для дома' },
+      subtitle: { ...masterWithImage.subtitle!, text: 'Практичные товары для уютного сезона.' },
+    }
+    const result = select(scene, 'vk-square', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
+
+    expect(result.selected).toBe('split-left-image')
+  })
+
+  it('yandex-rsy-728x90 hides subtitle and keeps readable title/CTA', () => {
+    const scene = buildScene(masterWithImage, 'yandex-rsy-728x90', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
+    })
+
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.image?.x).toBeLessThan(10)
+    expect(scene.cta?.x).toBeGreaterThan(70)
+    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(14)
+    expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(12)
+  })
+
+  it('yandex-rsy-240x400 uses compact vertical policy', () => {
+    const scene = buildScene(masterWithImage, 'yandex-rsy-240x400', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
+    })
+
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.image?.y).toBeLessThan(10)
+    expect(scene.image?.fit).toBe('contain')
+    expect(scene.cta!.y).toBeGreaterThan(scene.title!.y)
+    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(18)
+    expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(13)
+  })
+
+  it('avito-skyscraper uses compact policy', () => {
+    const scene = buildScene(masterWithImage, 'avito-skyscraper', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
+    })
+
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.image?.fit).toBe('contain')
+    expect(fontPx(scene.title!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(22)
+    expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(14)
+  })
+
+  it('product card with objectBounds uses contain image fit', () => {
+    const hint: AssetHint = {
+      ...hintWithGrid([[0.5]]),
+      aspectRatio: 2.2,
+      objectBounds: { x: 0.01, y: 0.18, w: 0.72, h: 0.62 },
+    }
+    const scene = buildScene(masterWithImage, 'yandex-market-card', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      assetHint: hint,
+    })
+
+    expect(scene.image?.fit).toBe('contain')
+    expect(scene.image?.x).toBeGreaterThan(10)
+    expect(scene.image?.w).toBeLessThan(84)
+  })
+
+  it('vk-square with high crop risk prefers product-safe over tight split', () => {
+    const result = select(masterWithImage, 'vk-square', {
+      ...hintWithGrid([[0.5]]),
+      aspectRatio: 2.4,
+      objectBounds: { x: 0.82, y: 0.12, w: 0.17, h: 0.7 },
+    })
+
+    expect(['product-card-safe', 'image-top-stack']).toContain(result.selected)
+    expect(['split-right-image', 'split-left-image']).not.toContain(result.selected)
+    expect(result.selectionDebug.cropRiskPenalty).toBeGreaterThan(0)
+  })
+
+  it('selector remains deterministic with compact/product penalties', () => {
+    const hint: AssetHint = {
+      ...hintWithGrid([[0.5]]),
+      aspectRatio: 2.4,
+      objectBounds: { x: 0.82, y: 0.12, w: 0.17, h: 0.7 },
+    }
+    const a = select(masterWithImage, 'vk-square', hint)
+    const b = select(masterWithImage, 'vk-square', hint)
+
+    expect(a).toEqual(b)
+    expect(a.selectionDebug.selectedArchetype).toBe(a.selected)
   })
 })

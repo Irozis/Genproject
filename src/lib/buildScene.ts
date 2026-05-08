@@ -3,7 +3,7 @@
 // No randomness. No side effects.
 
 import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkForLuma } from './color'
-import { LAYOUTS, chooseModel, profile } from './composition'
+import { LAYOUTS, chooseLayoutArchetype } from './composition'
 import { getFormat } from './formats'
 import { applyLayoutDensity } from './layoutDensity'
 import type {
@@ -48,8 +48,9 @@ function pickCompositionModel(
   rules: FormatRuleSet,
   enabled: EnabledMap,
   override: CompositionModel | undefined,
+  assetHint?: AssetHint | null,
 ): CompositionModel {
-  return override ?? chooseModel(profile(branded, rules, enabled))
+  return override ?? chooseLayoutArchetype({ format: rules, scene: branded, enabled, assetHint }).selected
 }
 
 /** Same composition decision as `buildScene` — for UI (picker labels, tooltips). */
@@ -62,7 +63,7 @@ export function resolveCompositionModel(
 ): CompositionModel {
   const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
   const branded = applyBrandKit(master, brandKit)
-  return pickCompositionModel(branded, rules, enabled, options.override)
+  return pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
 }
 
 export function buildScene(
@@ -78,7 +79,7 @@ export function buildScene(
   const branded = applyBrandKit(master, brandKit)
 
   // 2. profile content + choose layout (or honour override)
-  const model = pickCompositionModel(branded, rules, enabled, options.override)
+  const model = pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
 
   // 3. compute positioned scene
   const positioned = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
