@@ -208,7 +208,7 @@ function chooseLayoutArchetypeFromProfiles(
       smallTextRisk,
       cropRisk,
       compactTextPolicyApplied,
-      subtitleHiddenForCompactFormat: compactTextPolicyApplied && content.hasSubtitle,
+      subtitleHiddenForCompactFormat: false,
       imageFitMode,
       cropRiskPenalty,
       smallTextRiskPenalty,
@@ -342,10 +342,10 @@ export const COMPOSITION_MODEL_LABELS: Record<
 // Typography tokens — consistent across all layouts
 // ---------------------------------------------------------------------------
 
-const TITLE_TOKENS = { letterSpacing: -0.02, lineHeight: 1.02, weight: 900 }
+const TITLE_TOKENS = { letterSpacing: 0, lineHeight: 1.02, weight: 900 }
 const SUBTITLE_TOKENS = { letterSpacing: 0, lineHeight: 1.35, weight: 400, opacity: 0.72 }
-const BADGE_TOKENS = { letterSpacing: 0.1, lineHeight: 1.0, weight: 700 }
-const CTA_TOKENS = { letterSpacing: 0.02, lineHeight: 1.0, weight: 700 }
+const BADGE_TOKENS = { letterSpacing: 0, lineHeight: 1.0, weight: 700 }
+const CTA_TOKENS = { letterSpacing: 0, lineHeight: 1.0, weight: 700 }
 
 // Per-platform "bottom of the CTA" anchor for story-style formats. Each value
 // is the maximum y (% of canvas height) where the CTA's bottom edge can sit,
@@ -660,6 +660,8 @@ type Layout = (
 ) => Scene
 
 const layoutTextDominant: Layout = (scene, rules, enabled) => {
+  if (rules.aspectRatio > 4) return layoutUltraWideBanner(scene, rules, enabled)
+
   const sz = rules.safeZone
   const innerW = 100 - sz.left - sz.right
   const left = sz.left
@@ -905,20 +907,73 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
   const left = sz.left
   const out: Scene = { background: scene.background, accent: scene.accent }
 
-  const imageW = enabled.image && scene.image ? 18 : enabled.logo && scene.logo ? 8 : 0
-  const ctaW = enabled.cta && scene.cta ? 22 : 0
+  const imageW = enabled.image && scene.image ? 18 : 0
+  const badgeW = !imageW && enabled.badge && scene.badge ? 13 : 0
+  const hasImageBadge = !!imageW && enabled.badge && !!scene.badge
+  const ctaW = enabled.cta && scene.cta ? (rules.key === 'yandex-market-stretch' ? 26 : 22) : 0
   const gap = Math.max(rules.gutter, 2)
-  const titleX = left + imageW + (imageW ? gap : 0)
-  const titleW = 100 - sz.left - sz.right - imageW - ctaW - (imageW ? gap : 0) - (ctaW ? gap : 0)
+  const leadW = imageW || badgeW
+  const titleX = left + leadW + (leadW ? gap : 0)
+  const titleW = Math.max(
+    20,
+    100 - sz.left - sz.right - leadW - ctaW - (leadW ? gap : 0) - (ctaW ? gap : 0),
+  )
+  const baseTitlePx = rules.key === 'yandex-market-stretch' ? 42 : 32
+  const minTitlePx = rules.key === 'yandex-market-stretch' ? 18 : 14
   const titleFont = scene.title
-    ? fitFontSize(scene.title.text, titleW, 1, 3.6, compactTitleMinFont(rules))
-    : 3.6
-  const actualTitleFont = Math.max(capFontSize(scene.title, titleFont), compactTitleMinFont(rules))
+    ? (fitFontSizePx({
+        baseFontSizePx: baseTitlePx,
+        minFontSizePx: minTitlePx,
+        fits: (fontSizePx) =>
+          wrapText({
+            text: scene.title?.text ?? '',
+            fontSizePx,
+            fontWeight: TITLE_TOKENS.weight,
+            fontFamily: 'Inter, system-ui, sans-serif',
+            maxWidthPx: (titleW / 100) * rules.width,
+            maxLines: 1,
+          }).length <= 1,
+      }) /
+        rules.width) *
+      100
+    : (baseTitlePx / rules.width) * 100
+  const actualTitleFont = capFontSize(scene.title, titleFont)
   const titleLines = scene.title ? measuredLines(scene.title.text, actualTitleFont, titleW, 1, rules, TITLE_TOKENS.weight) : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const copyY = clamp((100 - titleH) / 2, sz.top, 100 - sz.bottom - titleH)
-  const ctaH = readableCtaHeight(46, rules)
+  const ctaH = readableCtaHeight(0, rules)
+  const copyY = enabled.cta && scene.cta
+    ? clamp(22, sz.top, 100 - sz.bottom - titleH - ctaH - gap)
+    : clamp((100 - titleH) / 2, sz.top, 100 - sz.bottom - titleH)
   const ctaY = clamp((100 - ctaH) / 2, sz.top, 100 - sz.bottom - ctaH)
+
+  if (enabled.badge && scene.badge && !imageW) {
+    out.badge = apply(
+      {
+        ...scene.badge,
+        x: left,
+        y: clamp(copyY + titleH * 0.2, sz.top, 100 - sz.bottom - 14),
+        w: badgeW,
+        h: Math.max(pxToHeightPct(20, rules), 10),
+        fontSize: pxToWidthPct(13, rules),
+      },
+      BADGE_TOKENS,
+    )
+  }
+
+  if (hasImageBadge && scene.badge) {
+    out.badge = apply(
+      {
+        ...scene.badge,
+        x: left + 1,
+        y: clamp(12, sz.top, 100 - sz.bottom - 16),
+        w: Math.max(11, imageW - 2),
+        h: Math.max(pxToHeightPct(18, rules), 9),
+        fontSize: pxToWidthPct(12, rules),
+        align: 'center',
+      },
+      BADGE_TOKENS,
+    )
+  }
 
   if (enabled.title && scene.title) {
     out.title = apply(
@@ -942,7 +997,7 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
       y: ctaY,
       w: ctaW,
       h: ctaH,
-      fontSize: readableCtaFont(scene.cta, 1.78, rules),
+      fontSize: readableCtaFont(scene.cta, pxToWidthPct(20, rules), rules),
       maxLines: 1,
     }
   }
@@ -959,7 +1014,7 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
     }
   }
 
-  if (enabled.logo && scene.logo && !out.image) {
+  if (enabled.logo && scene.logo && !out.image && !out.badge) {
     out.logo = {
       ...scene.logo,
       x: left,
@@ -994,6 +1049,13 @@ const layoutCompactBanner: Layout = (scene, rules, enabled) => {
   const stackGap = Math.max(2.5, rules.gutter * 0.8)
   const stackH = titleH + stackGap + subH + stackGap + ctaH
   const titleY = clamp((100 - stackH) / 2, sz.top + rules.gutter, 100 - sz.bottom - stackH)
+
+  if (enabled.badge && scene.badge) {
+    out.badge = apply(
+      { ...scene.badge, x: left, y: sz.top, w: 32, h: 3.4, fontSize: 1.3 },
+      BADGE_TOKENS,
+    )
+  }
 
   if (enabled.title && scene.title) {
     out.title = apply(
@@ -1090,12 +1152,19 @@ const layoutSmallVerticalAd: Layout = (scene, rules, enabled) => {
     ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
     : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const subH = 0
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle
+  const subFont = hasSubtitle && scene.subtitle
+    ? readableSubtitleFont(scene.subtitle, 2.15, rules)
+    : 0
+  const subLines = hasSubtitle && scene.subtitle
+    ? measuredLines(scene.subtitle.text, subFont, innerW * 0.94, 1, rules, SUBTITLE_TOKENS.weight)
+    : 0
+  const subH = subLines ? textBlockHeight(subFont, subLines, 1.25, rules) : 0
   const ctaH = readableCtaHeight(8.2, rules)
   const hasBadge = enabled.badge && !!scene.badge
   const badgeH = hasBadge ? 3 : 0
   const badgeGap = hasBadge ? g * 0.8 : 0
-  const textGap = 0
+  const textGap = titleH && subH ? Math.max(g * 0.55, pxToHeightPct(8, rules)) : 0
   const ctaGap = enabled.cta && scene.cta ? Math.max(g * 1.1, pxToHeightPct(16, rules)) : 0
   const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (enabled.cta && scene.cta ? ctaH : 0)
   const panelTop = (imageH || sz.top) + g * 1.2
@@ -1127,6 +1196,20 @@ const layoutSmallVerticalAd: Layout = (scene, rules, enabled) => {
         maxLines: Math.max(1, titleLines),
       },
       TITLE_TOKENS,
+    )
+  }
+
+  if (hasSubtitle && scene.subtitle) {
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: subY,
+        w: innerW * 0.94,
+        fontSize: subFont,
+        maxLines: 1,
+      },
+      SUBTITLE_TOKENS,
     )
   }
 
@@ -1404,9 +1487,15 @@ const layoutHeroOverlay: Layout = (scene, rules, enabled, hint) => {
   if (enabled.badge && scene.badge) {
     // In top/split modes the title now lives where the badge used to sit —
     // push the badge to the opposite edge instead.
-    const badgeY = mode === 'bottom' ? sz.top : Math.min(94, bottom + g)
+    const badgeH = 3
+    const maxBadgeY = 100 - sz.bottom - badgeH
+    const pushedBadgeY = bottom + g
+    const overlapsCta = hasCta && (isStory || pushedBadgeY <= ctaY + ctaH + g + 1)
+    const badgeY = mode === 'bottom' || overlapsCta
+      ? sz.top
+      : clamp(pushedBadgeY, sz.top, maxBadgeY)
     out.badge = apply(
-      { ...scene.badge, x: left, y: badgeY, w: 26, fontSize: 2.4, fill: '#FFFFFF' },
+      { ...scene.badge, x: left, y: badgeY, w: 26, h: badgeH, fontSize: 2.4, fill: '#FFFFFF' },
       BADGE_TOKENS,
     )
   }
@@ -1568,11 +1657,18 @@ const layoutAvitoSkyscraper: Layout = (scene, rules, enabled) => {
     ? measuredLines(scene.title.text, actualTitleFont, innerW, titleMaxLines, rules, TITLE_TOKENS.weight)
     : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const subH = 0
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle
+  const subFont = hasSubtitle && scene.subtitle
+    ? readableSubtitleFont(scene.subtitle, 2.18, rules)
+    : 0
+  const subLines = hasSubtitle && scene.subtitle
+    ? measuredLines(scene.subtitle.text, subFont, innerW * 0.94, 1, rules, SUBTITLE_TOKENS.weight)
+    : 0
+  const subH = subLines ? textBlockHeight(subFont, subLines, 1.25, rules) : 0
   const hasBadge = enabled.badge && !!scene.badge
   const badgeH = hasBadge ? 3 : 0
   const badgeGap = hasBadge ? g * 0.85 : 0
-  const textGap = 0
+  const textGap = titleH && subH ? Math.max(g * 0.55, pxToHeightPct(8, rules)) : 0
   const ctaGap = enabled.cta && scene.cta ? Math.max(g * 1.1, pxToHeightPct(20, rules)) : 0
   const stackH = badgeH + badgeGap + titleH + textGap + subH + ctaGap + (enabled.cta && scene.cta ? ctaH : 0)
   const panelTop = imageH + g * 1.2
@@ -1604,6 +1700,20 @@ const layoutAvitoSkyscraper: Layout = (scene, rules, enabled) => {
         maxLines: Math.max(1, titleLines),
       },
       TITLE_TOKENS,
+    )
+  }
+
+  if (hasSubtitle && scene.subtitle) {
+    out.subtitle = apply(
+      {
+        ...scene.subtitle,
+        x: left,
+        y: subY,
+        w: innerW * 0.94,
+        fontSize: subFont,
+        maxLines: 1,
+      },
+      SUBTITLE_TOKENS,
     )
   }
 
@@ -1831,7 +1941,7 @@ const layoutProductCardSafe: Layout = (scene, rules, enabled) => {
     : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
 
-  const hasSubtitle = enabled.subtitle && !!scene.subtitle && rules.key !== 'yandex-rsy-300x250'
+  const hasSubtitle = enabled.subtitle && !!scene.subtitle
   const subFont = hasSubtitle && scene.subtitle
     ? fitFontSize(scene.subtitle.text, innerW * 0.94, 1, 2.55 * tscale(rules), MIN_SUBTITLE_SIZE)
     : 0

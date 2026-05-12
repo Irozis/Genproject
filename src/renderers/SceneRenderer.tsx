@@ -1,7 +1,7 @@
 // Pure renderer: takes a positioned Scene + format dimensions and outputs SVG.
 // No state, no effects. Text wrapping uses canvas measureText for fidelity.
 
-import { forwardRef } from 'react'
+import { forwardRef, useId } from 'react'
 import type { CSSProperties } from 'react'
 import { tonalStops } from '../lib/color'
 import { measureTextWidth, wrapText } from '../lib/textMeasure'
@@ -40,10 +40,12 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
   ref,
 ) {
   const { width: W, height: H, key } = rules
-  const bgId = `bg-${key}`
-  const scrimId = `scrim-${key}`
-  const imgClipId = `img-clip-${key}`
-  const imgShadowId = `img-shadow-${key}`
+  const reactId = useId()
+  const idPrefix = `${safeSvgId(key)}-${safeSvgId(reactId)}`
+  const bgId = `${idPrefix}-bg`
+  const scrimId = `${idPrefix}-scrim`
+  const imgClipId = `${idPrefix}-img-clip`
+  const imgShadowId = `${idPrefix}-img-shadow`
 
   return (
     <svg
@@ -93,7 +95,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
 
       <BackgroundFill bg={scene.background} W={W} H={H} id={bgId} />
 
-      {scene.decor ? <DecorNode decor={scene.decor} W={W} H={H} /> : null}
+      {scene.decor ? <DecorNode decor={scene.decor} W={W} H={H} idPrefix={idPrefix} /> : null}
 
       {scene.image ? (
         <ImageNode
@@ -121,6 +123,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
           H={H}
           fontFamily={scene.title.fontFamily ?? displayFont}
           accent={scene.accent}
+          idPrefix={`${idPrefix}-title`}
         />
       ) : null}
 
@@ -132,6 +135,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
           H={H}
           fontFamily={scene.subtitle.fontFamily ?? textFont}
           accent={scene.accent}
+          idPrefix={`${idPrefix}-subtitle`}
         />
       ) : null}
 
@@ -154,6 +158,10 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
 
 function pct(v: number, total: number): number {
   return (v / 100) * total
+}
+
+function safeSvgId(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, '-') || 'scene'
 }
 
 function clamp(v: number, lo: number, hi: number): number {
@@ -253,7 +261,7 @@ function BackgroundFill({
 // Decor
 // ---------------------------------------------------------------------------
 
-function DecorNode({ decor, W, H }: { decor: Decor; W: number; H: number }) {
+function DecorNode({ decor, W, H, idPrefix }: { decor: Decor; W: number; H: number; idPrefix: string }) {
   if (decor.kind === 'corner-circle') {
     const r = pct(decor.size, W)
     const { cx, cy } = cornerAnchor(decor.corner, W, H, r)
@@ -317,7 +325,7 @@ function DecorNode({ decor, W, H }: { decor: Decor; W: number; H: number }) {
     // Film-grain via feTurbulence + feColorMatrix. Deterministic seed means
     // two identical-seed grains render pixel-for-pixel the same. Opacity
     // scales with `intensity` — kept low so grain stays a texture, not noise.
-    const filterId = `grain-${decor.seed}`
+    const filterId = `${idPrefix}-grain-${decor.seed}`
     const clamped = Math.max(0, Math.min(1, decor.intensity))
     return (
       <g opacity={clamped * 0.35}>
@@ -719,6 +727,7 @@ function TextNode({
   H,
   fontFamily,
   accent,
+  idPrefix,
 }: {
   role: string
   block: TextBlock
@@ -726,6 +735,7 @@ function TextNode({
   H: number
   fontFamily: string
   accent: string
+  idPrefix: string
 }) {
   const xLeft = pct(block.x, W)
   const yTop = pct(block.y, H)
@@ -750,15 +760,15 @@ function TextNode({
     : baseFontSizePx
   // Halo filter id is stable per bbox so hot-reload doesn't churn DOM.
   const haloId = block.halo
-    ? `halo-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(fontSizePx)}`
+    ? `${idPrefix}-halo-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(fontSizePx)}`
     : undefined
   // Anchor-point translation: SVG `text-anchor` attaches relative to the same
   // x coordinate for every tspan, so centering / right-aligning is a matter of
   // moving the anchor rather than computing per-line offsets.
   const anchorX = align === 'center' ? xLeft + wPx / 2 : align === 'right' ? xLeft + wPx : xLeft
   const textAnchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start'
-  const clipId = block.h && fitMode !== 'overflow'
-    ? `text-clip-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(wPx)}-${Math.round(pct(block.h, H))}`
+  const clipId = block.h && fitMode === 'clamp'
+    ? `${idPrefix}-text-clip-${Math.round(xLeft)}-${Math.round(yTop)}-${Math.round(wPx)}-${Math.round(pct(block.h, H))}`
     : undefined
   const lines = wrapText({
     text: plain,
@@ -982,8 +992,11 @@ function CtaNode({
   const rx = Math.min(block.rx, h / 2)
   const label = applyCase(block.text, block.transform)
   const labelMaxWidth = w * 0.82
-  const fontSizePx = fitCtaFontSize(label, baseFontSizePx, Math.max(8, baseFontSizePx * 0.72), labelMaxWidth, block.weight, fontFamily)
-  const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
+  const fitMode = block.fitMode ?? 'auto'
+  const fontSizePx = fitMode === 'auto'
+    ? fitCtaFontSize(label, baseFontSizePx, Math.max(8, baseFontSizePx * 0.72), labelMaxWidth, block.weight, fontFamily)
+    : baseFontSizePx
+  const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0)
   return (
     <g data-role={role}>
       <rect x={x} y={y} width={w} height={h} rx={rx} ry={rx} fill={block.bg} />

@@ -56,7 +56,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
               onPatchScene((s) => {
                 const block = s[kind]
                 if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
-                return { ...s, [kind]: { ...block, fontSize: value } }
+                return { ...s, [kind]: { ...block, fontSize: value, fitMode: 'ellipsis' } }
               })
             }}
           />
@@ -74,7 +74,7 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
               onPatchScene((s) => {
                 const block = s[kind]
                 if (!block || (kind !== 'title' && kind !== 'subtitle' && kind !== 'badge')) return s
-                return { ...s, [kind]: { ...block, maxLines: value } }
+                return { ...s, [kind]: { ...block, maxLines: value, fitMode: 'ellipsis' } }
               })
             }}
           />
@@ -170,7 +170,11 @@ export function ElementEditor({ kind, scene, onPatchScene, activeLocale }: Props
             step={0.1}
             value={block.fontSize}
             onChange={(e) =>
-              patchTextBlock(onPatchScene, 'cta', (current) => ({ ...current, fontSize: Number(e.target.value) }))
+              patchTextBlock(onPatchScene, 'cta', (current) => ({
+                ...current,
+                fontSize: Number(e.target.value),
+                fitMode: 'ellipsis',
+              }))
             }
           />
         </label>

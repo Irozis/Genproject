@@ -466,7 +466,7 @@ describe('chooseLayoutArchetype', () => {
 
     expect(isCompactTextFormat('yandex-rsy-728x90')).toBe(true)
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
-    expect(decision.selectionDebug.subtitleHiddenForCompactFormat).toBe(true)
+    expect(decision.selectionDebug.subtitleHiddenForCompactFormat).toBe(false)
     expect(decision.selectionDebug.minFontGuardApplied).toBe(true)
     expect(decision.selectionDebug.smallTextRisk).not.toBe('low')
     expect(scene.subtitle).toBeUndefined()
@@ -484,7 +484,7 @@ describe('chooseLayoutArchetype', () => {
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
     expect(decision.selectionDebug.smallTextRiskPenalty).toBeGreaterThan(0)
-    expect(scene.subtitle).toBeUndefined()
+    expect(scene.subtitle).toBeDefined()
     expect(scene.image?.y).toBeLessThan(10)
     expect(scene.image?.fit).toBe('contain')
     expect(scene.cta!.y).toBeGreaterThan(scene.title!.y)
@@ -499,7 +499,7 @@ describe('chooseLayoutArchetype', () => {
     })
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
-    expect(scene.subtitle).toBeUndefined()
+    expect(scene.subtitle).toBeDefined()
     expect(scene.image?.fit).toBe('contain')
     expect(fontPx(scene.title!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(22)
     expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(14)
@@ -517,6 +517,31 @@ describe('chooseLayoutArchetype', () => {
     expect(scene.cta).toBeDefined()
     expect(fontPx(scene.title!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(18)
     expect(fontPx(scene.cta!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(14)
+  })
+
+  it('yandex-market-stretch uses compact banner layout even for text-only auto mode', () => {
+    const scene = buildScene(
+      {
+        ...masterNoImage,
+        title: {
+          ...masterNoImage.title!,
+          text: 'Английский через игры и проекты',
+        },
+        subtitle: {
+          ...masterNoImage.subtitle!,
+          text: 'Мини-группы 7-10 лет: говорим, играем и делаем проекты',
+        },
+      },
+      'yandex-market-stretch',
+      DEFAULT_BRAND_KIT,
+      DEFAULT_ENABLED,
+    )
+
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.title?.maxLines).toBe(1)
+    expect(scene.cta).toBeDefined()
+    expect((scene.title!.x + scene.title!.w)).toBeLessThan(scene.cta!.x)
+    expect(fontPx(scene.title!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(18)
   })
 
   it.each(['vk-square', 'ozon-fresh-square', 'yandex-market-card'] as const)(

@@ -3,10 +3,17 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
+    "site:dev": "vite",
     "build": "tsc -b && vite build",
+    "site:build": "npm run build",
     "preview": "vite preview",
+    "site:preview": "vite preview",
+    "desktop:dev": "npm run build && electron .",
+    "desktop:build": "npm run build && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --win portable",
+    "desktop:dir": "npm run build && set CSC_IDENTITY_AUTO_DISCOVERY=false&& electron-builder --dir",
     "experiment": "tsx scripts/runExperiment.ts",
     "experiment:png": "tsx scripts/validatePngExports.ts",
     "experiment:bg-extension": "tsx scripts/testBackgroundExtension.ts",
@@ -28,9 +35,29 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "@vitest/coverage-v8": "^2.1.9",
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.4"
+  },
+  "build": {
+    "appId": "com.adaptivegraphics.app",
+    "productName": "Adaptive Graphics",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "portable"
+      ]
+    }
   }
 }

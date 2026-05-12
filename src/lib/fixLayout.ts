@@ -1,7 +1,7 @@
 // Local-only optimizer for a single positioned Scene.
 // Does NOT change composition model. Only nudges sizes/colors to fix readability.
 
-import { luminance } from './color'
+import { contrastRatio, contrastRatioFromLuminance, luminance } from './color'
 import { isBannerCopyFormat } from './formatCopy'
 import { fitFontSize, wrapText } from './textMeasure'
 import type { Background, BlockKind, FormatRuleSet, Scene, TextBlock } from './types'
@@ -103,7 +103,7 @@ function clamp(v: number, lo: number, hi: number): number {
 }
 
 function isLowContrast(fg: string, bg: string): boolean {
-  return Math.abs(luminance(fg) - luminance(bg)) < 0.25
+  return contrastRatio(fg, bg) < 4.5
 }
 
 function invertReadable(bg: string): string {
@@ -116,6 +116,15 @@ function approxBackgroundColor(bg: Background): string {
   if (bg.kind === 'tonal') return bg.base
   // split: average is ambiguous; pick the a-side as representative
   return bg.a
+}
+
+function approxBackgroundLuminance(bg: Background): number {
+  if (bg.kind === 'gradient') {
+    return (luminance(bg.stops[0]) + luminance(bg.stops[1]) + luminance(bg.stops[2])) / 3
+  }
+  if (bg.kind === 'solid') return luminance(bg.color)
+  if (bg.kind === 'tonal') return luminance(bg.base)
+  return (luminance(bg.a) + luminance(bg.b)) / 2
 }
 
 // ---------------------------------------------------------------------------
@@ -194,12 +203,12 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
 
   // Low text contrast vs approximate background. fixLayout already corrects
   // title; here we flag subtitle + cta too.
-  const bgApprox = approxBackgroundColor(scene.background)
+  const bgApproxLum = approxBackgroundLuminance(scene.background)
   if (!scene.scrim) {
     for (const k of ['title', 'subtitle'] as const) {
       const t = scene[k] as TextBlock | undefined
       if (!t) continue
-      if (isLowContrast(t.fill, bgApprox)) {
+      if (contrastRatioFromLuminance(luminance(t.fill), bgApproxLum) < 4.5) {
         issues.push({ block: k, message: `${label(k)} low contrast vs background`, level: 'warn' })
       }
     }

@@ -6,6 +6,7 @@ import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkFo
 import { LAYOUTS, chooseLayoutArchetype } from './composition'
 import { getFormat } from './formats'
 import { applyLayoutDensity } from './layoutDensity'
+import { fitFontSize as fitFontSizePx, measureTextWidth, wrapText } from './textMeasure'
 import type {
   AssetHint,
   BlockKind,
@@ -19,6 +20,7 @@ import type {
   FormatRuleSet,
   LayoutDensity,
   TextAlign,
+  TextBlock,
 } from './types'
 
 export type BuildOptions = {
@@ -37,10 +39,10 @@ export type BuildOptions = {
 
 const TONE_DEFAULTS: Record<BrandKit['toneOfVoice'], { titleWeight: number; letterSpacing: number; maxLines: number; align: TextAlign }> = {
   neutral: { titleWeight: 700, letterSpacing: 0, maxLines: 3, align: 'left' },
-  bold: { titleWeight: 900, letterSpacing: -0.02, maxLines: 2, align: 'left' },
+  bold: { titleWeight: 900, letterSpacing: 0, maxLines: 2, align: 'left' },
   friendly: { titleWeight: 600, letterSpacing: 0, maxLines: 3, align: 'left' },
-  minimal: { titleWeight: 400, letterSpacing: 0.01, maxLines: 2, align: 'left' },
-  editorial: { titleWeight: 800, letterSpacing: -0.03, maxLines: 2, align: 'center' },
+  minimal: { titleWeight: 400, letterSpacing: 0, maxLines: 2, align: 'left' },
+  editorial: { titleWeight: 800, letterSpacing: 0, maxLines: 2, align: 'center' },
 }
 
 export type CompositionSelectionDebug = {
@@ -99,7 +101,9 @@ export function resolveCompositionModel(
 ): CompositionModel {
   const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
   const branded = applyBrandKit(master, brandKit)
-  return pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
+  const localized = applyLocale(branded, options.locale)
+  const layoutInput = applyPreLayoutBlockOverrides(localized, options.blockOverrides)
+  return pickCompositionModel(layoutInput, rules, enabled, options.override, options.assetHint)
 }
 
 export function resolveCompositionSelection(
@@ -111,7 +115,9 @@ export function resolveCompositionSelection(
 ): CompositionSelectionDebug {
   const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
   const branded = applyBrandKit(master, brandKit)
-  return pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
+  const localized = applyLocale(branded, options.locale)
+  const layoutInput = applyPreLayoutBlockOverrides(localized, options.blockOverrides)
+  return pickCompositionSelection(layoutInput, rules, enabled, options.override, options.assetHint)
 }
 
 export function buildScene(
@@ -125,13 +131,15 @@ export function buildScene(
 
   // 1. apply brand kit to master before layout (so layouts can override fills if needed)
   const branded = applyBrandKit(master, brandKit)
+  const localizedBase = applyLocale(branded, options.locale)
+  const layoutInput = applyPreLayoutBlockOverrides(localizedBase, options.blockOverrides)
 
   // 2. profile content + choose layout (or honour override)
-  const selection = pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
+  const selection = pickCompositionSelection(layoutInput, rules, enabled, options.override, options.assetHint)
   const model = selection.selectedArchetype
 
   // 3. compute positioned scene
-  const positioned = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
+  const positioned = LAYOUTS[model](layoutInput, rules, enabled, options.assetHint ?? null)
 
   // 4. focal-aware background: when an image with non-default focal is placed,
   //    retarget a gradient background to radiate from the subject. Linear
@@ -142,18 +150,20 @@ export function buildScene(
   //    across formats without anyone having to hand-tune y values.
   const snapped = snapToBaseline(focalAware, rules.gutter / 4)
 
-  // 6. apply locale-specific text if present.
-  const localized = applyLocale(snapped, options.locale)
+  // 6. apply explicit per-format geometry overrides copied from another format.
+  const overridden = applyBlockOverrides(snapped, options.blockOverrides, layoutInput)
 
-  // 7. clamp anything outside safe zone (defensive — does not move blocks, only shrinks widths)
-  const clamped = clampToFrame(localized, rules.safeZone)
+  // 8. clamp anything outside safe zone after overrides.
+  const clamped = clampToFrame(overridden, rules.safeZone)
 
-  // 8. apply explicit per-format geometry overrides copied from another format.
-  const overridden = applyBlockOverrides(clamped, options.blockOverrides)
+  // 9. tighten editable object fields to the content they actually render.
+  // Designers drag these boxes in the editor, and diagnostics use them for
+  // overlap checks; oversized empty boxes make good layouts look broken.
+  const fieldTightened = clampToFrame(compactObjectFields(clamped, rules), rules.safeZone)
 
-  // 9. final readability guard. This is intentionally small and deterministic:
+  // 10. final readability guard. This is intentionally small and deterministic:
   // layout stays untouched; only text fills and existing scrim opacity can move.
-  return ensureReadableScene(overridden, rules, options.assetHint ?? null)
+  return ensureReadableScene(fieldTightened, rules, options.assetHint ?? null)
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {
@@ -170,7 +180,11 @@ function applyLocale(scene: Scene, locale: string | undefined): Scene {
   return out
 }
 
-function applyBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind, BlockOverride>>): Scene {
+function applyBlockOverrides(
+  scene: Scene,
+  overrides?: Partial<Record<BlockKind, BlockOverride>>,
+  source?: Scene,
+): Scene {
   if (!overrides) return scene
   const out: Scene = { ...scene }
   for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
@@ -184,9 +198,27 @@ function applyBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind,
       delete (out as Record<string, unknown>)[k]
       continue
     }
-    const b = out[k]
+    const b = out[k] ?? source?.[k]
     if (!b) continue
     ;(out as Record<string, unknown>)[k] = { ...b, ...dropUndefined(stripPresentationOnly(o)) }
+  }
+  return out
+}
+
+function applyPreLayoutBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind, BlockOverride>>): Scene {
+  if (!overrides) return scene
+  const out: Scene = { ...scene }
+  for (const k of ['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const) {
+    const o = overrides[k]
+    if (!o) continue
+    if (o.hidden) {
+      delete (out as Record<string, unknown>)[k]
+      continue
+    }
+    const b = out[k]
+    if (!b) continue
+    const layoutInput = dropUndefined(stripGeometryOnly(stripPresentationOnly(o)))
+    ;(out as Record<string, unknown>)[k] = { ...b, ...layoutInput }
   }
   return out
 }
@@ -196,6 +228,11 @@ function applyBlockOverrides(scene: Scene, overrides?: Partial<Record<BlockKind,
 // the spread below doesn't ship a stray boolean to the renderer.
 function stripPresentationOnly(o: BlockOverride): Omit<BlockOverride, 'hidden'> {
   const { hidden: _hidden, ...rest } = o
+  return rest
+}
+
+function stripGeometryOnly(o: Omit<BlockOverride, 'hidden'>): Omit<BlockOverride, 'hidden' | 'x' | 'y' | 'w' | 'h'> {
+  const { x: _x, y: _y, w: _w, h: _h, ...rest } = o
   return rest
 }
 
@@ -296,6 +333,190 @@ function applyBrandKit(master: Scene, brand: BrandKit): Scene {
   return out
 }
 
+function compactObjectFields(scene: Scene, rules: FormatRuleSet): Scene {
+  const out: Scene = { ...scene }
+  if (scene.title) out.title = compactTextField(scene.title, rules, 'title')
+  if (scene.subtitle) out.subtitle = compactTextField(scene.subtitle, rules, 'subtitle')
+  if (scene.badge) out.badge = compactBadgeField(scene.badge, rules)
+  if (scene.cta) out.cta = compactCtaField(scene.cta, rules)
+  return out
+}
+
+function compactTextField<T extends TextBlock>(block: T, rules: FormatRuleSet, kind: 'title' | 'subtitle'): T {
+  const plain = plainRenderedText(block)
+  if (!plain) return block
+  const currentWpx = pctToPx(block.w, rules.width)
+  if (currentWpx <= 0) return block
+  const fontFamily = block.fontFamily ?? 'Inter, system-ui, sans-serif'
+  const fitMode = block.fitMode ?? 'auto'
+  const wrapMaxLines = fitMode === 'overflow' ? 99 : block.maxLines
+  const fontSizePx = renderedTextFontSizePx(block, plain, currentWpx, wrapMaxLines, fontFamily, rules.width)
+  const overflow = fitMode === 'clamp' || fitMode === 'overflow' ? 'clip' : 'ellipsis'
+  const lines = wrapText({
+    text: plain,
+    fontSizePx,
+    fontWeight: block.weight,
+    fontFamily,
+    maxWidthPx: currentWpx,
+    maxLines: wrapMaxLines,
+    overflow,
+  })
+  const renderedLines = lines.length > 0 ? lines : [plain]
+  const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0)
+  const maxLineWidthPx = Math.max(
+    1,
+    ...renderedLines.map((line) => measureTextWidth(line, fontSizePx, block.weight, fontFamily) + letterSpacingPx * line.length),
+  )
+  const padX = Math.max(2, fontSizePx * (kind === 'title' ? 0.08 : 0.1))
+  const padY = Math.max(2, fontSizePx * 0.08)
+  const minWpx = Math.max(18, fontSizePx * 1.6)
+  const targetWpx = Math.min(currentWpx, Math.max(minWpx, maxLineWidthPx + padX * 2))
+  const lineHeightPx = fontSizePx * (block.lineHeight ?? 1.12)
+  const targetHpx = Math.max(fontSizePx, lineHeightPx * renderedLines.length + padY * 2)
+  if (fitMode === 'auto') {
+    return {
+      ...block,
+      h: roundField(pxToHeightPct(targetHpx, rules)),
+    }
+  }
+  const targetW = pxToWidthPct(targetWpx, rules)
+  const targetH = pxToHeightPct(targetHpx, rules)
+  const x = anchorCompactedX(block.x, block.w, targetW, block.align ?? 'left')
+  return {
+    ...block,
+    x,
+    w: roundField(targetW),
+    h: roundField(targetH),
+    maxLines: fitMode === 'overflow' ? block.maxLines : Math.max(1, Math.min(block.maxLines, renderedLines.length)),
+  }
+}
+
+function compactBadgeField<T extends TextBlock>(block: T, rules: FormatRuleSet): T {
+  const text = plainRenderedText({ ...block, transform: block.transform ?? 'uppercase' })
+  if (!text) return block
+  const fontFamily = block.fontFamily ?? 'Inter, system-ui, sans-serif'
+  const fontSizePx = resolveFontSizePx(block.fontSize, rules.width)
+  const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0)
+  const baseTextWidth = measureTextWidth(text, fontSizePx, block.weight, fontFamily)
+  const trackedTextWidth = (baseTextWidth + letterSpacingPx * text.length) * 1.02
+  const padX = fontSizePx * 0.85
+  const padY = fontSizePx * 0.4
+  const targetW = pxToWidthPct(trackedTextWidth + padX * 2, rules)
+  const targetH = pxToHeightPct(fontSizePx + padY * 2, rules)
+  return {
+    ...block,
+    w: roundField(Math.min(block.w, Math.max(pxToWidthPct(18, rules), targetW))),
+    h: roundField(targetH),
+  }
+}
+
+function compactCtaField<T extends TextBlock & { bg: string; rx: number }>(block: T, rules: FormatRuleSet): T {
+  const label = plainRenderedText(block)
+  if (!label) return block
+  if ((block.fitMode ?? 'auto') === 'auto') return block
+  const currentWpx = pctToPx(block.w, rules.width)
+  const currentHpx = pctToPx(block.h ?? 0, rules.height)
+  const fontFamily = block.fontFamily ?? 'Inter, system-ui, sans-serif'
+  const fontSizePx = resolveFontSizePx(block.fontSize, rules.width)
+  const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0)
+  const labelWidthPx = measureTextWidth(label, fontSizePx, block.weight, fontFamily) + letterSpacingPx * label.length
+  const minWidthPx = isCompactAdRules(rules) ? 96 : Math.max(72, fontSizePx * 4)
+  const targetWpx = Math.max(minWidthPx, labelWidthPx / 0.82, labelWidthPx + fontSizePx * 2.4)
+  const targetHpx = Math.max(isCompactAdRules(rules) ? 34 : 36, fontSizePx * 2.35)
+  const nextWpx = currentWpx > 0 ? Math.min(currentWpx, targetWpx) : targetWpx
+  const nextHpx = currentHpx > 1 ? Math.min(currentHpx, targetHpx) : targetHpx
+  const targetW = pxToWidthPct(nextWpx, rules)
+  const targetH = pxToHeightPct(nextHpx, rules)
+  return {
+    ...block,
+    x: anchorCtaX(block.x, block.w, targetW),
+    w: roundField(targetW),
+    h: roundField(targetH),
+    maxLines: 1,
+  }
+}
+
+function renderedTextFontSizePx(
+  block: TextBlock,
+  text: string,
+  maxWidthPx: number,
+  maxLines: number,
+  fontFamily: string,
+  frameWidth: number,
+): number {
+  const basePx = resolveFontSizePx(block.fontSize, frameWidth)
+  if ((block.fitMode ?? 'auto') !== 'auto') return basePx
+  return fitFontSizePx({
+    baseFontSizePx: basePx,
+    minFontSizePx: Math.max(8, basePx * 0.62),
+    fits: (fontSizePx) => {
+      const lines = wrapText({
+        text,
+        fontSizePx,
+        fontWeight: block.weight,
+        fontFamily,
+        maxWidthPx: maxWidthPx * 0.96,
+        maxLines,
+        overflow: 'ellipsis',
+      })
+      return !lines.some((line) => line.includes('...') || line.includes('…') || line.includes('вЂ¦'))
+    },
+  })
+}
+
+function plainRenderedText(block: Pick<TextBlock, 'text' | 'transform'>): string {
+  const raw = block.text.replace(/\*\*/g, '').trim()
+  if (block.transform === 'uppercase') return raw.toLocaleUpperCase()
+  if (block.transform === 'title-case') {
+    return raw.replace(/\w\S*/g, (w) => (w[0] ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+  }
+  if (block.transform === 'sentence-case') {
+    return raw.length > 0 ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : raw
+  }
+  return raw
+}
+
+function resolveFontSizePx(fontSize: number, frameWidth: number): number {
+  if (!Number.isFinite(fontSize) || fontSize <= 0) return 0
+  return fontSize <= 100 ? (fontSize / 100) * frameWidth : fontSize
+}
+
+function pctToPx(value: number, total: number): number {
+  return (value / 100) * total
+}
+
+function pxToWidthPct(value: number, rules: FormatRuleSet): number {
+  return (value / rules.width) * 100
+}
+
+function pxToHeightPct(value: number, rules: FormatRuleSet): number {
+  return (value / rules.height) * 100
+}
+
+function anchorCompactedX(x: number, oldW: number, newW: number, align: TextAlign): number {
+  if (newW >= oldW) return x
+  if (align === 'center') return roundField(x + (oldW - newW) / 2)
+  if (align === 'right') return roundField(x + oldW - newW)
+  return x
+}
+
+function anchorCtaX(x: number, oldW: number, newW: number): number {
+  if (newW >= oldW) return x
+  const center = x + oldW / 2
+  const right = x + oldW
+  if (right > 86) return roundField(right - newW)
+  if (Math.abs(center - 50) < 8) return roundField(center - newW / 2)
+  return x
+}
+
+function isCompactAdRules(rules: FormatRuleSet): boolean {
+  return rules.width <= 320 || rules.height <= 400 || rules.aspectRatio > 4 || rules.key === 'avito-skyscraper'
+}
+
+function roundField(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
 function ensureReadableScene(scene: Scene, rules: FormatRuleSet, hint: AssetHint | null): Scene {
   const out: Scene = { ...scene }
   const cta = scene.cta
@@ -339,7 +560,10 @@ function ensureReadableScene(scene: Scene, rules: FormatRuleSet, hint: AssetHint
 
 function readableTextFill(current: string, bgLum: number, muted: boolean): string {
   if (contrastRatioFromLuminance(luminance(current), bgLum) >= 4.5) return current
-  if (muted) return bgLum > 0.5 ? '#2A2D35' : '#E6E8EC'
+  if (muted) {
+    const candidate = bgLum > 0.5 ? '#2A2D35' : '#E6E8EC'
+    if (contrastRatioFromLuminance(luminance(candidate), bgLum) >= 4.5) return candidate
+  }
   return pickReadableInkForLuma(bgLum)
 }
 
@@ -451,11 +675,12 @@ function clampToFrame(scene: Scene, sz: { top: number; right: number; bottom: nu
       ;(out as Record<string, unknown>)[k] = { ...b }
       continue
     }
+    const h = b.h !== undefined ? Math.max(0, Math.min(b.h, maxY - minY)) : b.h
     const x = Math.max(minX, Math.min(maxX, b.x))
-    const y = Math.max(minY, Math.min(maxY, b.y))
-    const w = Math.min(b.w, maxX - x)
-    const h = b.h !== undefined ? Math.min(b.h, maxY - y) : b.h
-    ;(out as Record<string, unknown>)[k] = { ...b, x, y, w, h }
+    const yMax = h !== undefined ? Math.max(minY, maxY - h) : maxY
+    const y = Math.max(minY, Math.min(yMax, b.y))
+    const w = Math.max(0, Math.min(b.w, maxX - x))
+    ;(out as Record<string, unknown>)[k] = { ...b, x, y, w, ...(h !== undefined ? { h } : {}) }
   }
   return out
 }

@@ -236,6 +236,23 @@ describe('buildScene — text fitting', () => {
 
     expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter * 0.5)
   })
+
+  it('uses per-format text overrides before measuring the layout stack', () => {
+    const format = getFormat('avito-listing')
+    const scene = buildScene(longRussianMaster, 'avito-listing', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      blockOverrides: {
+        title: { maxLines: 1, fontSize: 5, fitMode: 'ellipsis' },
+        subtitle: { maxLines: 1, fontSize: 2.2, fitMode: 'ellipsis' },
+      },
+    })
+    const title = scene.title!
+    const subtitle = scene.subtitle!
+    const titleBottom = title.y + title.fontSize * (title.lineHeight ?? 1.2) * title.maxLines * format.aspectRatio
+
+    expect(title.maxLines).toBe(1)
+    expect(title.fontSize).toBe(5)
+    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
+  })
 })
 
 describe('buildScene — locale', () => {

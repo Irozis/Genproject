@@ -15,8 +15,9 @@ type Props = {
 const PREVIEW_FORMATS = [
   { key: 'vk-square', label: '1:1', slot: 'square' as const },
   { key: 'instagram-story', label: 'Story', slot: 'story' as const },
+  { key: 'wb-card', label: 'WB', slot: 'card' as const },
   { key: 'yandex-rsy-728x90', label: '728×90', slot: 'banner' as const },
-] satisfies Array<{ key: FormatKey; label: string; slot: 'square' | 'story' | 'banner' }>
+] satisfies Array<{ key: FormatKey; label: string; slot: 'square' | 'story' | 'card' | 'banner' }>
 
 const TONE_FILTERS: Array<{ id: Tone | 'all'; label: string }> = [
   { id: 'all', label: 'Все' },
@@ -26,6 +27,14 @@ const TONE_FILTERS: Array<{ id: Tone | 'all'; label: string }> = [
   { id: 'minimal', label: 'Minimal' },
   { id: 'neutral', label: 'Neutral' },
 ]
+
+const TONE_NAMES: Record<Tone, string> = {
+  bold: 'Bold',
+  editorial: 'Editorial',
+  friendly: 'Friendly',
+  minimal: 'Minimal',
+  neutral: 'Neutral',
+}
 
 export function TemplatePicker({ onPick, onBack }: Props) {
   const [tone, setTone] = useState<Tone | 'all'>('all')
@@ -87,8 +96,26 @@ export function TemplatePicker({ onPick, onBack }: Props) {
                 ))}
               </div>
               <div className="template-card__meta">
+                <div className="template-card__brand-row">
+                  <span className="template-card__brand-name">{t.brandKit.brandName}</span>
+                  <span className="template-card__tone">{TONE_NAMES[t.brandKit.toneOfVoice]}</span>
+                </div>
                 <div className="template-card__name">{t.name}</div>
                 <div className="template-card__desc">{t.description}</div>
+                <div className="template-card__swatches" aria-hidden="true">
+                  {[
+                    t.brandKit.palette.surface,
+                    t.brandKit.palette.ink,
+                    t.brandKit.palette.accent,
+                    t.brandKit.palette.accentSoft,
+                  ].map((color) => (
+                    <span
+                      key={color}
+                      className="template-card__swatch"
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
               </div>
             </button>
           )
@@ -108,7 +135,7 @@ function TemplateMiniPreview({
   template: Template
   formatKey: FormatKey
   label: string
-  slot: 'square' | 'story' | 'banner'
+  slot: 'square' | 'story' | 'card' | 'banner'
   enabled: typeof DEFAULT_ENABLED
 }) {
   const rules: FormatRuleSet = getFormat(formatKey)

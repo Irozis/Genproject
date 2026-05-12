@@ -51,6 +51,25 @@ npx vitest run
 npx vite build
 ```
 
+## Launch Modes
+
+Website:
+
+```bash
+npm run site:dev
+npm run site:build
+npm run site:preview
+```
+
+Windows desktop app:
+
+```bash
+npm run desktop:dev
+npm run desktop:build
+```
+
+`desktop:build` creates a portable `.exe` in `release/`.
+
 ## Coverage
 
 ```bash

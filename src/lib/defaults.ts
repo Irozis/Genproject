@@ -50,7 +50,7 @@ export const DEFAULT_MASTER: Scene = {
     maxLines: 3,
     weight: 900,
     fill: '#0E1014',
-    letterSpacing: -0.02,
+    letterSpacing: 0,
     lineHeight: 1.02,
   },
   subtitle: {

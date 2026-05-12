@@ -1216,7 +1216,7 @@ function TextBlockProps({
           min={fontMin}
           max={fontMax}
           step={0.1}
-          onChange={(v) => onChange({ fontSize: v })}
+          onChange={(v) => onChange({ fontSize: v, fitMode: 'ellipsis' })}
         />
         {kind !== 'badge' ? (
           <RangeRow
@@ -1226,7 +1226,7 @@ function TextBlockProps({
             min={1}
             max={4}
             step={1}
-            onChange={(v) => onChange({ maxLines: v })}
+            onChange={(v) => onChange({ maxLines: v, fitMode: 'ellipsis' })}
           />
         ) : null}
         <RangeRow
@@ -1317,7 +1317,7 @@ function CtaBlockProps({
           min={1.5}
           max={5}
           step={0.1}
-          onChange={(v) => onChange({ fontSize: v })}
+          onChange={(v) => onChange({ fontSize: v, fitMode: 'ellipsis' })}
         />
         <ColorRow label="Цвет фона" value={bg} onChange={(v) => onChange({ bg: v })} />
         <ColorRow label="Цвет текста" value={fill} onChange={(v) => onChange({ fill: v })} />

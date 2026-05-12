@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type MouseEvent,
   type WheelEvent,
 } from 'react'
@@ -571,6 +572,7 @@ function SafeAreaOverlay({
 // each warning without hover. Hidden entirely when there are zero issues.
 function IssuesBadge({ issues, onFix }: { issues: LayoutIssue[]; onFix: () => void }) {
   const [open, setOpen] = useState(false)
+  const [popover, setPopover] = useState<CSSProperties>({})
   if (issues.length === 0) return null
   const warnCount = issues.filter((i) => i.level === 'warn').length
   const cls = warnCount > 0 ? 'issues-badge issues-badge--warn' : 'issues-badge issues-badge--info'
@@ -588,11 +590,20 @@ function IssuesBadge({ issues, onFix }: { issues: LayoutIssue[]; onFix: () => vo
       <summary
         className={cls}
         aria-expanded={open}
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect()
+          const width = Math.min(340, Math.max(260, window.innerWidth - 24))
+          setPopover({
+            top: Math.round(rect.bottom + 6),
+            left: Math.round(Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12))),
+            width,
+          })
+        }}
         title={issues.map((i) => `• ${humanIssue(i)}`).join('\n')}
       >
         {label}
       </summary>
-      <div className="issues__list" role="region" aria-label={title}>
+      <div className="issues__list" role="region" aria-label={title} style={popover}>
         <div className="issues__title">{title}</div>
         <div className="issues__body">{body}</div>
         <ul className="issues__items" role="list">
