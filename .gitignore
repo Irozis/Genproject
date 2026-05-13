@@ -1,5 +1,8 @@
 node_modules
 dist
+desktop-release
+dist-electron
+release
 .vite
 *.log
 .DS_Store

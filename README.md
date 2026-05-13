@@ -51,6 +51,58 @@ npx vitest run
 npx vite build
 ```
 
+## Website and Desktop Builds
+
+The normal Vite website workflow is unchanged:
+
+```bash
+npm install
+npm run dev
+npm run build
+npm run preview
+```
+
+The Windows desktop app is an additional Electron wrapper around the local Vite build. It does not replace the website build and does not require hosting the app online.
+
+```bash
+npm run desktop:dev
+```
+
+Desktop development starts the Vite dev server on port 5173 and opens Electron against that local server.
+
+```bash
+npm run desktop:dist
+```
+
+The installer build runs a desktop-mode Vite build with relative asset paths, then packages the app with electron-builder/NSIS. The resulting Windows installer appears in `desktop-release/*.exe` and is configured to create Desktop and Start Menu shortcuts named `Ad Layout Generator`.
+
+For an unpacked local package instead of an installer:
+
+```bash
+npm run desktop:pack
+```
+
+## Desktop Release Verification
+
+Before sharing a Windows desktop build, run this smoke checklist:
+
+- Install the generated `desktop-release/*.exe` installer.
+- Launch the app from the Desktop shortcut.
+- Launch the app from the Start Menu shortcut.
+- Upload an image through the app's file picker.
+- Generate layouts for the supported formats.
+- Export SVG, PNG, PDF, and ZIP outputs where those export options are available.
+- Restart the desktop app and verify the saved project/state is restored from localStorage.
+- Verify the website dev workflow still starts with `npm run dev`.
+- Verify the website production build still succeeds with `npm run build`.
+
+Desktop release notes:
+
+- ASAR packaging is disabled intentionally because local Windows build limitations blocked electron-builder's ASAR integrity rewrite step in this environment.
+- The installer is unsigned.
+- Windows SmartScreen may show a warning for the unsigned installer.
+- This is acceptable for local/demo usage; production distribution should add a proper app icon and code signing.
+
 ## Coverage
 
 ```bash

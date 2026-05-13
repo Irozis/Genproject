@@ -2,11 +2,18 @@
   "name": "adaptive-graphics",
   "private": true,
   "version": "0.1.0",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:desktop": "tsc -b && vite build --mode desktop",
     "preview": "vite preview",
+    "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "desktop:dev": "npm run electron:dev",
+    "desktop:build": "npm run build:desktop && electron-builder --win",
+    "desktop:dist": "npm run build:desktop && electron-builder --win nsis",
+    "desktop:pack": "npm run build:desktop && electron-builder --dir",
     "experiment": "tsx scripts/runExperiment.ts",
     "experiment:png": "tsx scripts/validatePngExports.ts",
     "experiment:bg-extension": "tsx scripts/testBackgroundExtension.ts",
@@ -28,9 +35,38 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "@vitest/coverage-v8": "^2.1.9",
+    "concurrently": "^9.2.1",
+    "electron": "^42.0.1",
+    "electron-builder": "^26.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
-    "vitest": "^2.1.4"
+    "vitest": "^2.1.4",
+    "wait-on": "^9.0.10"
+  },
+  "build": {
+    "appId": "local.ad-layout-generator",
+    "productName": "Ad Layout Generator",
+    "asar": false,
+    "directories": {
+      "output": "desktop-release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Ad Layout Generator"
+    }
   }
 }
