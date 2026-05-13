@@ -27,6 +27,7 @@ import type {
   FormatRuleSet,
   LayoutDensity,
   Scene,
+  SceneObject,
 } from '../lib/types'
 
 type Props = {
@@ -35,6 +36,8 @@ type Props = {
   brandKit: BrandKit
   enabled: EnabledMap
   override?: CompositionModel
+  sceneOverride?: Scene
+  sceneObjects?: SceneObject[]
   /** Per-format image focal point override. When absent, master.image focal is used. */
   focal?: { x: number; y: number }
   /** Analyzed image stats. Used by hero-overlay to auto-tune scrim opacity. */
@@ -76,6 +79,8 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     brandKit,
     enabled,
     override: rawOverride,
+    sceneOverride,
+    sceneObjects,
     focal,
     assetHint,
     onPickElement,
@@ -246,6 +251,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   const override = manualOverride as CompositionModel
   const scene = useMemo(
     () =>
+      sceneOverride ??
       buildScene(effectiveMaster, formatKey, brandKit, enabled, {
         ...(manualOverride ? { override: manualOverride } : {}),
         assetHint,
@@ -254,7 +260,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
         customFormats,
         density,
       }),
-    [effectiveMaster, formatKey, brandKit, enabled, manualOverride, assetHint, blockOverride, locale, customFormats, density],
+    [sceneOverride, effectiveMaster, formatKey, brandKit, enabled, manualOverride, assetHint, blockOverride, locale, customFormats, density],
   )
   /** Что выберет авто-подбор (для подписи пункта «Авто» в списке). */
   const compositionSelection = useMemo(
@@ -433,6 +439,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             brandInitials={brandKit.brandName}
             brandColor={brandKit.palette.accent}
             imageAspectRatio={assetHint?.aspectRatio ?? null}
+            objects={sceneObjects}
             className="preview__svg"
           />
           <PreviewHotspots
@@ -472,6 +479,8 @@ export const FormatPreview = memo(
     prev.brandKit === next.brandKit &&
     prev.enabled === next.enabled &&
     prev.override === next.override &&
+    prev.sceneOverride === next.sceneOverride &&
+    prev.sceneObjects === next.sceneObjects &&
     prev.focal === next.focal &&
     prev.assetHint === next.assetHint &&
     prev.blockOverride === next.blockOverride &&

@@ -195,6 +195,47 @@ export type Scene = {
   image?: ImageBlock
 }
 
+export type SceneObjectType =
+  | 'background'
+  | 'image'
+  | 'title'
+  | 'subtitle'
+  | 'cta'
+  | 'badge'
+  | 'logo'
+  | 'text'
+  | 'shape'
+  | 'decor'
+  | 'custom-image'
+
+export type SceneObject = {
+  id: string
+  type: SceneObjectType
+  name: string
+  visible: boolean
+  locked?: boolean
+  x: number
+  y: number
+  width: number
+  height: number
+  rotation?: number
+  zIndex?: number
+  text?: string
+  fontFamily?: string
+  fontSize?: number
+  fontWeight?: number
+  lineHeight?: number
+  letterSpacing?: number
+  textAlign?: TextAlign
+  fill?: string
+  stroke?: string
+  opacity?: number
+  borderRadius?: number
+  imageSrc?: string
+  fit?: 'cover' | 'contain' | 'fill'
+  metadata?: Record<string, unknown>
+}
+
 export type EnabledMap = Record<BlockKind, boolean>
 
 // Semantic color tokens. Every template + user brand resolves to this shape.
@@ -270,6 +311,8 @@ export type Project = {
   backgroundExtensionByFormat?: Record<string, BackgroundExtensionMetadata>
   logoSrc: string | null
   selectedFormats: FormatKey[]
+  formatDocuments?: Record<string, ProjectFormatDocument>
+  activeFormatKey?: string
   // Optional per-format override: force a specific composition model for a given
   // format key instead of the one chosen by the profile. Templates ship with
   // sensible defaults here; users can override manually.
@@ -333,4 +376,18 @@ export type FormatRuleSet = {
    *  a boost above 1.0 compensates. Absent or 1.0 = no change. */
   typescaleBoost?: number
   requiredElements: BlockKind[]
+}
+
+export type Format = FormatRuleSet
+
+export type ProjectFormatDocument = {
+  formatKey: string
+  format: Format
+  scene: Scene
+  objects: SceneObject[]
+  activeObjectId?: string
+  isEdited?: boolean
+  createdFromGeneration: boolean
+  createdAt: string
+  updatedAt: string
 }

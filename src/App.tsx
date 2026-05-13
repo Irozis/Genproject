@@ -26,6 +26,7 @@ import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
 import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
 import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
 import { normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
+import { ensureProjectFormatDocuments, moveLayer, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene } from './lib/formatDocuments'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
@@ -116,6 +117,12 @@ export default function App() {
     project.selectedFormats,
     setProject,
   ])
+
+  useEffect(() => {
+    if (view !== 'editor') return
+    if (project.imageSrc && !hasBackgroundExtensionMetadataForAllFormats(project)) return
+    setProject((p) => ensureProjectFormatDocuments(p))
+  }, [project.backgroundExtensionByFormat, project.formatDocuments, project.imageSrc, project.selectedFormats, setProject, view])
 
   useEffect(() => {
     if (!project.imageSrc || !project.master.image) {
@@ -260,9 +267,15 @@ export default function App() {
   }, [project])
 
   const selectedFormatScene = useMemo<Scene | null>(() => {
-    if (!selectedFormat || !project.blockOverrides?.[selectedFormat]) return null
-    return buildSceneForProject(project, selectedFormat)
+    if (!selectedFormat) return null
+    if (project.blockOverrides?.[selectedFormat]) return buildSceneForProject(project, selectedFormat)
+    const document = project.formatDocuments?.[selectedFormat]
+    if (document?.isEdited) return sceneFromFormatDocument(document)
+    return null
   }, [project, selectedFormat])
+
+  const editingDocument = editingFormat ? project.formatDocuments?.[editingFormat] : undefined
+  const editingActiveObjectId = editingDocument?.activeObjectId ?? null
 
   const sidebarProject = useMemo<Project>(() => (
     selectedFormatScene ? { ...project, master: selectedFormatScene } : { ...project, master: masterWithAssets }
@@ -276,23 +289,46 @@ export default function App() {
   }, [setProject])
 
   const patchEditableScene = useCallback((patch: (s: Scene) => Scene) => {
-    if (!selectedFormat || !project.blockOverrides?.[selectedFormat]) {
+    if (!selectedFormat) {
       patchScene(patch)
       return
     }
-    setProject((p) => {
-      const current = buildSceneForProject(p, selectedFormat)
-      const next = patch(current)
-      const previous = p.blockOverrides?.[selectedFormat] ?? {}
-      return {
-        ...p,
-        blockOverrides: {
-          ...(p.blockOverrides ?? {}),
-          [selectedFormat]: mergeChangedOverrides(previous, current, next),
-        },
-      }
-    })
-  }, [patchScene, project.blockOverrides, selectedFormat, setProject])
+    if (project.blockOverrides?.[selectedFormat]) {
+      setProject((p) => {
+        const current = buildSceneForProject(p, selectedFormat)
+        const next = patch(current)
+        const previous = p.blockOverrides?.[selectedFormat] ?? {}
+        return {
+          ...p,
+          blockOverrides: {
+            ...(p.blockOverrides ?? {}),
+            [selectedFormat]: mergeChangedOverrides(previous, current, next),
+          },
+        }
+      })
+      return
+    }
+    if (project.formatDocuments?.[selectedFormat]?.isEdited) {
+      setProject((p) => {
+        const document = p.formatDocuments?.[selectedFormat]
+        if (!document) return p
+        const nextScene = patch(sceneFromFormatDocument(document))
+        const updated = {
+          ...document,
+          scene: nextScene,
+          objects: updateObjectsFromScene(nextScene, document.objects),
+          isEdited: true,
+          updatedAt: new Date().toISOString(),
+        }
+        return {
+          ...p,
+          formatDocuments: { ...(p.formatDocuments ?? {}), [selectedFormat]: updated },
+        }
+      })
+      return
+    }
+    patchScene(patch)
+  }, [patchScene, project.blockOverrides, project.formatDocuments, selectedFormat, setProject])
 
   // Inline-edit callback — invoked by FormatPreview on dbl-click + blur/Enter.
   // Writes the new text back onto master.<kind> so every format rerenders.
@@ -321,6 +357,30 @@ export default function App() {
       }))
       return
     }
+    if (project.formatDocuments?.[formatKey]?.isEdited) {
+      setProject((p) => {
+        const document = p.formatDocuments?.[formatKey]
+        if (!document) return p
+        const current = sceneFromFormatDocument(document)
+        const block = current[kind]
+        if (!block) return p
+        const nextScene = { ...current, [kind]: { ...block, text } }
+        return {
+          ...p,
+          formatDocuments: {
+            ...(p.formatDocuments ?? {}),
+            [formatKey]: {
+              ...document,
+              scene: nextScene,
+              objects: updateObjectsFromScene(nextScene, document.objects),
+              isEdited: true,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        }
+      })
+      return
+    }
     const activeLocale = project.activeLocale
     patchScene((m) => {
       const b = m[kind]
@@ -336,7 +396,7 @@ export default function App() {
       }
       return { ...m, [kind]: { ...b, text } }
     })
-  }, [patchScene, project.activeLocale, project.blockOverrides, setProject])
+  }, [patchScene, project.activeLocale, project.blockOverrides, project.formatDocuments, setProject])
 
   function toggleEnabled(kind: BlockKind, next: boolean) {
     setProject((p) => ({ ...p, enabled: { ...p.enabled, [kind]: next } }))
@@ -728,8 +788,75 @@ export default function App() {
 
   const handlePickElement = useCallback((k: BlockKind, formatKey: FormatKey) => {
     setSelectedKind(k)
-    setSelectedFormat(project.blockOverrides?.[formatKey] ? formatKey : null)
-  }, [project.blockOverrides])
+    setSelectedFormat(project.formatDocuments?.[formatKey]?.isEdited || project.blockOverrides?.[formatKey] ? formatKey : null)
+    if (project.formatDocuments?.[formatKey]?.isEdited) {
+      setProject((p) => {
+        const document = p.formatDocuments?.[formatKey]
+        if (!document) return p
+        const object = document.objects.find((candidate) => candidate.type === k)
+        if (!object) return p
+        return {
+          ...p,
+          formatDocuments: {
+            ...(p.formatDocuments ?? {}),
+            [formatKey]: selectDocumentObject(document, object.id),
+          },
+        }
+      })
+    }
+  }, [project.blockOverrides, project.formatDocuments, setProject])
+
+  const selectObject = useCallback((objectId: string) => {
+    const formatKey = editingFormat ?? selectedFormat
+    if (!formatKey) return
+    const object = project.formatDocuments?.[formatKey]?.objects.find((candidate) => candidate.id === objectId)
+    setProject((p) => {
+      const document = p.formatDocuments?.[formatKey]
+      if (!document) return p
+      return {
+        ...p,
+        formatDocuments: {
+          ...(p.formatDocuments ?? {}),
+          [formatKey]: selectDocumentObject(document, objectId),
+        },
+      }
+    })
+    if (object && isBlockObjectType(object.type)) setSelectedKind(object.type)
+  }, [editingFormat, project.formatDocuments, selectedFormat, setProject])
+
+  const toggleObjectVisible = useCallback((objectId: string, visible: boolean) => {
+    const formatKey = editingFormat ?? selectedFormat
+    if (!formatKey) return
+    setProject((p) => updateFormatDocumentObject(p, formatKey, objectId, { visible }))
+  }, [editingFormat, selectedFormat, setProject])
+
+  const toggleObjectLocked = useCallback((objectId: string, locked: boolean) => {
+    const formatKey = editingFormat ?? selectedFormat
+    if (!formatKey) return
+    setProject((p) => updateFormatDocumentObject(p, formatKey, objectId, { locked }))
+  }, [editingFormat, selectedFormat, setProject])
+
+  const moveObject = useCallback((objectId: string, direction: 'up' | 'down') => {
+    const formatKey = editingFormat ?? selectedFormat
+    if (!formatKey) return
+    setProject((p) => {
+      const document = p.formatDocuments?.[formatKey]
+      if (!document) return p
+      return {
+        ...p,
+        formatDocuments: {
+          ...(p.formatDocuments ?? {}),
+          [formatKey]: {
+            ...document,
+            objects: moveLayer(document.objects, objectId, direction),
+            activeObjectId: objectId,
+            isEdited: true,
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      }
+    })
+  }, [editingFormat, selectedFormat, setProject])
 
   // Open the full-screen layout editor for a format. If the format is in
   // "Auto" mode (no manual composition picked), resolve the auto-chosen
@@ -739,6 +866,10 @@ export default function App() {
   // would no longer match the layout they were authored against.
   const openLayoutEditor = useCallback(
     (formatKey: FormatKey) => {
+      setProject((p) => ({
+        ...ensureProjectFormatDocuments(p),
+        activeFormatKey: formatKey,
+      }))
       if (!project.formatOverrides?.[formatKey]) {
         const resolved = resolveCompositionModel(
           masterWithAssets,
@@ -1018,6 +1149,7 @@ export default function App() {
               brandKit={project.brandKit}
               enabled={project.enabled}
               overrides={project.formatOverrides}
+              formatDocuments={project.formatDocuments}
               blockOverrides={project.blockOverrides}
               layoutDensity={project.layoutDensity}
               formatDensities={project.formatDensities}
@@ -1063,6 +1195,12 @@ export default function App() {
             requestPropagate(editingFormat, overrides)
             setEditingFormat(null)
           }}
+          formatDocument={editingDocument}
+          activeObjectId={editingActiveObjectId}
+          onSelectObject={selectObject}
+          onToggleObjectVisible={toggleObjectVisible}
+          onToggleObjectLocked={toggleObjectLocked}
+          onMoveObject={moveObject}
         />
       ) : null}
       {propagateState ? (
@@ -1280,6 +1418,29 @@ function mergeChangedOverrides(
     }
   }
   return out
+}
+
+function updateFormatDocumentObject(
+  project: Project,
+  formatKey: FormatKey,
+  objectId: string,
+  patch: Parameters<typeof updateObjectProperties>[2],
+): Project {
+  const document = project.formatDocuments?.[formatKey]
+  if (!document) return project
+  const updated = updateObjectProperties(document, objectId, patch)
+  if (updated === document) return project
+  return {
+    ...project,
+    formatDocuments: {
+      ...(project.formatDocuments ?? {}),
+      [formatKey]: updated,
+    },
+  }
+}
+
+function isBlockObjectType(type: string): type is BlockKind {
+  return type === 'title' || type === 'subtitle' || type === 'cta' || type === 'badge' || type === 'logo' || type === 'image'
 }
 
 function sameOverride(a: BlockOverride, b: BlockOverride): boolean {

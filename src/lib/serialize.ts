@@ -141,6 +141,46 @@ const sceneSchema = z.object({
   image: imageBlockSchema.optional(),
 })
 
+const sceneObjectSchema = z.object({
+  id: z.string(),
+  type: z.enum([
+    'background',
+    'image',
+    'title',
+    'subtitle',
+    'cta',
+    'badge',
+    'logo',
+    'text',
+    'shape',
+    'decor',
+    'custom-image',
+  ]),
+  name: z.string(),
+  visible: z.boolean(),
+  locked: z.boolean().optional(),
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+  rotation: z.number().optional(),
+  zIndex: z.number().optional(),
+  text: z.string().optional(),
+  fontFamily: z.string().optional(),
+  fontSize: z.number().optional(),
+  fontWeight: z.number().optional(),
+  lineHeight: z.number().optional(),
+  letterSpacing: z.number().optional(),
+  textAlign: z.enum(['left', 'center', 'right']).optional(),
+  fill: z.string().optional(),
+  stroke: z.string().optional(),
+  opacity: z.number().optional(),
+  borderRadius: z.number().optional(),
+  imageSrc: z.string().optional(),
+  fit: z.enum(['cover', 'contain', 'fill']).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+})
+
 const blockKindEnum = z.enum(['title', 'subtitle', 'cta', 'badge', 'logo', 'image'])
 const blockOverrideSchema = z.object({
   x: z.number().optional(),
@@ -318,6 +358,18 @@ const formatRuleSetSchema = z.object({
   requiredElements: z.array(blockKindEnum),
 })
 
+const projectFormatDocumentSchema = z.object({
+  formatKey: z.string(),
+  format: formatRuleSetSchema,
+  scene: sceneSchema,
+  objects: z.array(sceneObjectSchema),
+  activeObjectId: z.string().optional(),
+  isEdited: z.boolean().optional(),
+  createdFromGeneration: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
 const blockOverridesSchema = z.record(anyFormatKeySchema, z.record(blockKindEnum, blockOverrideSchema).optional())
 const layoutDensitySchema = z.enum(['compact', 'balanced', 'spacious'])
 
@@ -342,6 +394,8 @@ export const projectSchema = z.object({
   backgroundExtensionByFormat: z.record(z.string(), backgroundExtensionSchema).optional(),
   logoSrc: z.string().nullable(),
   selectedFormats: z.array(anyFormatKeySchema),
+  formatDocuments: z.record(z.string(), projectFormatDocumentSchema).optional(),
+  activeFormatKey: z.string().optional(),
   formatOverrides: z.record(anyFormatKeySchema, compositionModelSchema).optional(),
   imageFocals: z
     .record(anyFormatKeySchema, z.object({ x: z.number(), y: z.number() }))
@@ -406,6 +460,13 @@ export function assertPortableProjectAssets(project: Project): void {
   if (project.logoSrc?.startsWith('blob:')) bad.push('logoSrc')
   if (project.master.image?.src?.startsWith('blob:')) bad.push('master.image.src')
   if (project.master.logo?.src?.startsWith('blob:')) bad.push('master.logo.src')
+  for (const [formatKey, document] of Object.entries(project.formatDocuments ?? {})) {
+    if (document.scene.image?.src?.startsWith('blob:')) bad.push(`formatDocuments.${formatKey}.scene.image.src`)
+    if (document.scene.logo?.src?.startsWith('blob:')) bad.push(`formatDocuments.${formatKey}.scene.logo.src`)
+    for (const object of document.objects) {
+      if (object.imageSrc?.startsWith('blob:')) bad.push(`formatDocuments.${formatKey}.objects.${object.id}.imageSrc`)
+    }
+  }
   if (bad.length > 0) {
     throw new Error(
       `Project contains non-portable blob URL asset(s): ${bad.join(', ')}. Re-upload the asset so it is stored as a data URL before exporting JSON.`,

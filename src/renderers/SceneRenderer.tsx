@@ -12,9 +12,11 @@ import type {
   ImageBlock,
   LogoBlock,
   Scene,
+  SceneObject,
   Scrim,
   TextBlock,
 } from '../lib/types'
+import { sortObjectsForRender } from '../lib/formatDocuments'
 
 type Props = {
   scene: Scene
@@ -33,10 +35,11 @@ type Props = {
    *  shift instead of snapping to Min/Mid/Max thresholds.
    *  When absent, falls back to SVG's discretized `preserveAspectRatio`. */
   imageAspectRatio?: number | null
+  objects?: SceneObject[]
 }
 
 export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRenderer(
-  { scene, rules, displayFont, textFont, brandInitials, brandColor, className, style, imageAspectRatio },
+  { scene, rules, displayFont, textFont, brandInitials, brandColor, className, style, imageAspectRatio, objects },
   ref,
 ) {
   const { width: W, height: H, key } = rules
@@ -44,6 +47,8 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
   const scrimId = `scrim-${key}`
   const imgClipId = `img-clip-${key}`
   const imgShadowId = `img-shadow-${key}`
+
+  const renderObjects = objects ? sortObjectsForRender(objects).filter((object) => object.visible) : null
 
   return (
     <svg
@@ -60,6 +65,7 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
     >
       <defs>
         <BackgroundDefs bg={scene.background} id={bgId} />
+        {renderObjects?.map((object) => <ObjectDefs key={object.id} object={object} W={W} H={H} imageAspectRatio={imageAspectRatio ?? null} />)}
         {scene.scrim ? (
           <linearGradient id={scrimId} x1="0" y1="0" x2="0" y2="1">
             <stop
@@ -91,66 +97,282 @@ export const SceneRenderer = forwardRef<SVGSVGElement, Props>(function SceneRend
         </filter>
       </defs>
 
-      <BackgroundFill bg={scene.background} W={W} H={H} id={bgId} />
+      {renderObjects ? (
+        renderObjects.map((object) => (
+          <ObjectNode
+            key={object.id}
+            object={object}
+            scene={scene}
+            W={W}
+            H={H}
+            bgId={bgId}
+            displayFont={displayFont}
+            textFont={textFont}
+            brandInitials={brandInitials ?? ''}
+            brandColor={brandColor ?? scene.accent ?? '#111827'}
+            imageAspectRatio={imageAspectRatio ?? null}
+          />
+        ))
+      ) : (
+        <>
+          <BackgroundFill bg={scene.background} W={W} H={H} id={bgId} />
 
-      {scene.decor ? <DecorNode decor={scene.decor} W={W} H={H} /> : null}
+          {scene.decor ? <DecorNode decor={scene.decor} W={W} H={H} /> : null}
 
-      {scene.image ? (
-        <ImageNode
-          role="image"
-          block={scene.image}
-          W={W}
-          H={H}
-          clipId={imgClipId}
-          shadowId={imgShadowId}
-          imageAspectRatio={imageAspectRatio ?? null}
-        />
-      ) : null}
+          {scene.image ? (
+            <ImageNode
+              role="image"
+              block={scene.image}
+              W={W}
+              H={H}
+              clipId={imgClipId}
+              shadowId={imgShadowId}
+              imageAspectRatio={imageAspectRatio ?? null}
+            />
+          ) : null}
 
-      {scene.scrim ? <ScrimNode scrim={scene.scrim} W={W} H={H} gradientId={scrimId} /> : null}
+          {scene.scrim ? <ScrimNode scrim={scene.scrim} W={W} H={H} gradientId={scrimId} /> : null}
 
-      {scene.badge ? (
-        <BadgeNode role="badge" block={scene.badge} W={W} H={H} fontFamily={scene.badge.fontFamily ?? textFont} />
-      ) : null}
+          {scene.badge ? (
+            <BadgeNode role="badge" block={scene.badge} W={W} H={H} fontFamily={scene.badge.fontFamily ?? textFont} />
+          ) : null}
 
-      {scene.title ? (
-        <TextNode
-          role="title"
-          block={scene.title}
-          W={W}
-          H={H}
-          fontFamily={scene.title.fontFamily ?? displayFont}
-          accent={scene.accent}
-        />
-      ) : null}
+          {scene.title ? (
+            <TextNode
+              role="title"
+              block={scene.title}
+              W={W}
+              H={H}
+              fontFamily={scene.title.fontFamily ?? displayFont}
+              accent={scene.accent}
+            />
+          ) : null}
 
-      {scene.subtitle ? (
-        <TextNode
-          role="subtitle"
-          block={scene.subtitle}
-          W={W}
-          H={H}
-          fontFamily={scene.subtitle.fontFamily ?? textFont}
-          accent={scene.accent}
-        />
-      ) : null}
+          {scene.subtitle ? (
+            <TextNode
+              role="subtitle"
+              block={scene.subtitle}
+              W={W}
+              H={H}
+              fontFamily={scene.subtitle.fontFamily ?? textFont}
+              accent={scene.accent}
+            />
+          ) : null}
 
-      {scene.cta ? <CtaNode role="cta" block={scene.cta} W={W} H={H} fontFamily={scene.cta.fontFamily ?? displayFont} /> : null}
+          {scene.cta ? <CtaNode role="cta" block={scene.cta} W={W} H={H} fontFamily={scene.cta.fontFamily ?? displayFont} /> : null}
 
-      {scene.logo ? (
-        <LogoNode
-          role="logo"
-          block={scene.logo}
-          W={W}
-          H={H}
-          fontFamily={displayFont}
-          initials={brandInitials ?? ''}
-          color={brandColor ?? scene.accent ?? '#111827'}
-        />
-      ) : null}
+          {scene.logo ? (
+            <LogoNode
+              role="logo"
+              block={scene.logo}
+              W={W}
+              H={H}
+              fontFamily={displayFont}
+              initials={brandInitials ?? ''}
+              color={brandColor ?? scene.accent ?? '#111827'}
+            />
+          ) : null}
+        </>
+      )}
     </svg>
   )
 })
+
+function ObjectDefs({
+  object,
+  W,
+  H,
+  imageAspectRatio,
+}: {
+  object: SceneObject
+  W: number
+  H: number
+  imageAspectRatio: number | null
+}) {
+  const image = objectToImageBlock(object)
+  if (!image || !needsImageClipPath(image, imageAspectRatio)) return null
+  return (
+    <clipPath id={objectClipId(object.id)}>
+      <rect
+        x={pct(image.x, W)}
+        y={pct(image.y, H)}
+        width={pct(image.w, W)}
+        height={pct(image.h ?? 50, H)}
+        rx={image.rx}
+        ry={image.rx}
+      />
+    </clipPath>
+  )
+}
+
+function ObjectNode({
+  object,
+  scene,
+  W,
+  H,
+  bgId,
+  displayFont,
+  textFont,
+  brandInitials,
+  brandColor,
+  imageAspectRatio,
+}: {
+  object: SceneObject
+  scene: Scene
+  W: number
+  H: number
+  bgId: string
+  displayFont: string
+  textFont: string
+  brandInitials: string
+  brandColor: string
+  imageAspectRatio: number | null
+}) {
+  if (object.type === 'background') {
+    const saved = object.metadata?.background
+    if (isBackground(saved)) return <BackgroundFill bg={saved} W={W} H={H} id={bgId} />
+    return <rect data-role="background" x={0} y={0} width={W} height={H} fill={object.fill ?? '#FFFFFF'} />
+  }
+
+  if (object.type === 'image' || object.type === 'custom-image') {
+    const block = objectToImageBlock(object)
+    if (!block) return null
+    return (
+      <ImageNode
+        role={object.type}
+        block={block}
+        W={W}
+        H={H}
+        clipId={objectClipId(object.id)}
+        shadowId=""
+        imageAspectRatio={imageAspectRatio}
+      />
+    )
+  }
+
+  if (object.type === 'logo') {
+    return (
+      <LogoNode
+        role="logo"
+        block={objectToLogoBlock(object)}
+        W={W}
+        H={H}
+        fontFamily={displayFont}
+        initials={brandInitials}
+        color={brandColor}
+      />
+    )
+  }
+
+  if (object.type === 'cta') {
+    return (
+      <CtaNode
+        role="cta"
+        block={objectToCtaBlock(object)}
+        W={W}
+        H={H}
+        fontFamily={object.fontFamily ?? displayFont}
+      />
+    )
+  }
+
+  if (object.type === 'title' || object.type === 'subtitle' || object.type === 'badge' || object.type === 'text') {
+    const block = objectToTextBlock(object)
+    if (object.type === 'badge') return <BadgeNode role="badge" block={block} W={W} H={H} fontFamily={object.fontFamily ?? textFont} />
+    return (
+      <TextNode
+        role={object.type}
+        block={block}
+        W={W}
+        H={H}
+        fontFamily={object.fontFamily ?? (object.type === 'subtitle' ? textFont : displayFont)}
+        accent={scene.accent}
+      />
+    )
+  }
+
+  if (object.type === 'shape' || object.type === 'decor') {
+    return (
+      <rect
+        data-role={object.type}
+        x={pct(object.x, W)}
+        y={pct(object.y, H)}
+        width={pct(object.width, W)}
+        height={pct(object.height, H)}
+        rx={object.borderRadius ?? 0}
+        ry={object.borderRadius ?? 0}
+        fill={object.fill ?? 'transparent'}
+        stroke={object.stroke}
+        opacity={object.opacity ?? 1}
+        transform={object.rotation ? `rotate(${object.rotation} ${pct(object.x + object.width / 2, W)} ${pct(object.y + object.height / 2, H)})` : undefined}
+      />
+    )
+  }
+
+  return null
+}
+
+function objectToImageBlock(object: SceneObject): ImageBlock | null {
+  if (object.type !== 'image' && object.type !== 'custom-image') return null
+  return {
+    x: object.x,
+    y: object.y,
+    w: object.width,
+    h: object.height,
+    src: object.imageSrc ?? null,
+    rx: object.borderRadius ?? 0,
+    fit: object.fit === 'contain' ? 'contain' : 'cover',
+  }
+}
+
+function objectToLogoBlock(object: SceneObject): LogoBlock {
+  return {
+    x: object.x,
+    y: object.y,
+    w: object.width,
+    h: object.height,
+    src: object.imageSrc ?? null,
+    bgOpacity: typeof object.metadata?.bgOpacity === 'number' ? object.metadata.bgOpacity : 0,
+  }
+}
+
+function objectToTextBlock(object: SceneObject): TextBlock {
+  return {
+    x: object.x,
+    y: object.y,
+    w: object.width,
+    h: object.height,
+    text: object.text ?? object.name,
+    fontSize: object.fontSize ?? 4,
+    charsPerLine: Math.max(8, Math.round(object.width / 2)),
+    maxLines: Math.max(1, Math.round((object.height || 8) / Math.max(1, object.fontSize ?? 4))),
+    weight: object.fontWeight ?? 600,
+    fill: object.fill ?? '#111827',
+    opacity: object.opacity,
+    letterSpacing: object.letterSpacing,
+    lineHeight: object.lineHeight,
+    align: object.textAlign,
+  }
+}
+
+function objectToCtaBlock(object: SceneObject): TextBlock & { bg: string; rx: number } {
+  return {
+    ...objectToTextBlock(object),
+    bg: typeof object.metadata?.bg === 'string' ? object.metadata.bg : object.fill ?? '#111827',
+    fill: object.fill && object.metadata?.bg ? object.fill : '#FFFFFF',
+    rx: object.borderRadius ?? 999,
+  }
+}
+
+function objectClipId(id: string): string {
+  return `obj-clip-${id.replace(/[^a-zA-Z0-9_-]/g, '-')}`
+}
+
+function isBackground(value: unknown): value is Background {
+  if (!value || typeof value !== 'object') return false
+  const kind = (value as { kind?: unknown }).kind
+  return kind === 'gradient' || kind === 'solid' || kind === 'tonal' || kind === 'split'
+}
 
 function pct(v: number, total: number): number {
   return (v / 100) * total
@@ -498,7 +720,7 @@ function ImageNode({
         height={dispH}
         preserveAspectRatio="xMidYMid meet"
         clipPath={`url(#${clipId})`}
-        filter={block.rx > 0 ? `url(#${shadowId})` : undefined}
+        filter={block.rx > 0 && shadowId ? `url(#${shadowId})` : undefined}
       />
     )
   }
@@ -522,7 +744,7 @@ function ImageNode({
       height={pct(blockH, H)}
       preserveAspectRatio={par}
       clipPath={isClipped ? `url(#${clipId})` : undefined}
-      filter={block.rx > 0 ? `url(#${shadowId})` : undefined}
+      filter={block.rx > 0 && shadowId ? `url(#${shadowId})` : undefined}
     />
   )
 }

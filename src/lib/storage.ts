@@ -44,6 +44,8 @@ function migrateProject(project: Project): Project {
     imageFocals: remapFormatRecord(project.imageFocals),
     blockOverrides: remapFormatRecord(project.blockOverrides),
     formatDensities: remapFormatRecord(project.formatDensities),
+    formatDocuments: remapFormatDocuments(project.formatDocuments),
+    activeFormatKey: project.activeFormatKey ? normalizeFormatKey(project.activeFormatKey) : project.activeFormatKey,
   }
 
   for (const key of ['avito-listing', 'avito-fullscreen', 'avito-skyscraper'] as const) {
@@ -89,6 +91,20 @@ function remapFormatRecord<T>(record: Partial<Record<FormatKey, T>> | undefined)
     out[next as FormatKey] = value as T
   }
   return out
+}
+
+function remapFormatDocuments(record: Project['formatDocuments'] | undefined): Project['formatDocuments'] | undefined {
+  if (!record) return undefined
+  const out: Project['formatDocuments'] = {}
+  for (const [key, value] of Object.entries(record)) {
+    const next = normalizeFormatKey(key)
+    out[next] = { ...value, formatKey: next }
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+function normalizeFormatKey(key: string): FormatKey {
+  return (key.startsWith('custom:') ? key : FORMAT_MIGRATIONS[key] ?? key) as FormatKey
 }
 
 export function clearProject(): void {

@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildScene } from '../buildScene'
 import { getFormat } from '../formats'
+import { ensureProjectFormatDocuments } from '../formatDocuments'
 import { importJson, parseBrandSnapshotList, projectSchema } from '../serialize'
 import { newProject } from '../defaults'
 import type { Project } from '../types'
@@ -191,6 +192,60 @@ describe('projectSchema — round trip', () => {
     if (result.success) {
       expect(result.data.extendedImageByFormat?.['vk-square']?.imageSrc).toBe('data:image/png;base64,extended-square')
       expect(result.data.backgroundExtensionByFormat?.['vk-square']?.changed).toBe(true)
+    }
+  })
+
+  it('preserves formatDocuments through parse, including custom objects', () => {
+    const generated = ensureProjectFormatDocuments(
+      { ...newProject('format-docs'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = generated.formatDocuments!['vk-square']!
+    const p: Project = {
+      ...generated,
+      formatDocuments: {
+        'vk-square': {
+          ...document,
+          objects: [
+            ...document.objects,
+            {
+              id: 'custom-1',
+              type: 'custom-image',
+              name: 'Uploaded sticker',
+              visible: true,
+              x: 10,
+              y: 12,
+              width: 20,
+              height: 18,
+              zIndex: 90,
+              imageSrc: 'data:image/png;base64,custom',
+              fit: 'contain',
+              metadata: { source: 'user' },
+            },
+          ],
+        },
+      },
+    }
+
+    const result = projectSchema.safeParse(JSON.parse(JSON.stringify(p)))
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.formatDocuments?.['vk-square']?.objects.some((object) => object.id === 'custom-1')).toBe(true)
+      expect(result.data.formatDocuments?.['vk-square']?.scene.title?.text).toBe(document.scene.title?.text)
+    }
+  })
+
+  it('accepts old projects without formatDocuments', () => {
+    const oldProject = JSON.parse(JSON.stringify(newProject('old-project')))
+    delete oldProject.formatDocuments
+    delete oldProject.activeFormatKey
+
+    const result = projectSchema.safeParse(oldProject)
+
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.formatDocuments).toBeUndefined()
     }
   })
 })

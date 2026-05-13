@@ -12,16 +12,17 @@ type Props = {
   onToggle: (next: boolean) => void
   onPatchScene: (patch: (master: Scene) => Scene) => void
   activeLocale?: string
+  disabledEditing?: boolean
 }
 
-export function ElementRow({ kind, label, enabled, forceOpen, isSelected, scene, onToggle, onPatchScene, activeLocale }: Props) {
+export function ElementRow({ kind, label, enabled, forceOpen, isSelected, scene, onToggle, onPatchScene, activeLocale, disabledEditing }: Props) {
   const [open, setOpen] = useState(false)
   const isOpen = open || forceOpen
   const isInlineEditable = kind === 'title' || kind === 'subtitle' || kind === 'cta' || kind === 'badge'
   const inlineText = getInlineText(scene, kind, activeLocale)
 
   return (
-    <div className={`el-row${isOpen ? ' is-open' : ''}${isSelected ? ' is-selected' : ''}${enabled ? '' : ' is-disabled'}`}>
+    <div className={`el-row${isOpen ? ' is-open' : ''}${isSelected ? ' is-selected' : ''}${enabled ? '' : ' is-disabled'}${disabledEditing ? ' is-locked' : ''}`}>
       <div className="el-row__head">
         <label className="el-row__check">
           <input
@@ -37,6 +38,7 @@ export function ElementRow({ kind, label, enabled, forceOpen, isSelected, scene,
             className="el-row__inline-text"
             value={inlineText}
             onChange={(e) => setInlineText(onPatchScene, kind, activeLocale, e.target.value)}
+            disabled={disabledEditing}
             placeholder={`Введите текст: ${label.toLowerCase()}`}
             aria-label={`Текст: ${label}`}
             onClick={(e) => e.stopPropagation()}
@@ -51,7 +53,8 @@ export function ElementRow({ kind, label, enabled, forceOpen, isSelected, scene,
           {isOpen ? '▴' : '▾'}
         </button>
       </div>
-      {isOpen && enabled ? <ElementEditor kind={kind} scene={scene} onPatchScene={onPatchScene} activeLocale={activeLocale} /> : null}
+      {isOpen && enabled && !disabledEditing ? <ElementEditor kind={kind} scene={scene} onPatchScene={onPatchScene} activeLocale={activeLocale} /> : null}
+      {isOpen && enabled && disabledEditing ? <div className="el-editor--note">Layer is locked. Unlock it to edit properties.</div> : null}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react'
 import { FormatPreview, type FormatPreviewHandle } from './FormatPreview'
+import { sceneFromFormatDocument } from '../lib/formatDocuments'
 import type {
   AssetHint,
   BlockKind,
@@ -9,6 +10,7 @@ import type {
   EnabledMap,
   FormatKey,
   LayoutDensity,
+  ProjectFormatDocument,
   Scene,
   FormatRuleSet,
 } from '../lib/types'
@@ -22,6 +24,7 @@ type Props = {
   enabled: EnabledMap
   /** Per-format composition override (template preferredModels merged with user overrides). */
   overrides?: Partial<Record<FormatKey, CompositionModel>>
+  formatDocuments?: Record<string, ProjectFormatDocument>
   /** Per-format image focal override. When a key is absent, master focal is used. */
   imageFocals?: Partial<Record<FormatKey, { x: number; y: number }>>
   /** Analyzed image stats. Forwarded to every preview so layouts can adapt. */
@@ -52,6 +55,13 @@ export type FormatGridHandle = {
   getSvg: (key: FormatKey) => SVGSVGElement | null
 }
 
+export function shouldUseFormatDocument(
+  document: ProjectFormatDocument | undefined,
+  _blockOverride: Partial<Record<BlockKind, BlockOverride>> | undefined,
+): ProjectFormatDocument | undefined {
+  return document?.isEdited ? document : undefined
+}
+
 export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGrid(
   {
     formats,
@@ -61,6 +71,7 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     brandKit,
     enabled,
     overrides,
+    formatDocuments,
     imageFocals,
     assetHint,
     onPickElement,
@@ -112,6 +123,7 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
         const previewMaster = imageSrc !== undefined && master.image
           ? { ...master, image: { ...master.image, src: imageSrc, fit: imageFit ?? master.image.fit } }
           : master
+        const editedDocument = shouldUseFormatDocument(formatDocuments?.[k], blockOverrides?.[k])
         return (
           <FormatPreview
             key={k}
@@ -123,6 +135,8 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
             brandKit={brandKit}
             enabled={enabled}
             override={overrides?.[k]}
+            sceneOverride={editedDocument ? sceneFromFormatDocument(editedDocument) : undefined}
+            sceneObjects={editedDocument ? editedDocument.objects : undefined}
             blockOverride={blockOverrides?.[k]}
             density={formatDensities?.[k] ?? layoutDensity}
             focal={imageFocals?.[k]}

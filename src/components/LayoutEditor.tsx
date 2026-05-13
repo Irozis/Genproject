@@ -25,9 +25,11 @@ import {
 } from 'react'
 import { SceneRenderer } from '../renderers/SceneRenderer'
 import { buildScene } from '../lib/buildScene'
+import { sceneFromFormatDocument } from '../lib/formatDocuments'
 import { applyLayoutDensity } from '../lib/layoutDensity'
 import { getFormat } from '../lib/formats'
 import { FONT_PAIRS } from '../lib/fontPairs'
+import { LayersPanel } from './editor/LayersPanel'
 import type {
   AssetHint,
   BlockKind,
@@ -38,7 +40,9 @@ import type {
   FormatKey,
   FormatRuleSet,
   LayoutDensity,
+  ProjectFormatDocument,
   Scene,
+  SceneObject,
   TextAlign,
 } from '../lib/types'
 
@@ -62,6 +66,12 @@ type Props = {
   onCancel: () => void
   /** «Применить к другим форматам» — открыть диалог выбора целей. */
   onPropagate: (overrides: EditableBlocks) => void
+  formatDocument?: ProjectFormatDocument
+  activeObjectId?: string | null
+  onSelectObject?: (objectId: string) => void
+  onToggleObjectVisible?: (objectId: string, visible: boolean) => void
+  onToggleObjectLocked?: (objectId: string, locked: boolean) => void
+  onMoveObject?: (objectId: string, direction: 'up' | 'down') => void
 }
 
 const EDITABLE_KINDS: BlockKind[] = ['title', 'subtitle', 'cta', 'badge', 'logo', 'image']
@@ -100,6 +110,12 @@ export function LayoutEditor({
   onSave,
   onCancel,
   onPropagate,
+  formatDocument,
+  activeObjectId,
+  onSelectObject,
+  onToggleObjectVisible,
+  onToggleObjectLocked,
+  onMoveObject,
 }: Props) {
   const rules = useMemo(
     () => applyLayoutDensity(getFormat(formatKey, customFormats), density),
@@ -160,6 +176,11 @@ export function LayoutEditor({
       }),
     [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, draft, locale, customFormats, density],
   )
+  const documentScene = useMemo(
+    () => formatDocument ? sceneFromFormatDocument(formatDocument) : null,
+    [formatDocument],
+  )
+  const renderScene = formatDocument?.isEdited && documentScene ? documentScene : scene
 
   const pushHistory = useCallback((prev: EditableBlocks) => {
     setHistory((h) => [...h.slice(-49), prev])
@@ -500,7 +521,7 @@ export function LayoutEditor({
               Применить к другим…
             </button>
             <button type="button" className="btn btn-ghost btn-xs" onClick={onCancel}>
-              Отмена
+              Назад к форматам
             </button>
             <button
               type="button"
@@ -523,7 +544,8 @@ export function LayoutEditor({
               }}
             >
               <SceneRenderer
-                scene={scene}
+                scene={renderScene}
+                objects={formatDocument?.isEdited ? formatDocument.objects : undefined}
                 rules={rules}
                 displayFont={brandKit.displayFont}
                 textFont={brandKit.textFont}
@@ -533,15 +555,15 @@ export function LayoutEditor({
                 className="layout-editor__svg"
               />
               <SafeZoneOverlay safeZone={rules.safeZone} />
-              {selected === 'image' && scene.image?.src ? (
+              {selected === 'image' && renderScene.image?.src ? (
                 <CropPreview
-                  imageBlock={scene.image}
-                  block={blockGeometry(scene, 'image')}
+                  imageBlock={renderScene.image}
+                  block={blockGeometry(renderScene, 'image')}
                   cropMode={cropMode}
                 />
               ) : null}
               <BlockOverlays
-                scene={scene}
+                scene={renderScene}
                 selected={selected}
                 cropMode={cropMode}
                 onSelect={(k) => {
@@ -559,8 +581,8 @@ export function LayoutEditor({
               />
               {editingText ? (
                 <InlineTextField
-                  block={blockGeometry(scene, editingText)}
-                  initialText={readText(scene, editingText) ?? ''}
+                  block={blockGeometry(renderScene, editingText)}
+                  initialText={readText(renderScene, editingText) ?? ''}
                   onCommit={(text) => {
                     pushHistory(draft)
                     setDraft((d) => {
@@ -576,23 +598,38 @@ export function LayoutEditor({
           </div>
 
           <aside className="layout-editor__side">
-            <LayersList
-              baseline={baselineScene}
-              scene={scene}
-              draft={draft}
-              selected={selected}
-              onSelect={setSelected}
-              onToggleVisibility={(kind, visible) => {
-                pushHistory(draft)
-                setDraft((d) => {
-                  const current = d[kind] ?? {}
-                  const next: BlockOverride = visible
-                    ? { ...current, hidden: false }
-                    : { ...current, hidden: true }
-                  return { ...d, [kind]: next }
-                })
-              }}
-            />
+            {formatDocument && onSelectObject && onToggleObjectVisible && onToggleObjectLocked && onMoveObject ? (
+              <LayersPanel
+                objects={formatDocument.objects}
+                activeObjectId={activeObjectId}
+                onSelect={(objectId) => {
+                  onSelectObject(objectId)
+                  const object = formatDocument.objects.find((candidate) => candidate.id === objectId)
+                  if (object && isBlockObjectType(object.type)) setSelected(object.type)
+                }}
+                onToggleVisible={onToggleObjectVisible}
+                onToggleLocked={onToggleObjectLocked}
+                onMove={onMoveObject}
+              />
+            ) : (
+              <LayersList
+                baseline={baselineScene}
+                scene={scene}
+                draft={draft}
+                selected={selected}
+                onSelect={setSelected}
+                onToggleVisibility={(kind, visible) => {
+                  pushHistory(draft)
+                  setDraft((d) => {
+                    const current = d[kind] ?? {}
+                    const next: BlockOverride = visible
+                      ? { ...current, hidden: false }
+                      : { ...current, hidden: true }
+                    return { ...d, [kind]: next }
+                  })
+                }}
+              />
+            )}
             <SidePanel
               selected={selected}
               scene={scene}
@@ -1037,6 +1074,10 @@ function layerGlyph(kind: BlockKind): string {
     default:
       return '·'
   }
+}
+
+function isBlockObjectType(type: SceneObject['type']): type is BlockKind {
+  return type === 'title' || type === 'subtitle' || type === 'cta' || type === 'badge' || type === 'logo' || type === 'image'
 }
 
 // Properties panel for the selected block. Shows position + size for any

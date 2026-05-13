@@ -2982,6 +2982,25 @@ summary:focus-visible {
   background: rgba(15, 118, 110, 0.85);
   flex-shrink: 0;
 }
+.layers-panel {
+  margin-bottom: 12px;
+}
+.layers-panel__type {
+  color: var(--ink-3);
+  flex-shrink: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.layout-editor__layer.is-locked .layout-editor__layer-label::after {
+  content: " locked";
+  color: var(--ink-3);
+  font-size: 10px;
+  font-weight: 500;
+}
+.layout-editor__layer-vis:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
 .layout-editor__empty {
   padding: 16px;
   border: 1px dashed var(--border);
