@@ -11,6 +11,23 @@ describe('format edit mode state', () => {
     const next = enterFormatEditMode(project, 'vk-stories')
 
     expect(next.activeFormatKey).toBe('vk-stories')
+    expect(next.editorMode).toBe('edit')
+    expect(next.activeObjectId).toBe(next.formatDocuments?.['vk-stories']?.activeObjectId)
+  })
+
+  it('refreshes an unedited generated document with the selected composition', () => {
+    const generated = ensureProjectFormatDocuments(
+      { ...newProject('edit-selected-composition'), selectedFormats: ['vk-square'], imageSrc: 'data:image/png;base64,image' },
+      new Date('2026-05-14T00:00:00.000Z'),
+    )
+    const next = enterFormatEditMode(
+      { ...generated, formatOverrides: { 'vk-square': 'text-dominant' } },
+      'vk-square',
+      true,
+    )
+
+    expect(generated.formatDocuments?.['vk-square']?.scene.image).toBeDefined()
+    expect(next.formatDocuments?.['vk-square']?.scene.image).toBeUndefined()
   })
 
   it('exposes the active format name and size', () => {
@@ -26,6 +43,8 @@ describe('format edit mode state', () => {
     const next = exitFormatEditMode(project)
 
     expect(next.activeFormatKey).toBeUndefined()
+    expect(next.activeObjectId).toBeUndefined()
+    expect(next.editorMode).toBe('preview')
   })
 
   it('selecting a layer makes its object available for properties', () => {

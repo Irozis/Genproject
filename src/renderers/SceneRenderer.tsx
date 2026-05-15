@@ -325,6 +325,11 @@ function objectToImageBlock(object: SceneObject): RenderImageBlock | null {
     rx: object.borderRadius ?? 0,
     fit: object.fit === 'contain' ? 'contain' : object.fit === 'fill' ? 'fill' : 'cover',
     opacity: object.opacity,
+    focalX: object.focalX,
+    focalY: object.focalY,
+    cropZoom: object.cropZoom,
+    cropX: object.cropX,
+    cropY: object.cropY,
   }
 }
 

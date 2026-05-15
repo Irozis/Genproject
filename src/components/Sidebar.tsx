@@ -4,6 +4,7 @@ import { ElementRow } from './ElementRow'
 import { FilePicker } from './FilePicker'
 import { SidebarTabs, type SidebarTab } from './SidebarTabs'
 import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
+import { groupFormatsByResolution } from '../lib/formatPlacements'
 import { densityLabel } from '../lib/layoutDensity'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
 import { getActiveImageSrc } from '../lib/projectImages'
@@ -93,6 +94,7 @@ export function Sidebar({
   const selectedFormatLabel = editingFormatKey ? getFormat(editingFormatKey, project.customFormats).label : null
   const previewImageSrc = getActiveImageSrc(project, editingFormatKey ?? undefined)
   const hasPreparedExtendedImage = hasAnyFormatExtension(project) || !!project.extendedImageSrc
+  const displayFormatCount = groupFormatsByResolution(project.selectedFormats, project.customFormats).length
 
   return (
     <aside className="sidebar">
@@ -109,7 +111,8 @@ export function Sidebar({
             <div className="sidebar-card">
               <div className="sidebar-card__title">{project.name || 'Новый проект'}</div>
               <div className="sidebar-card__meta">
-                Форматов: {project.selectedFormats.length}
+                Форматов: {displayFormatCount}
+                {displayFormatCount !== project.selectedFormats.length ? ` · Размещений: ${project.selectedFormats.length}` : ''}
                 {project.activeLocale ? ` · Локаль: ${project.activeLocale}` : ''}
               </div>
             </div>

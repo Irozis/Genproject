@@ -77,6 +77,7 @@ type Props = {
   onMoveObject?: (objectId: string, direction: 'up' | 'down') => void
   onUpdateObject?: (objectId: string, patch: Partial<SceneObject>) => void
   onAddObject?: (type: CreatableSceneObjectType) => void
+  onResetFormat?: () => void
 }
 
 const EDITABLE_KINDS: BlockKind[] = ['title', 'subtitle', 'cta', 'badge', 'logo', 'image']
@@ -136,6 +137,7 @@ export function LayoutEditor({
   onMoveObject,
   onUpdateObject,
   onAddObject,
+  onResetFormat,
 }: Props) {
   const rules = useMemo(
     () => applyLayoutDensity(getFormat(formatKey, customFormats), density),
@@ -210,7 +212,7 @@ export function LayoutEditor({
       formatDocument
         ? formatDocument.objects.flatMap((object) =>
             validateObjectEdit(object, formatDocument.format, formatDocument.objects).map((issue) => ({
-              objectName: object.name,
+              objectName: displayObjectName(object),
               message: issue.message,
               key: `${object.id}:${issue.code}`,
             })),
@@ -687,24 +689,46 @@ export function LayoutEditor({
               <span>Прилипать к safe-zone</span>
             </label>
             <div className="layout-editor__spacer" />
-            <button
-              type="button"
-              className="btn btn-ghost btn-xs"
-              onClick={() => onPropagate(draft)}
-              title="Применить эту раскладку к другим форматам"
-            >
-              Применить к другим…
-            </button>
+            {!formatDocument ? (
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs"
+                onClick={() => onPropagate(draft)}
+                title="Применить эту раскладку к другим форматам"
+              >
+                Применить к другим…
+              </button>
+            ) : null}
+            {formatDocument && onResetFormat ? (
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs"
+                onClick={onResetFormat}
+              >
+                Сбросить к авто-версии
+              </button>
+            ) : null}
             <button type="button" className="btn btn-ghost btn-xs" onClick={onCancel}>
               Назад к форматам
             </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-xs"
-              onClick={() => onSave(draft)}
-            >
-              Сохранить
-            </button>
+            {formatDocument ? (
+              <button
+                type="button"
+                className="btn btn-primary btn-xs"
+                onClick={onCancel}
+                title="Ручные изменения уже сохранены в этом формате"
+              >
+                Готово
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-primary btn-xs"
+                onClick={() => onSave(draft)}
+              >
+                Сохранить
+              </button>
+            )}
           </div>
         </header>
 
@@ -733,7 +757,7 @@ export function LayoutEditor({
                 className="layout-editor__svg"
               />
               <SafeZoneOverlay safeZone={rules.safeZone} />
-              {selected === 'image' && renderScene.image?.src ? (
+              {!formatDocument && selected === 'image' && renderScene.image?.src ? (
                 <CropPreview
                   imageBlock={renderScene.image}
                   block={blockGeometry(renderScene, 'image')}
@@ -789,6 +813,11 @@ export function LayoutEditor({
               <div className="layout-editor__format-eyebrow">Выбранный формат</div>
               <div className="layout-editor__format-title">{editorFormatLabel}</div>
               <div className="layout-editor__format-dim">{rules.width}×{rules.height}</div>
+              {formatDocument ? (
+                <div className="layout-editor__autosave">
+                  Автосохранение включено. Изменения применяются только к этому формату.
+                </div>
+              ) : null}
             </div>
             {formatDocument && onAddObject ? (
               <div className="layout-editor__add-object">
@@ -1156,11 +1185,11 @@ function ObjectOverlays({
               style={style}
               onPointerDown={(ev) => onPointerDown(ev, object)}
               role="button"
-              aria-label={object.name}
+              aria-label={displayObjectName(object)}
               tabIndex={0}
             >
               <span className="layout-editor__block-label" aria-hidden="true">
-                {object.name}
+                {displayObjectName(object)}
               </span>
               {isSelected && !object.locked
                 ? HANDLE_DIRS.map((dir) => (
@@ -1183,6 +1212,42 @@ function ObjectOverlays({
 
 // Decorative thirds grid for the crop tool — same visual language as
 // camera viewfinders and Figma's cropping mode, helps users compose.
+function displayObjectName(object: SceneObject): string {
+  if (!object.name || isTechnicalName(object.name, object.type)) return objectTypeLabel(object.type)
+  return object.name
+}
+
+function isTechnicalName(name: string, type: SceneObject['type']): boolean {
+  const normalized = name.toLowerCase()
+  return normalized === type || normalized === 'title' || normalized === 'subtitle' || normalized === 'cta' || normalized === 'badge' || normalized === 'logo' || normalized === 'image' || normalized === 'background'
+}
+
+function objectTypeLabel(type: SceneObject['type']): string {
+  switch (type) {
+    case 'background':
+      return 'Фон'
+    case 'image':
+    case 'custom-image':
+      return 'Изображение'
+    case 'title':
+      return 'Заголовок'
+    case 'subtitle':
+      return 'Подзаголовок'
+    case 'cta':
+      return 'Кнопка'
+    case 'badge':
+      return 'Бейдж'
+    case 'logo':
+      return 'Логотип'
+    case 'text':
+      return 'Текст'
+    case 'shape':
+      return 'Фигура'
+    case 'decor':
+      return 'Декор'
+  }
+}
+
 function CropGuides() {
   return (
     <div className="layout-editor__crop-guides" aria-hidden="true">

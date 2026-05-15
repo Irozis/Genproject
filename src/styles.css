@@ -1123,7 +1123,7 @@ input, select, textarea {
   align-items: center;
   justify-content: space-between;
 }
-.preview__title { font-weight: 700; font-size: 13px; }
+.preview__title { font-weight: 700; font-size: 13px; overflow-wrap: anywhere; }
 .preview__dim { font-size: 11px; color: var(--ink-3); }
 .preview__stage {
   position: relative;
@@ -1966,6 +1966,10 @@ summary:focus-visible {
 .preview__head {
   gap: 10px;
   min-height: 34px;
+}
+.preview__head > div:first-child {
+  min-width: 0;
+  flex: 1 1 160px;
 }
 .preview__title {
   font-size: 13px;
@@ -3046,6 +3050,16 @@ summary:focus-visible {
   font-size: 12px;
   color: var(--ink-2);
 }
+.layout-editor__autosave {
+  margin-top: 8px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: rgba(15, 118, 110, 0.1);
+  color: var(--accent-2);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
 .layout-editor__add-object {
   position: relative;
 }
@@ -3207,7 +3221,7 @@ summary:focus-visible {
   text-transform: uppercase;
 }
 .layout-editor__layer.is-locked .layout-editor__layer-label::after {
-  content: " locked";
+  content: " заблокирован";
   color: var(--ink-3);
   font-size: 10px;
   font-weight: 500;

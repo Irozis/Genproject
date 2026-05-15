@@ -195,12 +195,13 @@ describe('LAYOUTS', () => {
     expect(result.cta?.w).toBeGreaterThanOrEqual(40)
   })
 
-  it('728x90 banner keeps content in one horizontal row', () => {
+  it('728x90 banner keeps all core content in a compact horizontal layout', () => {
     const rules = getFormat('yandex-rsy-728x90')
     const result = LAYOUTS['split-right-image'](masterWithImage, rules, DEFAULT_ENABLED)
 
     expect(result.title?.maxLines).toBe(1)
-    expect(result.subtitle).toBeUndefined()
+    expect(result.subtitle).toBeDefined()
+    expect(result.subtitle?.maxLines).toBe(1)
     expect(result.cta?.x).toBeGreaterThan((result.title?.x ?? 0) + (result.title?.w ?? 0))
     expect(result.image?.x).toBeLessThan(result.title?.x ?? 100)
   })
@@ -406,6 +407,21 @@ describe('chooseLayoutArchetype', () => {
     expect(['split-right-image', 'split-left-image']).toContain(result.selected)
   })
 
+  it('dark square marketplace image can prioritize hero over split', () => {
+    const scene: Scene = {
+      ...masterWithImage,
+      title: { ...masterWithImage.title!, text: '8 недель до сильной формы' },
+      subtitle: { ...masterWithImage.subtitle!, text: 'Тренер, питание и еженедельные замеры в одной программе.' },
+    }
+    const result = select(scene, 'avito-listing', {
+      ...hintWithGrid([[0.18, 0.2], [0.22, 0.18]], 0.22),
+      isDarkBackground: true,
+      aspectRatio: 4 / 3,
+    })
+
+    expect(result.selected).toBe('hero-overlay')
+  })
+
   it('portrait + medium text + product image selects image-top-stack', () => {
     const scene: Scene = {
       ...masterWithImage,
@@ -480,7 +496,7 @@ describe('chooseLayoutArchetype', () => {
     expect(result.selected).toBe('split-left-image')
   })
 
-  it('yandex-rsy-728x90 hides subtitle and keeps readable title/CTA', () => {
+  it('yandex-rsy-728x90 keeps subtitle and readable title/CTA', () => {
     const decision = select(masterWithImage, 'yandex-rsy-728x90', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-rsy-728x90', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
@@ -488,10 +504,10 @@ describe('chooseLayoutArchetype', () => {
 
     expect(isCompactTextFormat('yandex-rsy-728x90')).toBe(true)
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
-    expect(decision.selectionDebug.subtitleHiddenForCompactFormat).toBe(true)
+    expect(decision.selectionDebug.subtitleHiddenForCompactFormat).toBe(false)
     expect(decision.selectionDebug.minFontGuardApplied).toBe(true)
     expect(decision.selectionDebug.smallTextRisk).not.toBe('low')
-    expect(scene.subtitle).toBeUndefined()
+    expect(scene.subtitle).toBeDefined()
     expect(scene.image?.x).toBeLessThan(10)
     expect(scene.cta?.x).toBeGreaterThan(70)
     expect(fontPx(scene.title!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(14)
@@ -506,7 +522,7 @@ describe('chooseLayoutArchetype', () => {
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
     expect(decision.selectionDebug.smallTextRiskPenalty).toBeGreaterThan(0)
-    expect(scene.subtitle).toBeUndefined()
+    expect(scene.subtitle).toBeDefined()
     expect(scene.image?.y).toBeLessThan(10)
     expect(scene.image?.fit).toBe('contain')
     expect(scene.cta!.y).toBeGreaterThan(scene.title!.y)
@@ -521,20 +537,20 @@ describe('chooseLayoutArchetype', () => {
     })
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
-    expect(scene.subtitle).toBeUndefined()
+    expect(scene.subtitle).toBeDefined()
     expect(scene.image?.fit).toBe('contain')
     expect(fontPx(scene.title!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(22)
     expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(14)
   })
 
-  it('yandex-market-stretch hides subtitle and prioritizes title/CTA', () => {
+  it('yandex-market-stretch keeps subtitle while prioritizing title/CTA', () => {
     const decision = select(masterWithImage, 'yandex-market-stretch', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-market-stretch', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
     })
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
-    expect(scene.subtitle).toBeUndefined()
+    expect(scene.subtitle).toBeDefined()
     expect(scene.title?.maxLines).toBe(1)
     expect(scene.cta).toBeDefined()
     expect(fontPx(scene.title!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(18)

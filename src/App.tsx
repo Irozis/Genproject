@@ -32,8 +32,8 @@ import { applyImageHint } from './lib/applyImageHint'
 import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
 import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
 import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
-import { normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
-import { addSceneObject, ensureProjectFormatDocuments, moveLayer, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene, type CreatableSceneObjectType } from './lib/formatDocuments'
+import { clearFormatLayoutOverrides, normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
+import { addSceneObject, ensureProjectFormatDocuments, moveLayer, resetProjectFormatDocument, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene, type CreatableSceneObjectType } from './lib/formatDocuments'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
@@ -287,7 +287,7 @@ export default function App() {
   }, [project, selectedFormat])
 
   const editingDocument = editingFormat ? project.formatDocuments?.[editingFormat] : undefined
-  const editingActiveObjectId = editingDocument?.activeObjectId ?? null
+  const editingActiveObjectId = editingDocument?.activeObjectId ?? project.activeObjectId ?? null
 
   const sidebarProject = useMemo<Project>(() => (
     selectedFormatScene ? { ...project, master: selectedFormatScene } : { ...project, master: masterWithAssets }
@@ -722,6 +722,7 @@ export default function App() {
         ...(p.formatDensities ?? {}),
         [formatKey]: density,
       },
+      blockOverrides: clearFormatLayoutOverrides(p.blockOverrides, formatKey),
     }))
   }, [setProject])
 
@@ -801,6 +802,7 @@ export default function App() {
       return {
         ...p,
         formatOverrides: setFormatCompositionOverride(p.formatOverrides, formatKey, model),
+        blockOverrides: clearFormatLayoutOverrides(p.blockOverrides, formatKey),
       }
     })
   }, [setProject])
@@ -808,10 +810,16 @@ export default function App() {
   const disableFormatCustom = useCallback((formatKey: FormatKey) => {
     setSelectedFormat((current) => current === formatKey ? null : current)
     setProject((p) => {
-      if (!p.blockOverrides?.[formatKey]) return p
-      const next = { ...p.blockOverrides }
-      delete next[formatKey]
-      return { ...p, blockOverrides: Object.keys(next).length > 0 ? next : undefined }
+      if (!p.blockOverrides?.[formatKey] && !p.formatDocuments?.[formatKey]?.isEdited) return p
+      const nextBlockOverrides = { ...(p.blockOverrides ?? {}) }
+      delete nextBlockOverrides[formatKey]
+      const nextProject: Project = {
+        ...p,
+        blockOverrides: Object.keys(nextBlockOverrides).length > 0 ? nextBlockOverrides : undefined,
+      }
+      return p.formatDocuments?.[formatKey]?.isEdited
+        ? resetProjectFormatDocument(nextProject, formatKey)
+        : nextProject
     })
   }, [setProject])
 
@@ -863,6 +871,7 @@ export default function App() {
       if (!document) return p
       return {
         ...p,
+        activeObjectId: objectId,
         formatDocuments: {
           ...(p.formatDocuments ?? {}),
           [formatKey]: selectDocumentObject(document, objectId),
@@ -892,6 +901,7 @@ export default function App() {
       if (!document) return p
       return {
         ...p,
+        activeObjectId: objectId,
         formatDocuments: {
           ...(p.formatDocuments ?? {}),
           [formatKey]: {
@@ -912,6 +922,15 @@ export default function App() {
     setProject((p) => updateFormatDocumentObject(p, formatKey, objectId, patch))
   }, [editingFormat, selectedFormat, setProject])
 
+  const resetEditingFormat = useCallback(() => {
+    if (!editingFormat) return
+    const confirmed = window.confirm('Все ручные изменения этого формата будут сброшены. Остальные форматы не изменятся.')
+    if (!confirmed) return
+    setProject((p) => enterFormatEditMode(resetProjectFormatDocument(p, editingFormat), editingFormat, true))
+    setSelectedFormat(editingFormat)
+    pushToast('Формат сброшен к авто-версии', 'info')
+  }, [editingFormat, pushToast, setProject])
+
   const addObject = useCallback((type: CreatableSceneObjectType) => {
     if (!editingFormat) return
     setProject((p) => {
@@ -921,6 +940,7 @@ export default function App() {
       return {
         ...ensured,
         activeFormatKey: editingFormat,
+        editorMode: 'edit',
         formatDocuments: {
           ...(ensured.formatDocuments ?? {}),
           [editingFormat]: addSceneObject(document, type),
@@ -938,23 +958,24 @@ export default function App() {
   const openLayoutEditor = useCallback(
     (formatKey: FormatKey) => {
       setSelectedFormat(formatKey)
-      setProject((p) => enterFormatEditMode(p, formatKey))
+      const resolved = project.formatOverrides?.[formatKey] ?? resolveCompositionModel(
+        masterWithAssets,
+        formatKey,
+        project.brandKit,
+        project.enabled,
+        {
+          assetHint: project.assetHint ?? undefined,
+          customFormats: project.customFormats,
+          density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+        },
+      )
+      setProject((p) => {
+        const withOverride = p.formatOverrides?.[formatKey]
+          ? p
+          : { ...p, formatOverrides: { ...(p.formatOverrides ?? {}), [formatKey]: resolved } }
+        return enterFormatEditMode(withOverride, formatKey, true)
+      })
       if (!project.formatOverrides?.[formatKey]) {
-        const resolved = resolveCompositionModel(
-          masterWithAssets,
-          formatKey,
-          project.brandKit,
-          project.enabled,
-          {
-            assetHint: project.assetHint ?? undefined,
-            customFormats: project.customFormats,
-            density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
-          },
-        )
-        setProject((p) => ({
-          ...p,
-          formatOverrides: { ...(p.formatOverrides ?? {}), [formatKey]: resolved },
-        }))
         pushToast(
           `Композиция «${COMPOSITION_MODEL_LABELS[resolved].short}» зафиксирована для редактирования`,
           'info',
@@ -986,6 +1007,10 @@ export default function App() {
   // user's manual edits aren't blown away by master-scene tweaks afterward.
   const saveEditedLayout = useCallback(
     (formatKey: FormatKey, overrides: Partial<Record<BlockKind, BlockOverride>>) => {
+      if (project.formatDocuments?.[formatKey]) {
+        setSelectedFormat(formatKey)
+        return
+      }
       setProject((p) => ({
         ...p,
         blockOverrides: {
@@ -995,7 +1020,7 @@ export default function App() {
       }))
       setSelectedFormat(formatKey)
     },
-    [setProject],
+    [project.formatDocuments, setProject],
   )
 
   const requestPropagate = useCallback(
@@ -1278,6 +1303,7 @@ export default function App() {
           onMoveObject={moveObject}
           onUpdateObject={updateObject}
           onAddObject={addObject}
+          onResetFormat={resetEditingFormat}
         />
       ) : null}
       {propagateState ? (
@@ -1371,26 +1397,50 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
   )
 }
 
-export function enterFormatEditMode(project: Project, formatKey: FormatKey): Project {
+export function enterFormatEditMode(project: Project, formatKey: FormatKey, refreshGenerated = false): Project {
   const ensured = ensureProjectFormatDocuments(project)
-  const document = ensured.formatDocuments?.[formatKey]
-  if (!document) return { ...ensured, activeFormatKey: formatKey }
+  const existing = ensured.formatDocuments?.[formatKey]
+  const refreshedScene = refreshGenerated && existing && !existing.isEdited
+    ? buildSceneForProject(ensured, formatKey)
+    : null
+  const refreshedFormat = refreshedScene
+    ? applyLayoutDensity(
+        getFormat(formatKey, ensured.customFormats),
+        ensured.formatDensities?.[formatKey] ?? ensured.layoutDensity,
+      )
+    : null
+  const document = refreshedScene && refreshedFormat && existing
+    ? {
+        ...existing,
+        format: refreshedFormat,
+        scene: refreshedScene,
+        objects: updateObjectsFromScene(refreshedScene, existing.objects, refreshedFormat),
+      }
+    : existing
+  if (!document) return { ...ensured, activeFormatKey: formatKey, editorMode: 'edit' }
+  const activeObjectId =
+    document.activeObjectId ??
+    document.objects.find((object) => object.type === 'title' && object.visible)?.id ??
+    document.objects.find((object) => object.visible && object.type !== 'background')?.id ??
+    document.objects[0]?.id
   return {
     ...ensured,
     activeFormatKey: formatKey,
+    activeObjectId,
+    editorMode: 'edit',
     formatDocuments: {
       ...(ensured.formatDocuments ?? {}),
       [formatKey]: {
         ...document,
-        activeObjectId: document.activeObjectId ?? document.objects.find((object) => object.visible)?.id ?? document.objects[0]?.id,
+        activeObjectId,
       },
     },
   }
 }
 
 export function exitFormatEditMode(project: Project): Project {
-  const { activeFormatKey: _activeFormatKey, ...rest } = project
-  return rest
+  const { activeFormatKey: _activeFormatKey, activeObjectId: _activeObjectId, editorMode: _editorMode, ...rest } = project
+  return { ...rest, editorMode: 'preview' }
 }
 
 function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene {

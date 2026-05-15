@@ -235,6 +235,11 @@ export type SceneObject = {
   borderRadius?: number
   imageSrc?: string
   fit?: 'cover' | 'contain' | 'fill'
+  focalX?: number
+  focalY?: number
+  cropZoom?: number
+  cropX?: number
+  cropY?: number
   metadata?: Record<string, unknown>
 }
 
@@ -315,6 +320,8 @@ export type Project = {
   selectedFormats: FormatKey[]
   formatDocuments?: Record<string, ProjectFormatDocument>
   activeFormatKey?: string
+  activeObjectId?: string
+  editorMode?: 'preview' | 'edit'
   // Optional per-format override: force a specific composition model for a given
   // format key instead of the one chosen by the profile. Templates ship with
   // sensible defaults here; users can override manually.

@@ -180,6 +180,11 @@ const sceneObjectSchema = z.object({
   borderRadius: z.number().optional(),
   imageSrc: z.string().optional(),
   fit: z.enum(['cover', 'contain', 'fill']).optional(),
+  focalX: z.number().optional(),
+  focalY: z.number().optional(),
+  cropZoom: z.number().optional(),
+  cropX: z.number().optional(),
+  cropY: z.number().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
@@ -398,6 +403,8 @@ export const projectSchema = z.object({
   selectedFormats: z.array(anyFormatKeySchema),
   formatDocuments: z.record(z.string(), projectFormatDocumentSchema).optional(),
   activeFormatKey: z.string().optional(),
+  activeObjectId: z.string().optional(),
+  editorMode: z.enum(['preview', 'edit']).optional(),
   formatOverrides: z.record(anyFormatKeySchema, compositionModelSchema).optional(),
   imageFocals: z
     .record(anyFormatKeySchema, z.object({ x: z.number(), y: z.number() }))

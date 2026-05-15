@@ -1,6 +1,7 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react'
+import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
 import { FormatPreview, type FormatPreviewHandle } from './FormatPreview'
 import { sceneFromFormatDocument } from '../lib/formatDocuments'
+import { groupFormatsByResolution } from '../lib/formatPlacements'
 import type {
   AssetHint,
   BlockKind,
@@ -94,6 +95,15 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
   ref,
 ) {
   const previewRefs = useRef<Partial<Record<FormatKey, FormatPreviewHandle | null>>>({})
+  const separateFormatKeys = useMemo(() => {
+    const keys = new Set<string>()
+    for (const key of Object.keys(blockOverrides ?? {})) keys.add(key)
+    for (const [key, document] of Object.entries(formatDocuments ?? {})) {
+      if (document.isEdited) keys.add(key)
+    }
+    return keys
+  }, [blockOverrides, formatDocuments])
+  const formatGroups = groupFormatsByResolution(formats, customFormats, { separateKeys: separateFormatKeys })
 
   useImperativeHandle(ref, () => ({
     getSvg: (key) => previewRefs.current[key]?.svgEl ?? null,
@@ -117,7 +127,8 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
       className="format-grid"
       style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))' }}
     >
-      {formats.map((k) => {
+      {formatGroups.map((group) => {
+        const k = group.previewKey
         const imageSrc = imageSrcByFormat?.[k]
         const imageFit = imageFitByFormat?.[k]
         const previewMaster = imageSrc !== undefined && master.image
@@ -126,11 +137,12 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
         const editedDocument = shouldUseFormatDocument(formatDocuments?.[k], blockOverrides?.[k])
         return (
           <FormatPreview
-            key={k}
+            key={group.key}
             ref={(el) => {
               previewRefs.current[k] = el
             }}
             formatKey={k}
+            displayLabel={group.label}
             master={previewMaster}
             brandKit={brandKit}
             enabled={enabled}
@@ -141,7 +153,7 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
             density={formatDensities?.[k] ?? layoutDensity}
             focal={imageFocals?.[k]}
             assetHint={assetHint}
-            isCustom={!!blockOverrides?.[k]}
+            isCustom={!!blockOverrides?.[k] || !!editedDocument?.isEdited}
             onEnableCustom={onEnableCustom}
             onDisableCustom={onDisableCustom}
             onPickElement={(kind) => onPickElement(kind, k)}

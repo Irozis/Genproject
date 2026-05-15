@@ -283,6 +283,35 @@ describe('project format documents', () => {
     expect(edited.objects.find((object) => object.id === 'image')?.fit).toBe('fill')
   })
 
+  it('crop settings update only the selected image object', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-image-crop'), master: FIXTURE_MASTER, selectedFormats: ['vk-square', 'instagram-story'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const square = project.formatDocuments!['vk-square']!
+    const story = project.formatDocuments!['instagram-story']!
+
+    const edited = updateObjectProperties(square, 'image', {
+      cropZoom: 1.6,
+      cropX: 12,
+      cropY: -8,
+      focalX: 0.25,
+      focalY: 0.7,
+    })
+
+    expect(sceneFromFormatDocument(edited).image).toMatchObject({
+      cropZoom: 1.6,
+      cropX: 12,
+      cropY: -8,
+      focalX: 0.25,
+      focalY: 0.7,
+    })
+    expect(story.objects.find((object) => object.id === 'image')).not.toMatchObject({
+      cropZoom: 1.6,
+      cropX: 12,
+    })
+  })
+
   it('object edits do not affect other format documents', () => {
     const project = ensureProjectFormatDocuments(
       { ...newProject('objects-isolated-docs'), selectedFormats: ['vk-square', 'instagram-story'] },
@@ -355,7 +384,7 @@ describe('project format documents', () => {
     )
 
     expect(markup).toContain('Декор')
-    expect(markup).toContain('decor')
+    expect(markup).not.toContain('decor')
   })
 
   it('assigns added object zIndex above existing objects', () => {

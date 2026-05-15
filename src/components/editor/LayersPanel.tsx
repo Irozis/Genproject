@@ -41,18 +41,20 @@ export function LayersPanel({
               className="layout-editor__layer-vis"
               onClick={() => onToggleVisible(object.id, !object.visible)}
               aria-pressed={object.visible}
-              title={object.visible ? 'Hide layer' : 'Show layer'}
+              aria-label={object.visible ? 'Скрыть слой' : 'Показать слой'}
+              title={object.visible ? 'Скрыть слой' : 'Показать слой'}
             >
-              {object.visible ? 'V' : '-'}
+              {object.visible ? 'П' : '-'}
             </button>
             <button
               type="button"
               className="layout-editor__layer-vis"
               onClick={() => onToggleLocked(object.id, !object.locked)}
               aria-pressed={!!object.locked}
-              title={object.locked ? 'Unlock layer' : 'Lock layer'}
+              aria-label={object.locked ? 'Разблокировать слой' : 'Заблокировать слой'}
+              title={object.locked ? 'Разблокировать слой' : 'Заблокировать слой'}
             >
-              {object.locked ? 'L' : 'U'}
+              {object.locked ? 'З' : 'О'}
             </button>
             <button
               type="button"
@@ -60,20 +62,21 @@ export function LayersPanel({
               aria-selected={isSelected}
               className="layout-editor__layer-pick"
               onClick={() => onSelect(object.id)}
-              title={`Select ${object.name}`}
+              title={`Выбрать: ${displayObjectName(object)}`}
             >
               <span className="layout-editor__layer-icon" aria-hidden="true">
                 {layerGlyph(object.type)}
               </span>
-              <span className="layout-editor__layer-label">{object.name}</span>
-              <span className="layers-panel__type">{object.type}</span>
+              <span className="layout-editor__layer-label">{displayObjectName(object)}</span>
+              <span className="layers-panel__type">{objectTypeLabel(object.type)}</span>
             </button>
             <button
               type="button"
               className="layout-editor__layer-vis"
               onClick={() => onMove(object.id, 'up')}
               disabled={!canMoveUp || backgroundMovementLocked}
-              title="Move layer up"
+              aria-label="Переместить слой выше"
+              title="Выше"
             >
               ^
             </button>
@@ -82,7 +85,8 @@ export function LayersPanel({
               className="layout-editor__layer-vis"
               onClick={() => onMove(object.id, 'down')}
               disabled={!canMoveDown || backgroundMovementLocked}
-              title="Move layer down"
+              aria-label="Переместить слой ниже"
+              title="Ниже"
             >
               v
             </button>
@@ -91,6 +95,42 @@ export function LayersPanel({
       })}
     </div>
   )
+}
+
+function displayObjectName(object: SceneObject): string {
+  if (!object.name || isTechnicalName(object.name, object.type)) return objectTypeLabel(object.type)
+  return object.name
+}
+
+function isTechnicalName(name: string, type: SceneObject['type']): boolean {
+  const normalized = name.toLowerCase()
+  return normalized === type || normalized === 'title' || normalized === 'subtitle' || normalized === 'cta' || normalized === 'badge' || normalized === 'logo' || normalized === 'image' || normalized === 'background'
+}
+
+function objectTypeLabel(type: SceneObject['type']): string {
+  switch (type) {
+    case 'background':
+      return 'Фон'
+    case 'image':
+    case 'custom-image':
+      return 'Изображение'
+    case 'title':
+      return 'Заголовок'
+    case 'subtitle':
+      return 'Подзаголовок'
+    case 'cta':
+      return 'Кнопка'
+    case 'badge':
+      return 'Бейдж'
+    case 'logo':
+      return 'Логотип'
+    case 'text':
+      return 'Текст'
+    case 'shape':
+      return 'Фигура'
+    case 'decor':
+      return 'Декор'
+  }
 }
 
 function layerGlyph(type: SceneObject['type']): string {

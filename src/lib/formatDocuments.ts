@@ -75,6 +75,11 @@ export function sceneToObjects(scene: Scene, format?: Pick<FormatRuleSet, 'aspec
     if (typeof source.bg === 'string') object.metadata = { ...object.metadata, bg: source.bg }
     if (typeof source.src === 'string') object.imageSrc = source.src
     if (source.fit === 'cover' || source.fit === 'contain' || source.fit === 'fill') object.fit = source.fit
+    if (typeof source.focalX === 'number') object.focalX = source.focalX
+    if (typeof source.focalY === 'number') object.focalY = source.focalY
+    if (typeof source.cropZoom === 'number') object.cropZoom = source.cropZoom
+    if (typeof source.cropX === 'number') object.cropX = source.cropX
+    if (typeof source.cropY === 'number') object.cropY = source.cropY
     if (typeof source.bgOpacity === 'number') object.metadata = { ...object.metadata, bgOpacity: source.bgOpacity }
 
     objects.push(object)
@@ -220,6 +225,11 @@ export function objectsToScene(baseScene: Scene, objects: SceneObject[]): Scene 
     if (object.borderRadius !== undefined) patch.rx = object.borderRadius
     if (object.imageSrc !== undefined) patch.src = object.imageSrc
     if (object.fit === 'cover' || object.fit === 'contain') patch.fit = object.fit
+    if (object.focalX !== undefined) patch.focalX = object.focalX
+    if (object.focalY !== undefined) patch.focalY = object.focalY
+    if (object.cropZoom !== undefined) patch.cropZoom = object.cropZoom
+    if (object.cropX !== undefined) patch.cropX = object.cropX
+    if (object.cropY !== undefined) patch.cropY = object.cropY
     if (typeof object.metadata?.bg === 'string') patch.bg = object.metadata.bg
     if (typeof object.metadata?.bgOpacity === 'number') patch.bgOpacity = object.metadata.bgOpacity
     ;(next as Record<string, unknown>)[kind] = { ...current, ...patch }
@@ -306,7 +316,7 @@ export function updateObjectProperties(
 
 function sanitizeObjectPatch(patch: Partial<SceneObject>): Partial<SceneObject> {
   const next = { ...patch }
-  for (const key of ['x', 'y', 'width', 'height', 'rotation', 'zIndex', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity', 'borderRadius'] as const) {
+  for (const key of ['x', 'y', 'width', 'height', 'rotation', 'zIndex', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity', 'borderRadius', 'focalX', 'focalY', 'cropZoom', 'cropX', 'cropY'] as const) {
     const value = next[key]
     if (typeof value === 'number' && !Number.isFinite(value)) delete next[key]
   }
@@ -327,6 +337,11 @@ export function updateObjectsFromScene(scene: Scene, existing: SceneObject[], fo
       visible: object.visible,
       locked: object.locked,
       zIndex: object.zIndex ?? replacement.zIndex,
+      focalX: object.focalX ?? replacement.focalX,
+      focalY: object.focalY ?? replacement.focalY,
+      cropZoom: object.cropZoom ?? replacement.cropZoom,
+      cropX: object.cropX ?? replacement.cropX,
+      cropY: object.cropY ?? replacement.cropY,
     }
   })
   const existingIds = new Set(existing.map((object) => object.id))
@@ -464,17 +479,17 @@ function blockHeight(kind: BlockKind, source: Record<string, unknown>, format?: 
 function objectName(kind: BlockKind): string {
   switch (kind) {
     case 'title':
-      return 'Title'
+      return 'Заголовок'
     case 'subtitle':
-      return 'Subtitle'
+      return 'Подзаголовок'
     case 'cta':
-      return 'CTA'
+      return 'Кнопка'
     case 'badge':
-      return 'Badge'
+      return 'Бейдж'
     case 'logo':
-      return 'Logo'
+      return 'Логотип'
     case 'image':
-      return 'Image'
+      return 'Изображение'
   }
 }
 

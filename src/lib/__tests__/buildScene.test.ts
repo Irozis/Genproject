@@ -58,6 +58,20 @@ describe('buildScene composition auto mode', () => {
   })
 })
 
+describe('buildScene safe-zone clamping', () => {
+  it('moves CTA upward instead of shrinking its height at the bottom edge', () => {
+    const scene = buildScene(DEFAULT_MASTER, 'vk-square', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      override: 'text-dominant',
+      blockOverrides: {
+        cta: { x: 8, y: 97, w: 34, h: 7 },
+      },
+    })
+
+    expect(scene.cta?.h).toBe(7)
+    expect((scene.cta?.y ?? 0) + (scene.cta?.h ?? 0)).toBeLessThanOrEqual(94)
+  })
+})
+
 const ALL_FORMATS = ['vk-square', 'vk-vertical', 'vk-landscape', 'instagram-story'] as const
 
 describe('buildScene — determinism', () => {

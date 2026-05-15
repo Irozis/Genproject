@@ -151,9 +151,14 @@ export function buildScene(
   // 8. apply explicit per-format geometry overrides copied from another format.
   const overridden = applyBlockOverrides(clamped, options.blockOverrides)
 
-  // 9. final readability guard. This is intentionally small and deterministic:
+  // 9. Clamp again because manual per-format overrides can move fixed-size
+  // blocks (especially CTAs) past the safe-zone after the generated layout
+  // was already clamped.
+  const reclamped = clampToFrame(overridden, rules.safeZone)
+
+  // 10. final readability guard. This is intentionally small and deterministic:
   // layout stays untouched; only text fills and existing scrim opacity can move.
-  return ensureReadableScene(overridden, rules, options.assetHint ?? null)
+  return ensureReadableScene(reclamped, rules, options.assetHint ?? null)
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {
@@ -451,10 +456,14 @@ function clampToFrame(scene: Scene, sz: { top: number; right: number; bottom: nu
       ;(out as Record<string, unknown>)[k] = { ...b }
       continue
     }
-    const x = Math.max(minX, Math.min(maxX, b.x))
-    const y = Math.max(minY, Math.min(maxY, b.y))
-    const w = Math.min(b.w, maxX - x)
-    const h = b.h !== undefined ? Math.min(b.h, maxY - y) : b.h
+    const desiredW = Math.min(b.w, maxX - minX)
+    const desiredH = b.h !== undefined ? Math.min(b.h, maxY - minY) : b.h
+    const x = Math.max(minX, Math.min(maxX - desiredW, b.x))
+    const y = desiredH !== undefined
+      ? Math.max(minY, Math.min(maxY - desiredH, b.y))
+      : Math.max(minY, Math.min(maxY, b.y))
+    const w = desiredW
+    const h = desiredH
     ;(out as Record<string, unknown>)[k] = { ...b, x, y, w, h }
   }
   return out

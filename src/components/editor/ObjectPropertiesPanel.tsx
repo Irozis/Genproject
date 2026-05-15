@@ -12,6 +12,7 @@ type Props = {
 const TEXT_TYPES = new Set<SceneObject['type']>(['title', 'subtitle', 'cta', 'badge', 'text'])
 const STYLE_TYPES = new Set<SceneObject['type']>(['shape', 'image', 'cta', 'badge', 'custom-image'])
 const IMAGE_TYPES = new Set<SceneObject['type']>(['image', 'logo', 'custom-image'])
+const CROP_IMAGE_TYPES = new Set<SceneObject['type']>(['image', 'custom-image'])
 
 export function ObjectPropertiesPanel({ object, objects, format, onChange }: Props) {
   const issues = useMemo(
@@ -32,8 +33,8 @@ export function ObjectPropertiesPanel({ object, objects, format, onChange }: Pro
   return (
     <div className="layout-editor__props object-properties-panel">
       <div className="layout-editor__props-head">
-        <span>{object.name}</span>
-        <span className="layers-panel__type">{object.type}</span>
+        <span>{displayObjectName(object)}</span>
+        <span className="layers-panel__type">{objectTypeLabel(object.type)}</span>
       </div>
 
       {disabled ? <p className="layout-editor__locked-note">Объект заблокирован</p> : null}
@@ -120,6 +121,66 @@ export function ObjectPropertiesPanel({ object, objects, format, onChange }: Pro
         </PropsSection>
       ) : null}
 
+      {CROP_IMAGE_TYPES.has(object.type) ? (
+        <PropsSection title="Кадр">
+          <div className="layout-editor__props-grid">
+            <NumberField
+              label="Масштаб"
+              value={object.cropZoom ?? 1}
+              disabled={disabled}
+              min={1}
+              step={0.05}
+              onChange={(cropZoom) => {
+                const limit = Math.max(0, (cropZoom - 1) * 50)
+                patch({
+                  cropZoom,
+                  cropX: clamp(object.cropX ?? 0, -limit, limit),
+                  cropY: clamp(object.cropY ?? 0, -limit, limit),
+                })
+              }}
+            />
+            <NumberField
+              label="Сдвиг X"
+              value={object.cropX ?? 0}
+              disabled={disabled}
+              step={1}
+              onChange={(cropX) => patch({ cropX })}
+            />
+            <NumberField
+              label="Сдвиг Y"
+              value={object.cropY ?? 0}
+              disabled={disabled}
+              step={1}
+              onChange={(cropY) => patch({ cropY })}
+            />
+            <NumberField
+              label="Фокус X"
+              value={object.focalX ?? 0.5}
+              disabled={disabled}
+              min={0}
+              step={0.05}
+              onChange={(focalX) => patch({ focalX: clamp(focalX, 0, 1) })}
+            />
+            <NumberField
+              label="Фокус Y"
+              value={object.focalY ?? 0.5}
+              disabled={disabled}
+              min={0}
+              step={0.05}
+              onChange={(focalY) => patch({ focalY: clamp(focalY, 0, 1) })}
+            />
+          </div>
+          <button
+            type="button"
+            className="btn btn-xs btn-ghost"
+            disabled={disabled}
+            onClick={() => patch({ cropZoom: 1, cropX: 0, cropY: 0, focalX: 0.5, focalY: 0.5, fit: 'cover' })}
+          >
+            Заполнить рамку
+          </button>
+        </PropsSection>
+      ) : null}
+
       {issues.length > 0 ? (
         <PropsSection title="Предупреждения">
           <ul className="layout-editor__warnings">
@@ -129,6 +190,42 @@ export function ObjectPropertiesPanel({ object, objects, format, onChange }: Pro
       ) : null}
     </div>
   )
+}
+
+function displayObjectName(object: SceneObject): string {
+  if (!object.name || isTechnicalName(object.name, object.type)) return objectTypeLabel(object.type)
+  return object.name
+}
+
+function isTechnicalName(name: string, type: SceneObject['type']): boolean {
+  const normalized = name.toLowerCase()
+  return normalized === type || normalized === 'title' || normalized === 'subtitle' || normalized === 'cta' || normalized === 'badge' || normalized === 'logo' || normalized === 'image' || normalized === 'background'
+}
+
+function objectTypeLabel(type: SceneObject['type']): string {
+  switch (type) {
+    case 'background':
+      return 'Фон'
+    case 'image':
+    case 'custom-image':
+      return 'Изображение'
+    case 'title':
+      return 'Заголовок'
+    case 'subtitle':
+      return 'Подзаголовок'
+    case 'cta':
+      return 'Кнопка'
+    case 'badge':
+      return 'Бейдж'
+    case 'logo':
+      return 'Логотип'
+    case 'text':
+      return 'Текст'
+    case 'shape':
+      return 'Фигура'
+    case 'decor':
+      return 'Декор'
+  }
 }
 
 function PropsSection({ title, children }: { title: string; children: ReactNode }) {
@@ -199,6 +296,11 @@ function ColorField({
 
 function cleanNumber(value: number): number {
   return Number.isFinite(value) ? Math.round(value * 100) / 100 : 0
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (max < min) return min
+  return Math.max(min, Math.min(max, value))
 }
 
 function emptyToUndefined(value: string): string | undefined {

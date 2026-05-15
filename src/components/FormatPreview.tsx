@@ -32,6 +32,7 @@ import type {
 
 type Props = {
   formatKey: FormatKey
+  displayLabel?: string
   master: Scene
   brandKit: BrandKit
   enabled: EnabledMap
@@ -75,6 +76,7 @@ export type FormatPreviewHandle = {
 const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function FormatPreview(
   {
     formatKey,
+    displayLabel,
     master,
     brandKit,
     enabled,
@@ -298,7 +300,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     <article className={`preview${aspectClass}`} data-format-key={formatKey}>
       <header className="preview__head">
         <div>
-          <div className="preview__title">{rules.label}</div>
+          <div className="preview__title" title={displayLabel ?? rules.label}>{displayLabel ?? rules.label}</div>
           <div className="preview__dim">{rules.width}×{rules.height}</div>
         </div>
         <div className="preview__head-actions">
@@ -476,6 +478,7 @@ export const FormatPreview = memo(
   FormatPreviewBase,
   (prev, next) =>
     prev.formatKey === next.formatKey &&
+    prev.displayLabel === next.displayLabel &&
     prev.master === next.master &&
     prev.brandKit === next.brandKit &&
     prev.enabled === next.enabled &&
