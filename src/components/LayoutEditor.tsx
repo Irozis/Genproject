@@ -25,11 +25,13 @@ import {
 } from 'react'
 import { SceneRenderer } from '../renderers/SceneRenderer'
 import { buildScene } from '../lib/buildScene'
-import { sceneFromFormatDocument } from '../lib/formatDocuments'
+import { sceneFromFormatDocument, sortObjectsForRender, zIndexForObject } from '../lib/formatDocuments'
+import { validateObjectEdit } from '../lib/objectEditValidation'
 import { applyLayoutDensity } from '../lib/layoutDensity'
 import { getFormat } from '../lib/formats'
 import { FONT_PAIRS } from '../lib/fontPairs'
 import { LayersPanel } from './editor/LayersPanel'
+import { ObjectPropertiesPanel } from './editor/ObjectPropertiesPanel'
 import type {
   AssetHint,
   BlockKind,
@@ -45,6 +47,7 @@ import type {
   SceneObject,
   TextAlign,
 } from '../lib/types'
+import type { CreatableSceneObjectType } from '../lib/formatDocuments'
 
 type EditableBlocks = Partial<Record<BlockKind, BlockOverride>>
 
@@ -72,9 +75,17 @@ type Props = {
   onToggleObjectVisible?: (objectId: string, visible: boolean) => void
   onToggleObjectLocked?: (objectId: string, locked: boolean) => void
   onMoveObject?: (objectId: string, direction: 'up' | 'down') => void
+  onUpdateObject?: (objectId: string, patch: Partial<SceneObject>) => void
+  onAddObject?: (type: CreatableSceneObjectType) => void
 }
 
 const EDITABLE_KINDS: BlockKind[] = ['title', 'subtitle', 'cta', 'badge', 'logo', 'image']
+const ADD_OBJECT_OPTIONS: { type: CreatableSceneObjectType; label: string }[] = [
+  { type: 'text', label: 'Текст' },
+  { type: 'shape', label: 'Фигура' },
+  { type: 'custom-image', label: 'Изображение' },
+  { type: 'decor', label: 'Декор' },
+]
 const HANDLE_DIRS = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'] as const
 type HandleDir = (typeof HANDLE_DIRS)[number]
 
@@ -83,6 +94,13 @@ type DragState =
   | { kind: 'resize'; dir: HandleDir; startMouseX: number; startMouseY: number; startBlock: { x: number; y: number; w: number; h: number }; aspect: number; preserveAspect: boolean }
   | { kind: 'pan'; startMouseX: number; startMouseY: number; startBlock: { x: number; y: number; w: number; h: number }; startCropX: number; startCropY: number }
   | null
+
+type ObjectDragState =
+  | { kind: 'move'; objectId: string; startMouseX: number; startMouseY: number; startBox: ObjectBox }
+  | { kind: 'resize'; objectId: string; dir: HandleDir; startMouseX: number; startMouseY: number; startBox: ObjectBox; aspect: number; preserveAspect: boolean }
+  | null
+
+type ObjectBox = { x: number; y: number; width: number; height: number }
 
 const SNAP_TOLERANCE = 1.0 // % — snap to safe-zone edges within this distance
 const MIN_W = 4
@@ -116,11 +134,14 @@ export function LayoutEditor({
   onToggleObjectVisible,
   onToggleObjectLocked,
   onMoveObject,
+  onUpdateObject,
+  onAddObject,
 }: Props) {
   const rules = useMemo(
     () => applyLayoutDensity(getFormat(formatKey, customFormats), density),
     [formatKey, customFormats, density],
   )
+  const editorFormatLabel = formatKey === 'vk-stories' ? 'VK Story' : rules.label
 
   const effectiveMaster = useMemo<Scene>(() => {
     if (!focal || !master.image) return master
@@ -152,8 +173,10 @@ export function LayoutEditor({
   const [redoStack, setRedoStack] = useState<EditableBlocks[]>([])
   const [selected, setSelected] = useState<BlockKind | null>(null)
   const [dragState, setDragState] = useState<DragState>(null)
+  const [objectDragState, setObjectDragState] = useState<ObjectDragState>(null)
   const [snapping, setSnapping] = useState(true)
   const [editingText, setEditingText] = useState<BlockKind | null>(null)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
   // Visual crop tool for the image block. When on, dragging inside the image
   // pans (cropX/cropY) and the wheel zooms (cropZoom). The regular move/resize
   // affordances on the image hide so the two interaction models don't fight.
@@ -180,7 +203,21 @@ export function LayoutEditor({
     () => formatDocument ? sceneFromFormatDocument(formatDocument) : null,
     [formatDocument],
   )
-  const renderScene = formatDocument?.isEdited && documentScene ? documentScene : scene
+  const renderScene = formatDocument && documentScene ? documentScene : scene
+  const activeObject = formatDocument?.objects.find((object) => object.id === activeObjectId) ?? null
+  const documentWarnings = useMemo(
+    () =>
+      formatDocument
+        ? formatDocument.objects.flatMap((object) =>
+            validateObjectEdit(object, formatDocument.format, formatDocument.objects).map((issue) => ({
+              objectName: object.name,
+              message: issue.message,
+              key: `${object.id}:${issue.code}`,
+            })),
+          )
+        : [],
+    [formatDocument],
+  )
 
   const pushHistory = useCallback((prev: EditableBlocks) => {
     setHistory((h) => [...h.slice(-49), prev])
@@ -275,6 +312,126 @@ export function LayoutEditor({
     },
     [draft, pushHistory, scene],
   )
+
+  const onObjectPointerDown = useCallback(
+    (ev: ReactPointerEvent<HTMLDivElement>, object: SceneObject) => {
+      if (editingText) return
+      ev.stopPropagation()
+      onSelectObject?.(object.id)
+      if (isBlockObjectType(object.type)) setSelected(object.type)
+      else setSelected(null)
+      if (object.locked || object.type === 'background') return
+      ev.currentTarget.setPointerCapture(ev.pointerId)
+      setObjectDragState({
+        kind: 'move',
+        objectId: object.id,
+        startMouseX: ev.clientX,
+        startMouseY: ev.clientY,
+        startBox: objectToBox(object),
+      })
+    },
+    [editingText, onSelectObject],
+  )
+
+  const onObjectHandlePointerDown = useCallback(
+    (ev: ReactPointerEvent<HTMLButtonElement>, object: SceneObject, dir: HandleDir) => {
+      ev.stopPropagation()
+      ev.preventDefault()
+      onSelectObject?.(object.id)
+      if (isBlockObjectType(object.type)) setSelected(object.type)
+      else setSelected(null)
+      if (object.locked || object.type === 'background') return
+      ev.currentTarget.setPointerCapture(ev.pointerId)
+      const box = objectToBox(object)
+      setObjectDragState({
+        kind: 'resize',
+        objectId: object.id,
+        dir,
+        startMouseX: ev.clientX,
+        startMouseY: ev.clientY,
+        startBox: box,
+        aspect: box.height > 0 ? box.width / box.height : 1,
+        preserveAspect: object.type === 'image' || object.type === 'logo' || object.type === 'custom-image',
+      })
+    },
+    [onSelectObject],
+  )
+
+  const onObjectPointerMove = useCallback(
+    (ev: globalThis.PointerEvent) => {
+      if (!objectDragState || !stageRef.current || !onUpdateObject) return
+      const rect = stageRef.current.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) return
+      const dxPct = ((ev.clientX - objectDragState.startMouseX) / rect.width) * 100
+      const dyPct = ((ev.clientY - objectDragState.startMouseY) / rect.height) * 100
+      const sb = objectDragState.startBox
+
+      if (objectDragState.kind === 'move') {
+        let x = sb.x + dxPct
+        let y = sb.y + dyPct
+        if (snapping) {
+          const snapped = snapBox({ x, y, w: sb.width, h: sb.height }, rules)
+          x = snapped.x
+          y = snapped.y
+        }
+        onUpdateObject(objectDragState.objectId, {
+          x: round(clamp(x, -10, 100 - sb.width + 10)),
+          y: round(clamp(y, -10, 100 - sb.height + 10)),
+        })
+        return
+      }
+
+      const dir = objectDragState.dir
+      let { x, y, width, height } = sb
+      const preserveAspect = objectDragState.preserveAspect || ev.shiftKey
+      const ratio = objectDragState.aspect
+
+      if (dir.includes('e')) width = Math.max(MIN_W, sb.width + dxPct)
+      if (dir.includes('w')) {
+        width = Math.max(MIN_W, sb.width - dxPct)
+        x = sb.x + (sb.width - width)
+      }
+      if (dir.includes('s')) height = Math.max(MIN_H, sb.height + dyPct)
+      if (dir.includes('n')) {
+        height = Math.max(MIN_H, sb.height - dyPct)
+        y = sb.y + (sb.height - height)
+      }
+
+      if (preserveAspect && ratio > 0) {
+        if (dir === 'n' || dir === 's') {
+          const nextWidth = height * ratio
+          x = x + (width - nextWidth) / 2
+          width = nextWidth
+        } else if (dir === 'e' || dir === 'w') {
+          const nextHeight = width / ratio
+          y = y + (height - nextHeight) / 2
+          height = nextHeight
+        } else {
+          const widthFromHeight = height * ratio
+          const heightFromWidth = width / ratio
+          if (Math.abs(widthFromHeight - width) < Math.abs(heightFromWidth - height)) {
+            if (dir.includes('w')) x = x + (width - widthFromHeight)
+            width = widthFromHeight
+          } else {
+            if (dir.includes('n')) y = y + (height - heightFromWidth)
+            height = heightFromWidth
+          }
+        }
+      }
+
+      onUpdateObject(objectDragState.objectId, {
+        x: round(x),
+        y: round(y),
+        width: round(width),
+        height: round(height),
+      })
+    },
+    [objectDragState, onUpdateObject, rules, snapping],
+  )
+
+  const onObjectPointerUp = useCallback(() => {
+    setObjectDragState(null)
+  }, [])
 
   const onPointerMove = useCallback(
     (ev: globalThis.PointerEvent) => {
@@ -413,12 +570,29 @@ export function LayoutEditor({
     }
   }, [dragState, onPointerMove, onPointerUp])
 
+  useEffect(() => {
+    if (!objectDragState) return
+    window.addEventListener('pointermove', onObjectPointerMove)
+    window.addEventListener('pointerup', onObjectPointerUp)
+    return () => {
+      window.removeEventListener('pointermove', onObjectPointerMove)
+      window.removeEventListener('pointerup', onObjectPointerUp)
+    }
+  }, [objectDragState, onObjectPointerMove, onObjectPointerUp])
+
   // Crop mode is meaningful only while the image block is the active one.
   // If the user picks another layer (or deselects), turn it off automatically
   // so the next selection's normal interactions kick in.
   useEffect(() => {
     if (cropMode && selected !== 'image') setCropMode(false)
   }, [cropMode, selected])
+
+  useEffect(() => {
+    if (!addMenuOpen) return
+    const close = () => setAddMenuOpen(false)
+    window.addEventListener('click', close)
+    return () => window.removeEventListener('click', close)
+  }, [addMenuOpen])
 
   // --- Keyboard -------------------------------------------------------------
   // Esc closes the modal, Enter saves. Arrow keys nudge the selected block
@@ -481,7 +655,8 @@ export function LayoutEditor({
       <div className="layout-editor__panel">
         <header className="layout-editor__header">
           <div className="layout-editor__title">
-            <strong>{rules.label}</strong>
+            <span className="layout-editor__breadcrumb">Редактор формата → {editorFormatLabel} {rules.width}×{rules.height}</span>
+            <strong>{editorFormatLabel}</strong>
             <span className="layout-editor__dim">{rules.width}×{rules.height}</span>
           </div>
           <div className="layout-editor__toolbar">
@@ -538,14 +713,17 @@ export function LayoutEditor({
             <div
               ref={stageRef}
               className="layout-editor__stage"
-              style={{ aspectRatio: `${rules.width} / ${rules.height}` }}
+              style={{
+                aspectRatio: `${rules.width} / ${rules.height}`,
+                '--format-aspect': `${rules.width / rules.height}`,
+              } as CSSProperties}
               onClick={(ev) => {
                 if (ev.target === ev.currentTarget) setSelected(null)
               }}
             >
               <SceneRenderer
                 scene={renderScene}
-                objects={formatDocument?.isEdited ? formatDocument.objects : undefined}
+                objects={formatDocument ? formatDocument.objects : undefined}
                 rules={rules}
                 displayFont={brandKit.displayFont}
                 textFont={brandKit.textFont}
@@ -562,23 +740,32 @@ export function LayoutEditor({
                   cropMode={cropMode}
                 />
               ) : null}
-              <BlockOverlays
-                scene={renderScene}
-                selected={selected}
-                cropMode={cropMode}
-                onSelect={(k) => {
-                  setSelected(k)
-                  if (k !== 'image') setCropMode(false)
-                }}
-                onPointerDown={onBlockPointerDown}
-                onResizePointerDown={onHandlePointerDown}
-                onDoubleClick={(k) => {
-                  if (k === 'title' || k === 'subtitle' || k === 'cta' || k === 'badge') {
-                    setEditingText(k)
-                  }
-                }}
-                onCropWheel={onCropWheel}
-              />
+              {formatDocument ? (
+                <ObjectOverlays
+                  objects={formatDocument.objects}
+                  activeObjectId={activeObjectId}
+                  onPointerDown={onObjectPointerDown}
+                  onResizePointerDown={onObjectHandlePointerDown}
+                />
+              ) : (
+                <BlockOverlays
+                  scene={renderScene}
+                  selected={selected}
+                  cropMode={cropMode}
+                  onSelect={(k) => {
+                    setSelected(k)
+                    if (k !== 'image') setCropMode(false)
+                  }}
+                  onPointerDown={onBlockPointerDown}
+                  onResizePointerDown={onHandlePointerDown}
+                  onDoubleClick={(k) => {
+                    if (k === 'title' || k === 'subtitle' || k === 'cta' || k === 'badge') {
+                      setEditingText(k)
+                    }
+                  }}
+                  onCropWheel={onCropWheel}
+                />
+              )}
               {editingText ? (
                 <InlineTextField
                   block={blockGeometry(renderScene, editingText)}
@@ -598,6 +785,45 @@ export function LayoutEditor({
           </div>
 
           <aside className="layout-editor__side">
+            <div className="layout-editor__format-card">
+              <div className="layout-editor__format-eyebrow">Выбранный формат</div>
+              <div className="layout-editor__format-title">{editorFormatLabel}</div>
+              <div className="layout-editor__format-dim">{rules.width}×{rules.height}</div>
+            </div>
+            {formatDocument && onAddObject ? (
+              <div className="layout-editor__add-object">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm layout-editor__add-object-button"
+                  aria-haspopup="menu"
+                  aria-expanded={addMenuOpen}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setAddMenuOpen((open) => !open)
+                  }}
+                >
+                  Добавить объект
+                </button>
+                {addMenuOpen ? (
+                  <div className="layout-editor__add-object-menu" role="menu" onClick={(event) => event.stopPropagation()}>
+                    {ADD_OBJECT_OPTIONS.map((option) => (
+                      <button
+                        key={option.type}
+                        type="button"
+                        role="menuitem"
+                        className="layout-editor__add-object-item"
+                        onClick={() => {
+                          onAddObject(option.type)
+                          setAddMenuOpen(false)
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             {formatDocument && onSelectObject && onToggleObjectVisible && onToggleObjectLocked && onMoveObject ? (
               <LayersPanel
                 objects={formatDocument.objects}
@@ -630,37 +856,58 @@ export function LayoutEditor({
                 }}
               />
             )}
-            <SidePanel
-              selected={selected}
-              scene={scene}
-              baseline={baselineScene}
-              brandKit={brandKit}
-              draft={draft}
-              cropMode={cropMode}
-              onToggleCropMode={(next) => setCropMode(next)}
-              onChange={(kind, patch) => {
-                pushHistory(draft)
-                updateBlock(kind, patch)
-              }}
-              onReset={(kind) => {
-                pushHistory(draft)
-                setDraft((d) => {
-                  const next = { ...d }
-                  delete next[kind]
-                  return next
-                })
-              }}
-              onToggleVisibility={(kind, visible) => {
-                pushHistory(draft)
-                setDraft((d) => {
-                  const current = d[kind] ?? {}
-                  const next: BlockOverride = visible
-                    ? { ...current, hidden: false }
-                    : { ...current, hidden: true }
-                  return { ...d, [kind]: next }
-                })
-              }}
-            />
+            {formatDocument && onUpdateObject ? (
+              <ObjectPropertiesPanel
+                object={activeObject}
+                objects={formatDocument.objects}
+                format={formatDocument.format}
+                onChange={onUpdateObject}
+              />
+            ) : (
+              <SidePanel
+                selected={selected}
+                scene={scene}
+                baseline={baselineScene}
+                brandKit={brandKit}
+                draft={draft}
+                cropMode={cropMode}
+                onToggleCropMode={(next) => setCropMode(next)}
+                onChange={(kind, patch) => {
+                  pushHistory(draft)
+                  updateBlock(kind, patch)
+                }}
+                onReset={(kind) => {
+                  pushHistory(draft)
+                  setDraft((d) => {
+                    const next = { ...d }
+                    delete next[kind]
+                    return next
+                  })
+                }}
+                onToggleVisibility={(kind, visible) => {
+                  pushHistory(draft)
+                  setDraft((d) => {
+                    const current = d[kind] ?? {}
+                    const next: BlockOverride = visible
+                      ? { ...current, hidden: false }
+                      : { ...current, hidden: true }
+                    return { ...d, [kind]: next }
+                  })
+                }}
+              />
+            )}
+            {documentWarnings.length > 0 ? (
+              <div className="layout-editor__warnings-card">
+                <div className="layout-editor__layers-head">Предупреждения</div>
+                <ul className="layout-editor__warnings">
+                  {documentWarnings.map((warning) => (
+                    <li key={warning.key}>
+                      <strong>{warning.objectName}:</strong> {warning.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <div className="layout-editor__hint">
               <strong>Подсказки</strong>
               <ul>
@@ -700,6 +947,15 @@ function blockGeometry(scene: Scene, kind: BlockKind): { x: number; y: number; w
   const b = scene[kind]
   if (!b) return null
   return { x: b.x, y: b.y, w: b.w, h: b.h ?? defaultH(kind) }
+}
+
+function objectToBox(object: SceneObject): ObjectBox {
+  return {
+    x: object.x,
+    y: object.y,
+    width: object.width,
+    height: object.height,
+  }
 }
 
 function readText(scene: Scene, kind: BlockKind): string | undefined {
@@ -859,6 +1115,68 @@ function BlockOverlays({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+function ObjectOverlays({
+  objects,
+  activeObjectId,
+  onPointerDown,
+  onResizePointerDown,
+}: {
+  objects: SceneObject[]
+  activeObjectId?: string | null
+  onPointerDown: (ev: ReactPointerEvent<HTMLDivElement>, object: SceneObject) => void
+  onResizePointerDown: (ev: ReactPointerEvent<HTMLButtonElement>, object: SceneObject, dir: HandleDir) => void
+}) {
+  return (
+    <div className="layout-editor__overlays">
+      {sortObjectsForRender(objects)
+        .filter((object) => object.visible && object.type !== 'background')
+        .map((object) => {
+          const isSelected = object.id === activeObjectId
+          const box = objectToBox(object)
+          const style: CSSProperties = {
+            left: `${box.x}%`,
+            top: `${box.y}%`,
+            width: `${box.width}%`,
+            height: `${box.height}%`,
+            zIndex: isSelected ? 1000 : zIndexForObject(object) + 100,
+            transform: object.rotation ? `rotate(${object.rotation}deg)` : undefined,
+          }
+          return (
+            <div
+              key={object.id}
+              className={
+                `layout-editor__block layout-editor__object-block layout-editor__object-block--${object.type}` +
+                `${isSelected ? ' is-selected' : ''}` +
+                `${object.locked ? ' is-locked' : ''}`
+              }
+              style={style}
+              onPointerDown={(ev) => onPointerDown(ev, object)}
+              role="button"
+              aria-label={object.name}
+              tabIndex={0}
+            >
+              <span className="layout-editor__block-label" aria-hidden="true">
+                {object.name}
+              </span>
+              {isSelected && !object.locked
+                ? HANDLE_DIRS.map((dir) => (
+                    <button
+                      key={dir}
+                      type="button"
+                      className={`layout-editor__handle layout-editor__handle--${dir}`}
+                      onPointerDown={(ev) => onResizePointerDown(ev, object, dir)}
+                      aria-label={`Изменить размер ${dir}`}
+                      title="Перетащите для изменения размера. Shift — сохранить пропорции"
+                    />
+                  ))
+                : null}
+            </div>
+          )
+        })}
     </div>
   )
 }

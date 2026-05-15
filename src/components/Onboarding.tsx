@@ -74,6 +74,31 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
         </button>
       </section>
 
+      <section className="onboarding-download card" aria-labelledby="windows-download-title">
+        <div className="onboarding-download__copy">
+          <h2 id="windows-download-title" className="onboarding-download__title">
+            Скачать приложение для Windows
+          </h2>
+          <p className="onboarding-download__subtitle">
+            Локальная версия работает без обязательного размещения сайта на сервере и открывает тот же редактор в отдельном приложении.
+          </p>
+          <p className="onboarding-download__note">
+            Windows может показать предупреждение SmartScreen для неподписанного установщика.
+          </p>
+        </div>
+        <div className="onboarding-download__actions">
+          <button className="btn btn-ghost" type="button" disabled>
+            Скачать EXE
+          </button>
+          <button className="btn btn-primary" type="button" onClick={() => onChoose('master')}>
+            Продолжить в браузере
+          </button>
+          <span className="onboarding-download__release-note">
+            Файл установщика добавляется в релизную сборку.
+          </span>
+        </div>
+      </section>
+
       <ol className="onboarding__steps" aria-label="Этапы работы">
         <li className="is-current" aria-current="step"><span>1</span> Выберите сценарий</li>
         <li><span>2</span> Настройте форматы</li>

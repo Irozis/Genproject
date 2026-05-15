@@ -41,7 +41,7 @@ export const DEFAULT_MASTER: Scene = {
   background: { kind: 'gradient', stops: ['#FFEDD5', '#FED7AA', '#FDBA74'] },
   accent: '#FF5A1F',
   title: {
-    text: 'Покупки к лету лучше делать заранее',
+    text: 'Новый оффер **готов** к запуску',
     x: 6,
     y: 18,
     w: 60,
@@ -54,7 +54,7 @@ export const DEFAULT_MASTER: Scene = {
     lineHeight: 1.02,
   },
   subtitle: {
-    text: 'Готовые макеты для маркетплейсов в пару кликов.',
+    text: 'Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.',
     x: 6,
     y: 44,
     w: 50,
@@ -67,7 +67,7 @@ export const DEFAULT_MASTER: Scene = {
     lineHeight: 1.35,
   },
   cta: {
-    text: 'Купить сейчас',
+    text: 'Начать',
     x: 6,
     y: 84,
     w: 30,
@@ -81,7 +81,7 @@ export const DEFAULT_MASTER: Scene = {
     rx: 999,
   },
   badge: {
-    text: 'Новинка',
+    text: 'Старт',
     x: 6,
     y: 6,
     w: 18,
@@ -156,9 +156,9 @@ export function newProject(name = 'novyy-proekt'): Project {
     logoSrc: null,
     selectedFormats: [...DEFAULT_FORMATS],
     blockOverrides: compactCopyOverrides({
-      title: 'Готовые макеты',
-      subtitle: 'Для маркетплейсов и рекламы',
-      cta: 'Купить',
+      title: 'Оффер готов',
+      subtitle: 'Мастер для всех форматов',
+      cta: 'Начать',
     }),
   }
 }

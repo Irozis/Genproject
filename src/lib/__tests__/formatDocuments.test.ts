@@ -3,7 +3,11 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { SceneRenderer } from '../../renderers/SceneRenderer'
 import { DEFAULT_MASTER, newProject } from '../defaults'
+import { FIXTURE_MASTER } from './fixtures'
+import { LayersPanel } from '../../components/editor/LayersPanel'
 import {
+  addSceneObject,
+  createSceneObject,
   ensureProjectFormatDocuments,
   moveLayer,
   selectDocumentObject,
@@ -12,6 +16,7 @@ import {
   sortLayers,
   updateObjectProperties,
 } from '../formatDocuments'
+import { validateObjectEdit } from '../objectEditValidation'
 import type { Project, SceneObject } from '../types'
 
 describe('project format documents', () => {
@@ -211,5 +216,160 @@ describe('project format documents', () => {
 
     expect(edited.objects.find((object) => object.id === 'title')?.x).toBe(title.x)
     expect(updateObjectProperties(locked, 'title', { locked: false }).objects.find((object) => object.id === 'title')?.locked).toBe(false)
+  })
+
+  it('manual object editor allows title width above old generation limits', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-free-width'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = project.formatDocuments!['vk-square']!
+
+    const edited = updateObjectProperties(document, 'title', { width: 80 })
+
+    expect(edited.objects.find((object) => object.id === 'title')?.width).toBe(80)
+  })
+
+  it('manual object outside safe zone is saved and reported as warning', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-safe-zone-warning'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = project.formatDocuments!['vk-square']!
+
+    const edited = updateObjectProperties(document, 'title', { x: -25 })
+    const title = edited.objects.find((object) => object.id === 'title')!
+
+    expect(title.x).toBe(-25)
+    expect(validateObjectEdit(title, document.format, edited.objects).map((issue) => issue.code)).toContain('outside-safe-zone')
+  })
+
+  it('text content update changes only the selected format document', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-text-per-format'), selectedFormats: ['vk-square', 'instagram-story'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const square = project.formatDocuments!['vk-square']!
+    const story = project.formatDocuments!['instagram-story']!
+
+    const editedSquare = updateObjectProperties(square, 'title', { text: 'Only square' })
+
+    expect(sceneFromFormatDocument(editedSquare).title?.text).toBe('Only square')
+    expect(sceneFromFormatDocument(story).title?.text).not.toBe('Only square')
+  })
+
+  it('borderRadius updates image object', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-image-radius'), master: FIXTURE_MASTER, selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = project.formatDocuments!['vk-square']!
+
+    const edited = updateObjectProperties(document, 'image', { borderRadius: 37 })
+
+    expect(edited.objects.find((object) => object.id === 'image')?.borderRadius).toBe(37)
+    expect(sceneFromFormatDocument(edited).image?.rx).toBe(37)
+  })
+
+  it('fit changes image object including fill mode', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-image-fit'), master: FIXTURE_MASTER, selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = project.formatDocuments!['vk-square']!
+
+    const edited = updateObjectProperties(document, 'image', { fit: 'fill' })
+
+    expect(edited.objects.find((object) => object.id === 'image')?.fit).toBe('fill')
+  })
+
+  it('object edits do not affect other format documents', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-isolated-docs'), selectedFormats: ['vk-square', 'instagram-story'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const square = project.formatDocuments!['vk-square']!
+    const story = project.formatDocuments!['instagram-story']!
+    const storyTitle = story.objects.find((object) => object.id === 'title')!
+
+    const editedSquare = updateObjectProperties(square, 'title', { x: 77, text: 'Square only' })
+
+    expect(editedSquare.objects.find((object) => object.id === 'title')?.x).toBe(77)
+    expect(story.objects.find((object) => object.id === 'title')).toMatchObject({
+      x: storyTitle.x,
+      text: storyTitle.text,
+    })
+  })
+
+  it('creates a default text object', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-create-text'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = project.formatDocuments!['vk-square']!
+
+    const object = createSceneObject('text', document.format)
+
+    expect(object).toMatchObject({
+      type: 'text',
+      name: 'Новый текст',
+      text: 'Новый текст',
+      visible: true,
+      textAlign: 'center',
+    })
+    expect(object.id).toMatch(/^text-/)
+  })
+
+  it('adds a shape object only to the active format document', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-add-active'), selectedFormats: ['vk-square', 'instagram-story'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const square = project.formatDocuments!['vk-square']!
+    const story = project.formatDocuments!['instagram-story']!
+
+    const editedSquare = addSceneObject(square, 'shape', new Date('2026-05-13T01:00:00.000Z'))
+
+    expect(editedSquare.objects.some((object) => object.type === 'shape')).toBe(true)
+    expect(story.objects.some((object) => object.type === 'shape')).toBe(false)
+    expect(editedSquare.activeObjectId).toBe(editedSquare.objects.at(-1)?.id)
+    expect(editedSquare.isEdited).toBe(true)
+  })
+
+  it('newly added object appears in the layer list', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-layer-list'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = addSceneObject(project.formatDocuments!['vk-square']!, 'decor')
+
+    const markup = renderToStaticMarkup(
+      createElement(LayersPanel, {
+        objects: document.objects,
+        activeObjectId: document.activeObjectId,
+        onSelect: () => undefined,
+        onToggleVisible: () => undefined,
+        onToggleLocked: () => undefined,
+        onMove: () => undefined,
+      }),
+    )
+
+    expect(markup).toContain('Декор')
+    expect(markup).toContain('decor')
+  })
+
+  it('assigns added object zIndex above existing objects', () => {
+    const project = ensureProjectFormatDocuments(
+      { ...newProject('objects-z-index'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = project.formatDocuments!['vk-square']!
+    const maxBefore = Math.max(...document.objects.map((object) => object.zIndex ?? 0))
+
+    const edited = addSceneObject(document, 'custom-image')
+    const added = edited.objects.find((object) => object.id === edited.activeObjectId)!
+
+    expect(added.zIndex).toBeGreaterThan(maxBefore)
+    expect(sortLayers(edited.objects)[0]).toBe(added)
   })
 })

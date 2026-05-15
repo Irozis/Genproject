@@ -336,9 +336,10 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
               type="button"
               className="btn btn-primary btn-xs preview__open-editor"
               onClick={() => onOpenLayoutEditor(formatKey)}
-              title="Открыть полноэкранный редактор: перетаскивать и менять размер блоков как в Figma"
+              title="Открыть редактор формата"
             >
-              Редактировать
+              <span className="preview__open-editor-title">Редактировать формат</span>
+              <span className="preview__open-editor-subtitle">Настроить текст, слои, цвета и объекты</span>
             </button>
           ) : null}
           <button

@@ -169,7 +169,7 @@ function chooseLayoutArchetypeFromProfiles(
   scoreSplit(scores, content, format, focalX)
   scoreImageTopStack(scores, content, format)
   scoreProductCardSafe(scores, content, format, cropRisk)
-  scoreTextDominant(scores, content, format)
+  scoreTextDominant(scores, content, format, cropRisk)
   scoreCenteredCard(scores, content, format)
 
   if (compactTextPolicyApplied) {
@@ -188,6 +188,13 @@ function chooseLayoutArchetypeFromProfiles(
     scores['hero-overlay'] -= cropRiskPenalty
     scores['product-card-safe'] += 36
     scores['image-top-stack'] += 18
+  }
+
+  if (!productSafeFormat && !format.isCompact && content.hasImage && cropRisk === 'high') {
+    scores['hero-overlay'] -= 16
+    scores['split-right-image'] -= 24
+    scores['split-left-image'] -= 24
+    scores['image-top-stack'] -= format.family === 'wide' || format.family === 'square' ? 16 : 0
   }
 
   const chosen = (Object.keys(scores) as CompositionModel[])
@@ -263,11 +270,31 @@ function scoreProductCardSafe(scores: Record<CompositionModel, number>, content:
   scores['product-card-safe'] -= format.family === 'wide' ? 20 : 0
 }
 
-function scoreTextDominant(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile): void {
-  scores['text-dominant'] += content.textDensity === 'high' ? 42 : content.textDensity === 'medium' ? 8 : -14
-  scores['text-dominant'] += content.imageImportance === 'low' ? 24 : content.imageImportance === 'medium' ? 4 : -18
-  scores['text-dominant'] += format.isCompact || format.isNarrow ? 10 : 0
-  scores['text-dominant'] -= format.family === 'wide' && content.hasImage ? 14 : 0
+function scoreTextDominant(
+  scores: Record<CompositionModel, number>,
+  content: ContentProfile,
+  format: FormatProfile,
+  cropRisk: 'low' | 'medium' | 'high',
+): void {
+  if (!content.hasImage) {
+    scores['text-dominant'] += content.textDensity === 'high' ? 48 : content.textDensity === 'medium' ? 34 : 20
+    scores['text-dominant'] += format.isCompact || format.isNarrow ? 10 : 0
+    return
+  }
+
+  scores['text-dominant'] += content.textDensity === 'high' ? 18 : content.textDensity === 'medium' ? -4 : -28
+  scores['text-dominant'] += content.imageImportance === 'low' ? -8 : content.imageImportance === 'medium' ? -28 : -42
+  scores['text-dominant'] += cropRisk === 'high'
+    ? format.family === 'wide'
+      ? 118
+      : format.family === 'square' && !format.isCompact
+        ? 72
+        : 12
+    : cropRisk === 'medium'
+      ? 8
+      : 0
+  scores['text-dominant'] += format.isCompact || format.isNarrow ? 6 : 0
+  scores['text-dominant'] -= format.family === 'wide' ? 14 : 0
 }
 
 function scoreCenteredCard(scores: Record<CompositionModel, number>, content: ContentProfile, format: FormatProfile): void {

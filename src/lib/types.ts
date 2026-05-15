@@ -94,6 +94,7 @@ export type ImageBlock = Block & {
   src: string | null
   rx: number
   fit: ImageFitMode
+  opacity?: number
   // Focal point in normalized [0..1] coords. Controls where the image gets
   // anchored when the block aspect differs from the source aspect (i.e. which
   // part stays in frame when cover-cropping). Default 0.5/0.5 = center.
@@ -124,6 +125,7 @@ export type ImageFitDecision = {
 export type LogoBlock = Block & {
   src: string | null
   bgOpacity: number
+  opacity?: number
 }
 
 export type BlockOverride = Partial<Block & TextBlock & CtaBlock & ImageBlock & LogoBlock> & {
@@ -330,6 +332,15 @@ export type Project = {
   activeLocale?: string
   availableLocales?: string[]
   customFormats?: FormatRuleSet[]
+}
+
+export type ProjectHistoryItem = {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+  thumbnail?: string
+  project: Project
 }
 
 export type BackgroundExtensionByFormatEntry = {

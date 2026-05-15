@@ -46,6 +46,7 @@ const imageBlockSchema = z.object({
   src: z.string().nullable(),
   rx: z.number(),
   fit: z.enum(['cover', 'contain']),
+  opacity: z.number().optional(),
   focalX: z.number().optional(),
   focalY: z.number().optional(),
   cropZoom: z.number().optional(),
@@ -57,6 +58,7 @@ const logoBlockSchema = z.object({
   ...blockBase,
   src: z.string().nullable(),
   bgOpacity: z.number(),
+  opacity: z.number().optional(),
 })
 
 const scrimSchema = z.object({

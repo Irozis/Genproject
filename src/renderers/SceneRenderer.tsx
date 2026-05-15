@@ -18,6 +18,8 @@ import type {
 } from '../lib/types'
 import { sortObjectsForRender } from '../lib/formatDocuments'
 
+type RenderImageBlock = Omit<ImageBlock, 'fit'> & { fit: 'cover' | 'contain' | 'fill' }
+
 type Props = {
   scene: Scene
   rules: FormatRuleSet
@@ -312,7 +314,7 @@ function ObjectNode({
   return null
 }
 
-function objectToImageBlock(object: SceneObject): ImageBlock | null {
+function objectToImageBlock(object: SceneObject): RenderImageBlock | null {
   if (object.type !== 'image' && object.type !== 'custom-image') return null
   return {
     x: object.x,
@@ -321,7 +323,8 @@ function objectToImageBlock(object: SceneObject): ImageBlock | null {
     h: object.height,
     src: object.imageSrc ?? null,
     rx: object.borderRadius ?? 0,
-    fit: object.fit === 'contain' ? 'contain' : 'cover',
+    fit: object.fit === 'contain' ? 'contain' : object.fit === 'fill' ? 'fill' : 'cover',
+    opacity: object.opacity,
   }
 }
 
@@ -333,6 +336,7 @@ function objectToLogoBlock(object: SceneObject): LogoBlock {
     h: object.height,
     src: object.imageSrc ?? null,
     bgOpacity: typeof object.metadata?.bgOpacity === 'number' ? object.metadata.bgOpacity : 0,
+    opacity: object.opacity,
   }
 }
 
@@ -646,7 +650,7 @@ function ImageNode({
   imageAspectRatio,
 }: {
   role: string
-  block: ImageBlock
+  block: RenderImageBlock
   W: number
   H: number
   clipId: string
@@ -666,6 +670,7 @@ function ImageNode({
         fill="rgba(0,0,0,0.06)"
         stroke="rgba(0,0,0,0.12)"
         strokeDasharray="8 8"
+        opacity={block.opacity}
       />
     )
   }
@@ -721,6 +726,7 @@ function ImageNode({
         preserveAspectRatio="xMidYMid meet"
         clipPath={`url(#${clipId})`}
         filter={block.rx > 0 && shadowId ? `url(#${shadowId})` : undefined}
+        opacity={block.opacity}
       />
     )
   }
@@ -730,7 +736,9 @@ function ImageNode({
   // anyway) and when intrinsic aspect isn't known.
   const isClipped = shouldClipImage(block)
   const par =
-    fit === 'contain'
+    fit === 'fill'
+      ? 'none'
+      : fit === 'contain'
       ? 'xMidYMid meet'
       : `${focalAlign(focalX, 'x')}${focalAlign(focalY, 'y')} slice`
   return (
@@ -745,11 +753,12 @@ function ImageNode({
       preserveAspectRatio={par}
       clipPath={isClipped ? `url(#${clipId})` : undefined}
       filter={block.rx > 0 && shadowId ? `url(#${shadowId})` : undefined}
+      opacity={block.opacity}
     />
   )
 }
 
-function shouldClipImage(block: ImageBlock): boolean {
+function shouldClipImage(block: RenderImageBlock): boolean {
   return block.rx > 0 || (block.cropZoom ?? 1) > 1 || !!block.cropX || !!block.cropY
 }
 
@@ -757,7 +766,7 @@ function shouldClipImage(block: ImageBlock): boolean {
 // as `shouldClipImage` *plus* the smooth-cover branch — that path always
 // renders the source bigger than the block and relies on the clipPath to
 // trim the overhang back to the block bounds.
-function needsImageClipPath(block: ImageBlock, imageAspectRatio: number | null | undefined): boolean {
+function needsImageClipPath(block: RenderImageBlock, imageAspectRatio: number | null | undefined): boolean {
   if (shouldClipImage(block)) return true
   const fit = block.fit ?? 'cover'
   return fit === 'cover' && !!imageAspectRatio && imageAspectRatio > 0
@@ -830,19 +839,31 @@ function LogoNode({
         width={w}
         height={h}
         preserveAspectRatio="xMidYMid meet"
+        opacity={block.opacity}
       />
     )
   }
 
   const cx = x + w / 2
   const cy = y + h / 2
-  const r = Math.min(w, h) / 2
+  const r = Math.min(w, h) * 0.28
   const label = extractInitials(initials)
-  const fontSize = Math.min(w, h) * 0.42
+  const fontSize = Math.min(w, h) * 0.34
 
   return (
-    <g data-role={role}>
-      <circle cx={cx} cy={cy} r={r} fill={color} />
+    <g data-role={role} opacity={block.opacity}>
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        rx={r}
+        ry={r}
+        fill={color}
+        fillOpacity={Math.max(0.88, block.bgOpacity || 0.92)}
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth={Math.max(1, Math.min(w, h) * 0.035)}
+      />
       <text
         x={cx}
         y={cy}
@@ -1154,7 +1175,7 @@ function BadgeNode({
   const w = trackedTextWidth + padX * 2
   const h = fontSizePx + padY * 2
   return (
-    <g data-role={role}>
+    <g data-role={role} opacity={block.opacity}>
       <rect
         x={x}
         y={y}
@@ -1207,7 +1228,7 @@ function CtaNode({
   const fontSizePx = fitCtaFontSize(label, baseFontSizePx, Math.max(8, baseFontSizePx * 0.72), labelMaxWidth, block.weight, fontFamily)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
   return (
-    <g data-role={role}>
+    <g data-role={role} opacity={block.opacity}>
       <rect x={x} y={y} width={w} height={h} rx={rx} ry={rx} fill={block.bg} />
       <text
         x={x + w / 2}

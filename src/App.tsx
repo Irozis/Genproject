@@ -10,6 +10,13 @@ import { PropagateDialog } from './components/PropagateDialog'
 import { projectOverrides } from './lib/propagateLayout'
 import { newProject } from './lib/defaults'
 import { loadProject, saveProject } from './lib/storage'
+import {
+  deleteProjectFromHistory,
+  duplicateProjectFromHistory,
+  listProjectHistory,
+  loadProjectFromHistory,
+  saveProjectToHistory,
+} from './lib/projectHistory'
 import { exportZip, exportPdf } from './lib/export'
 import { exportSvgZip } from './lib/exportSvg'
 import { exportJson, importJson } from './lib/serialize'
@@ -26,7 +33,7 @@ import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
 import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
 import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
 import { normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
-import { ensureProjectFormatDocuments, moveLayer, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene } from './lib/formatDocuments'
+import { addSceneObject, ensureProjectFormatDocuments, moveLayer, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene, type CreatableSceneObjectType } from './lib/formatDocuments'
 import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
 import type { Template } from './lib/templates'
 import type {
@@ -41,7 +48,9 @@ import type {
   LayoutDensity,
   OnboardingMode,
   Project,
+  ProjectHistoryItem,
   Scene,
+  SceneObject,
   View,
 } from './lib/types'
 
@@ -60,6 +69,7 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false)
   const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, BlockOverride>> | null>(null)
   const [snapshots, setSnapshots] = useState<BrandSnapshot[]>(() => listSnapshots())
+  const [projectHistoryItems, setProjectHistoryItems] = useState<ProjectHistoryItem[]>(() => listProjectHistory())
   // Полноэкранный редактор макета и диалог переноса на другие форматы.
   const [editingFormat, setEditingFormat] = useState<FormatKey | null>(null)
   const [propagateState, setPropagateState] = useState<
@@ -188,6 +198,8 @@ export default function App() {
     setIsSaving(true)
     const t = window.setTimeout(() => {
       saveProject(project)
+      saveProjectToHistory(project)
+      setProjectHistoryItems(listProjectHistory())
       setLastSavedAt(Date.now())
       setIsSaving(false)
     }, 300)
@@ -316,7 +328,7 @@ export default function App() {
         const updated = {
           ...document,
           scene: nextScene,
-          objects: updateObjectsFromScene(nextScene, document.objects),
+          objects: updateObjectsFromScene(nextScene, document.objects, document.format),
           isEdited: true,
           updatedAt: new Date().toISOString(),
         }
@@ -372,7 +384,7 @@ export default function App() {
             [formatKey]: {
               ...document,
               scene: nextScene,
-              objects: updateObjectsFromScene(nextScene, document.objects),
+              objects: updateObjectsFromScene(nextScene, document.objects, document.format),
               isEdited: true,
               updatedAt: new Date().toISOString(),
             },
@@ -457,6 +469,42 @@ export default function App() {
   function handleDeleteSnapshot(id: string) {
     deleteSnapshot(id)
     refreshSnapshots()
+  }
+
+  function refreshProjectHistory() {
+    setProjectHistoryItems(listProjectHistory())
+  }
+
+  function handleOpenHistoryProject(id: string) {
+    saveProject(project)
+    saveProjectToHistory(project)
+    const stored = loadProjectFromHistory(id)
+    if (!stored) {
+      refreshProjectHistory()
+      pushToast('Проект не найден в истории.')
+      return
+    }
+    imageGenRef.current += 1
+    history.reset(normalizeBackgroundExtensionState(stored))
+    setSelectedKind(null)
+    setSelectedFormat(null)
+    setEditingFormat(null)
+    setPropagateState(null)
+    setView('editor')
+    refreshProjectHistory()
+  }
+
+  function handleDuplicateHistoryProject(id: string) {
+    if (!duplicateProjectFromHistory(id)) {
+      pushToast('Не удалось продублировать проект.')
+      return
+    }
+    refreshProjectHistory()
+  }
+
+  function handleDeleteHistoryProject(id: string) {
+    deleteProjectFromHistory(id)
+    refreshProjectHistory()
   }
 
   function setPaletteLocked(next: boolean) {
@@ -858,6 +906,29 @@ export default function App() {
     })
   }, [editingFormat, selectedFormat, setProject])
 
+  const updateObject = useCallback((objectId: string, patch: Partial<SceneObject>) => {
+    const formatKey = editingFormat ?? selectedFormat
+    if (!formatKey) return
+    setProject((p) => updateFormatDocumentObject(p, formatKey, objectId, patch))
+  }, [editingFormat, selectedFormat, setProject])
+
+  const addObject = useCallback((type: CreatableSceneObjectType) => {
+    if (!editingFormat) return
+    setProject((p) => {
+      const ensured = ensureProjectFormatDocuments(p)
+      const document = ensured.formatDocuments?.[editingFormat]
+      if (!document) return ensured
+      return {
+        ...ensured,
+        activeFormatKey: editingFormat,
+        formatDocuments: {
+          ...(ensured.formatDocuments ?? {}),
+          [editingFormat]: addSceneObject(document, type),
+        },
+      }
+    })
+  }, [editingFormat, setProject])
+
   // Open the full-screen layout editor for a format. If the format is in
   // "Auto" mode (no manual composition picked), resolve the auto-chosen
   // model and pin it now — that way the user edits on top of a known,
@@ -866,10 +937,8 @@ export default function App() {
   // would no longer match the layout they were authored against.
   const openLayoutEditor = useCallback(
     (formatKey: FormatKey) => {
-      setProject((p) => ({
-        ...ensureProjectFormatDocuments(p),
-        activeFormatKey: formatKey,
-      }))
+      setSelectedFormat(formatKey)
+      setProject((p) => enterFormatEditMode(p, formatKey))
       if (!project.formatOverrides?.[formatKey]) {
         const resolved = resolveCompositionModel(
           masterWithAssets,
@@ -909,7 +978,8 @@ export default function App() {
 
   const closeLayoutEditor = useCallback(() => {
     setEditingFormat(null)
-  }, [])
+    setProject((p) => exitFormatEditMode(p))
+  }, [setProject])
 
   // Save edited overrides back into the project. Always lands them under
   // blockOverrides[formatKey] — that way the format becomes "custom" and the
@@ -1111,6 +1181,11 @@ export default function App() {
             onSaveSnapshot={handleSaveSnapshot}
             onApplySnapshot={handleApplySnapshot}
             onDeleteSnapshot={handleDeleteSnapshot}
+            projectHistoryItems={projectHistoryItems}
+            currentProjectId={project.id}
+            onOpenHistoryProject={handleOpenHistoryProject}
+            onDuplicateHistoryProject={handleDuplicateHistoryProject}
+            onDeleteHistoryProject={handleDeleteHistoryProject}
             onSetLocales={setAvailableLocales}
             onAddCustomFormat={addCustomFormat}
             onDeleteCustomFormat={deleteCustomFormat}
@@ -1201,6 +1276,8 @@ export default function App() {
           onToggleObjectVisible={toggleObjectVisible}
           onToggleObjectLocked={toggleObjectLocked}
           onMoveObject={moveObject}
+          onUpdateObject={updateObject}
+          onAddObject={addObject}
         />
       ) : null}
       {propagateState ? (
@@ -1292,6 +1369,28 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
       density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
     },
   )
+}
+
+export function enterFormatEditMode(project: Project, formatKey: FormatKey): Project {
+  const ensured = ensureProjectFormatDocuments(project)
+  const document = ensured.formatDocuments?.[formatKey]
+  if (!document) return { ...ensured, activeFormatKey: formatKey }
+  return {
+    ...ensured,
+    activeFormatKey: formatKey,
+    formatDocuments: {
+      ...(ensured.formatDocuments ?? {}),
+      [formatKey]: {
+        ...document,
+        activeObjectId: document.activeObjectId ?? document.objects.find((object) => object.visible)?.id ?? document.objects[0]?.id,
+      },
+    },
+  }
+}
+
+export function exitFormatEditMode(project: Project): Project {
+  const { activeFormatKey: _activeFormatKey, ...rest } = project
+  return rest
 }
 
 function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene {

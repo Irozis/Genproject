@@ -1,6 +1,6 @@
 import { useRef, type KeyboardEvent } from 'react'
 
-type Tab = 'content' | 'formats' | 'brand' | 'assets'
+type Tab = 'project' | 'brand' | 'content' | 'formats' | 'editor' | 'export'
 
 type Props = {
   active: Tab
@@ -8,10 +8,12 @@ type Props = {
 }
 
 const TABS: ReadonlyArray<{ id: Tab; label: string }> = [
+  { id: 'project', label: 'Проект' },
+  { id: 'brand', label: 'Бренд' },
   { id: 'content', label: 'Контент' },
   { id: 'formats', label: 'Форматы' },
-  { id: 'brand', label: 'Бренд' },
-  { id: 'assets', label: 'Медиа' },
+  { id: 'editor', label: 'Редактор' },
+  { id: 'export', label: 'Экспорт' },
 ]
 
 export function SidebarTabs({ active, onChange }: Props) {

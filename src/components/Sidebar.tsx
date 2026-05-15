@@ -7,7 +7,7 @@ import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/
 import { densityLabel } from '../lib/layoutDensity'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
 import { getActiveImageSrc } from '../lib/projectImages'
-import type { BackgroundExtensionMetadata, BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, ImageFitPreference, LayoutDensity, Project, Scene } from '../lib/types'
+import type { BackgroundExtensionMetadata, BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, ImageFitPreference, LayoutDensity, Project, ProjectHistoryItem, Scene } from '../lib/types'
 
 const ELEMENT_ROWS: { kind: BlockKind; label: string }[] = [
   { kind: 'title', label: 'Заголовок' },
@@ -42,6 +42,11 @@ type Props = {
   onSaveSnapshot: (name: string) => void
   onApplySnapshot: (id: string) => void
   onDeleteSnapshot: (id: string) => void
+  projectHistoryItems: ProjectHistoryItem[]
+  currentProjectId: string
+  onOpenHistoryProject: (id: string) => void
+  onDuplicateHistoryProject: (id: string) => void
+  onDeleteHistoryProject: (id: string) => void
   onSetLocales: (locales: string[]) => void
   onAddCustomFormat: (input: { name: string; width: number; height: number; safePct: number; gutterPct: number }) => void
   onDeleteCustomFormat: (key: FormatKey) => void
@@ -69,11 +74,16 @@ export function Sidebar({
   onSaveSnapshot,
   onApplySnapshot,
   onDeleteSnapshot,
+  projectHistoryItems,
+  currentProjectId,
+  onOpenHistoryProject,
+  onDuplicateHistoryProject,
+  onDeleteHistoryProject,
   onSetLocales,
   onAddCustomFormat,
   onDeleteCustomFormat,
 }: Props) {
-  const [tab, setTab] = useState<SidebarTab>('content')
+  const [tab, setTab] = useState<SidebarTab>('project')
   const [customName, setCustomName] = useState('')
   const [customWidth, setCustomWidth] = useState('300')
   const [customHeight, setCustomHeight] = useState('300')
@@ -93,7 +103,69 @@ export function Sidebar({
         id={`sidebar-panel-${tab}`}
         aria-labelledby={`sidebar-tab-${tab}`}
       >
-        {tab === 'content' ? (
+        {tab === 'project' ? (
+          <>
+            <SectionHeader>Проект</SectionHeader>
+            <div className="sidebar-card">
+              <div className="sidebar-card__title">{project.name || 'Новый проект'}</div>
+              <div className="sidebar-card__meta">
+                Форматов: {project.selectedFormats.length}
+                {project.activeLocale ? ` · Локаль: ${project.activeLocale}` : ''}
+              </div>
+            </div>
+
+            <SectionHeader>История проектов</SectionHeader>
+            <ProjectHistoryList
+              items={projectHistoryItems}
+              currentProjectId={currentProjectId}
+              onOpen={onOpenHistoryProject}
+              onDuplicate={onDuplicateHistoryProject}
+              onDelete={onDeleteHistoryProject}
+            />
+
+            <SectionHeader>Медиа</SectionHeader>
+            <div className="asset-block">
+              <div className="asset-block__label">Основное изображение</div>
+              <FilePicker
+                label={project.imageSrc ? 'Заменить' : 'Загрузить'}
+                hint={project.imageSrc ? 'Загружено' : 'PNG / JPG'}
+                onFile={(dataUrl) => onSetImage(dataUrl)}
+              />
+              {project.imageSrc ? (
+                <>
+                  <img className="asset-thumb" src={previewImageSrc ?? ''} alt="" />
+                  <label className="field" style={{ marginTop: 8 }}>
+                    <span>Режим размещения изображения</span>
+                    <select
+                      value={project.imageFitPreference ?? 'auto'}
+                      onChange={(e) => onSetImageFitPreference(e.target.value as ImageFitPreference)}
+                    >
+                      <option value="auto">Авто</option>
+                      <option value="cover">Заполнять область</option>
+                      <option value="contain">Вместить целиком</option>
+                    </select>
+                  </label>
+                  <div style={{ fontSize: 12, opacity: 0.72, marginTop: 6 }}>
+                    {imageFitStatus(project, editingFormatKey)}
+                    {hasPreparedExtendedImage ? ` · ${backgroundExtensionStatus(project, editingFormatKey)}` : ''}
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            <div className="asset-block">
+              <div className="asset-block__label">Логотип</div>
+              <FilePicker
+                label={project.logoSrc ? 'Заменить' : 'Загрузить'}
+                hint={project.logoSrc ? 'Загружено' : 'SVG / PNG'}
+                onFile={(dataUrl) => onSetLogo(dataUrl)}
+              />
+              {project.logoSrc ? (
+                <img className="asset-thumb asset-thumb--logo" src={project.logoSrc} alt="" />
+              ) : null}
+            </div>
+          </>
+        ) : tab === 'content' ? (
           <>
             <EditContextCard
               selectedLabel={selectedLabel}
@@ -320,6 +392,47 @@ export function Sidebar({
               onDeleteSnapshot={onDeleteSnapshot}
             />
           </>
+        ) : tab === 'editor' ? (
+          <>
+            <SectionHeader>Редактор</SectionHeader>
+            {editingFormatKey ? (
+              <>
+                <EditContextCard
+                  selectedLabel={selectedLabel}
+                  selectedFormatLabel={selectedFormatLabel}
+                  activeLocale={project.activeLocale}
+                />
+                <OverridePanel
+                  formatKey={editingFormatKey}
+                  project={project}
+                  onResetFormatCustom={onResetFormatCustom}
+                  onResetFormatBlock={onResetFormatBlock}
+                />
+                <DensityPanel
+                  density={project.formatDensities?.[editingFormatKey] ?? project.layoutDensity ?? 'balanced'}
+                  scopeLabel={getFormat(editingFormatKey, project.customFormats).label}
+                  onChange={(density) => onSetLayoutDensity(density, editingFormatKey)}
+                />
+              </>
+            ) : (
+              <div className="sidebar-card">
+                <div className="sidebar-card__title">Выберите формат</div>
+                <div className="sidebar-card__meta">
+                  Нажмите «Редактировать формат» на карточке предпросмотра, чтобы открыть слои и свойства объектов.
+                </div>
+              </div>
+            )}
+          </>
+        ) : tab === 'export' ? (
+          <>
+            <SectionHeader>Экспорт</SectionHeader>
+            <div className="sidebar-card">
+              <div className="sidebar-card__title">Готово к экспорту</div>
+              <div className="sidebar-card__meta">
+                Экспорт PNG, SVG и PDF находится в верхней панели. Перед выгрузкой проверьте предупреждения на карточках форматов.
+              </div>
+            </div>
+          </>
         ) : (
           <>
             <SectionHeader>Изображения</SectionHeader>
@@ -388,6 +501,88 @@ export function Sidebar({
       </div>
     </aside>
   )
+}
+
+function ProjectHistoryList({
+  items,
+  currentProjectId,
+  onOpen,
+  onDuplicate,
+  onDelete,
+}: {
+  items: ProjectHistoryItem[]
+  currentProjectId: string
+  onOpen: (id: string) => void
+  onDuplicate: (id: string) => void
+  onDelete: (id: string) => void
+}) {
+  const recent = items.slice(0, 8)
+  if (recent.length === 0) {
+    return (
+      <div className="project-history project-history--empty">
+        История появится после первого автосохранения.
+      </div>
+    )
+  }
+  return (
+    <div className="project-history">
+      {recent.map((item) => {
+        const isCurrent = item.id === currentProjectId
+        return (
+          <div key={item.id} className={`project-history__item${isCurrent ? ' is-current' : ''}`}>
+            {item.thumbnail ? (
+              <img className="project-history__thumb" src={item.thumbnail} alt="" />
+            ) : (
+              <div className="project-history__thumb project-history__thumb--blank" aria-hidden="true" />
+            )}
+            <div className="project-history__body">
+              <div className="project-history__name" title={item.name}>
+                {item.name}
+                {isCurrent ? <span className="project-history__badge">текущий</span> : null}
+              </div>
+              <div className="project-history__date">{formatHistoryDate(item.updatedAt)}</div>
+              <div className="project-history__actions">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => onOpen(item.id)}
+                  disabled={isCurrent}
+                >
+                  Открыть
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => onDuplicate(item.id)}
+                >
+                  Дубль
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => onDelete(item.id)}
+                  disabled={isCurrent}
+                >
+                  Удалить
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function formatHistoryDate(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
 }
 
 function SectionHeader({ children }: { children: React.ReactNode }) {

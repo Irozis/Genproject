@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildScene } from '../buildScene'
 import { getFormat } from '../formats'
-import { ensureProjectFormatDocuments } from '../formatDocuments'
+import { addSceneObject, ensureProjectFormatDocuments } from '../formatDocuments'
 import { importJson, parseBrandSnapshotList, projectSchema } from '../serialize'
 import { newProject } from '../defaults'
 import type { Project } from '../types'
@@ -234,6 +234,40 @@ describe('projectSchema — round trip', () => {
       expect(result.data.formatDocuments?.['vk-square']?.objects.some((object) => object.id === 'custom-1')).toBe(true)
       expect(result.data.formatDocuments?.['vk-square']?.scene.title?.text).toBe(document.scene.title?.text)
     }
+  })
+
+  it('custom object survives export/import JSON round trip', async () => {
+    const generated = ensureProjectFormatDocuments(
+      { ...newProject('format-docs-import'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-13T00:00:00.000Z'),
+    )
+    const document = generated.formatDocuments!['vk-square']!
+    const edited = addSceneObject(document, 'text', new Date('2026-05-13T01:00:00.000Z'))
+    const added = edited.objects.find((object) => object.id === edited.activeObjectId)!
+    const p: Project = {
+      ...generated,
+      formatDocuments: {
+        ...generated.formatDocuments,
+        'vk-square': {
+          ...edited,
+          objects: edited.objects.map((object) =>
+            object.id === added.id ? { ...object, text: 'Imported custom text' } : object,
+          ),
+        },
+      },
+    }
+
+    const restored = await importJson(asFile(JSON.parse(JSON.stringify(p))))
+
+    expect(restored.formatDocuments?.['vk-square']?.objects).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: added.id,
+          type: 'text',
+          text: 'Imported custom text',
+        }),
+      ]),
+    )
   })
 
   it('accepts old projects without formatDocuments', () => {

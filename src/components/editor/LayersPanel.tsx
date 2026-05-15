@@ -24,8 +24,8 @@ export function LayersPanel({
   if (layers.length === 0) return null
 
   return (
-    <div className="layers-panel layout-editor__layers" role="listbox" aria-label="Layers">
-      <div className="layout-editor__layers-head">Layers</div>
+    <div className="layers-panel layout-editor__layers" role="listbox" aria-label="Слои">
+      <div className="layout-editor__layers-head">Слои</div>
       {layers.map((object, index) => {
         const isSelected = object.id === activeObjectId
         const canMoveUp = index > 0

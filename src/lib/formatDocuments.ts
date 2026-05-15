@@ -9,9 +9,12 @@ import type {
   ProjectFormatDocument,
   Scene,
   SceneObject,
+  FormatRuleSet,
 } from './types'
 
 const SCENE_BLOCKS = ['image', 'title', 'subtitle', 'cta', 'badge', 'logo'] as const
+export type CreatableSceneObjectType = 'text' | 'shape' | 'custom-image' | 'decor'
+
 const OBJECT_Z: Record<'background' | (typeof SCENE_BLOCKS)[number], number> = {
   background: 0,
   image: 10,
@@ -22,7 +25,7 @@ const OBJECT_Z: Record<'background' | (typeof SCENE_BLOCKS)[number], number> = {
   logo: 50,
 }
 
-export function sceneToObjects(scene: Scene): SceneObject[] {
+export function sceneToObjects(scene: Scene, format?: Pick<FormatRuleSet, 'aspectRatio'>): SceneObject[] {
   const objects: SceneObject[] = [
     {
       id: 'background',
@@ -52,7 +55,7 @@ export function sceneToObjects(scene: Scene): SceneObject[] {
       x: block.x,
       y: block.y,
       width: block.w,
-      height: blockHeight(kind, source),
+      height: blockHeight(kind, source, format),
       zIndex: OBJECT_Z[kind],
       metadata: { blockKind: kind },
     }
@@ -71,13 +74,101 @@ export function sceneToObjects(scene: Scene): SceneObject[] {
     if (typeof source.rx === 'number') object.borderRadius = source.rx
     if (typeof source.bg === 'string') object.metadata = { ...object.metadata, bg: source.bg }
     if (typeof source.src === 'string') object.imageSrc = source.src
-    if (source.fit === 'cover' || source.fit === 'contain') object.fit = source.fit
+    if (source.fit === 'cover' || source.fit === 'contain' || source.fit === 'fill') object.fit = source.fit
     if (typeof source.bgOpacity === 'number') object.metadata = { ...object.metadata, bgOpacity: source.bgOpacity }
 
     objects.push(object)
   }
 
   return objects.sort((a, b) => zIndexForObject(a) - zIndexForObject(b))
+}
+
+export function createSceneObject(type: CreatableSceneObjectType, format: ProjectFormatDocument['format']): SceneObject {
+  const id = `${type}-${uniqueId()}`
+  const common = {
+    id,
+    type,
+    visible: true,
+    locked: false,
+    zIndex: 60,
+  } satisfies Pick<SceneObject, 'id' | 'type' | 'visible' | 'locked' | 'zIndex'>
+
+  switch (type) {
+    case 'text':
+      return {
+        ...common,
+        name: 'Новый текст',
+        x: 25,
+        y: 44,
+        width: 50,
+        height: 12,
+        text: 'Новый текст',
+        fontSize: Math.max(format.minTitleSize, 4),
+        fontWeight: 700,
+        lineHeight: 1.15,
+        textAlign: 'center',
+        fill: '#111827',
+        opacity: 1,
+      }
+    case 'shape':
+      return {
+        ...common,
+        name: 'Фигура',
+        x: 30,
+        y: 34,
+        width: 40,
+        height: 22,
+        fill: '#FFFFFF',
+        stroke: '#111827',
+        opacity: 0.92,
+        borderRadius: 18,
+      }
+    case 'custom-image':
+      return {
+        ...common,
+        name: 'Изображение',
+        x: 28,
+        y: 28,
+        width: 44,
+        height: 32,
+        imageSrc: undefined,
+        fit: 'cover',
+        fill: '#F3F4F6',
+        stroke: '#9CA3AF',
+        opacity: 1,
+        borderRadius: 16,
+      }
+    case 'decor':
+      return {
+        ...common,
+        name: 'Декор',
+        x: 72,
+        y: 12,
+        width: 14,
+        height: 6,
+        rotation: -8,
+        fill: '#FF5A1F',
+        opacity: 0.88,
+        borderRadius: 999,
+      }
+  }
+}
+
+export function addSceneObject(
+  document: ProjectFormatDocument,
+  type: CreatableSceneObjectType,
+  now = new Date(),
+): ProjectFormatDocument {
+  const object = createSceneObject(type, document.format)
+  const maxZ = document.objects.reduce((max, candidate) => Math.max(max, zIndexForObject(candidate)), 0)
+  const withZ: SceneObject = { ...object, zIndex: maxZ + 10 }
+  return {
+    ...document,
+    objects: [...document.objects, withZ],
+    activeObjectId: withZ.id,
+    isEdited: true,
+    updatedAt: now.toISOString(),
+  }
 }
 
 export function sceneFromFormatDocument(document: ProjectFormatDocument): Scene {
@@ -202,18 +293,30 @@ export function updateObjectProperties(
   const patchKeys = Object.keys(patch)
   const onlyLayerState = patchKeys.every((key) => key === 'visible' || key === 'locked' || key === 'zIndex')
   if (object.locked && !onlyLayerState) return document
+  const sanitizedPatch = sanitizeObjectPatch(patch)
   return {
     ...document,
     objects: document.objects.map((candidate) =>
-      candidate.id === objectId ? { ...candidate, ...patch, id: candidate.id } : candidate,
+      candidate.id === objectId ? { ...candidate, ...sanitizedPatch, id: candidate.id } : candidate,
     ),
     isEdited: true,
     updatedAt: now.toISOString(),
   }
 }
 
-export function updateObjectsFromScene(scene: Scene, existing: SceneObject[]): SceneObject[] {
-  const generated = new Map(sceneToObjects(scene).map((object) => [object.id, object]))
+function sanitizeObjectPatch(patch: Partial<SceneObject>): Partial<SceneObject> {
+  const next = { ...patch }
+  for (const key of ['x', 'y', 'width', 'height', 'rotation', 'zIndex', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'opacity', 'borderRadius'] as const) {
+    const value = next[key]
+    if (typeof value === 'number' && !Number.isFinite(value)) delete next[key]
+  }
+  if (typeof next.width === 'number') next.width = Math.max(1, next.width)
+  if (typeof next.height === 'number') next.height = Math.max(1, next.height)
+  return next
+}
+
+export function updateObjectsFromScene(scene: Scene, existing: SceneObject[], format?: Pick<FormatRuleSet, 'aspectRatio'>): SceneObject[] {
+  const generated = new Map(sceneToObjects(scene, format).map((object) => [object.id, object]))
   const next = existing.map((object) => {
     const replacement = generated.get(object.id)
     if (!replacement) return object
@@ -280,7 +383,7 @@ export function ensureProjectFormatDocuments(project: Project, now = new Date())
       formatKey,
       format,
       scene,
-      objects: sceneToObjects(scene),
+      objects: sceneToObjects(scene, format),
       isEdited: false,
       createdFromGeneration: true,
       createdAt,
@@ -311,7 +414,7 @@ export function resetProjectFormatDocument(project: Project, formatKey: FormatKe
           project.formatDensities?.[formatKey] ?? project.layoutDensity,
         ),
         scene,
-        objects: sceneToObjects(scene),
+        objects: sceneToObjects(scene, getFormat(formatKey, project.customFormats)),
         isEdited: false,
         createdFromGeneration: true,
         createdAt: project.formatDocuments?.[formatKey]?.createdAt ?? timestamp,
@@ -347,14 +450,15 @@ function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene
   }
 }
 
-function blockHeight(kind: BlockKind, source: Record<string, unknown>): number {
+function blockHeight(kind: BlockKind, source: Record<string, unknown>, format?: Pick<FormatRuleSet, 'aspectRatio'>): number {
   if (typeof source.h === 'number') return source.h
   if (kind === 'image') return 50
   if (kind === 'logo') return 6
   const fontSize = typeof source.fontSize === 'number' ? source.fontSize : 4
   const lineHeight = typeof source.lineHeight === 'number' ? source.lineHeight : 1.2
   const maxLines = typeof source.maxLines === 'number' ? source.maxLines : 1
-  return fontSize * lineHeight * maxLines
+  const aspectRatio = format?.aspectRatio ?? 1
+  return fontSize * lineHeight * maxLines * aspectRatio
 }
 
 function objectName(kind: BlockKind): string {
@@ -386,4 +490,9 @@ function isBackground(value: unknown): value is Scene['background'] {
   if (!value || typeof value !== 'object') return false
   const kind = (value as { kind?: unknown }).kind
   return kind === 'gradient' || kind === 'solid' || kind === 'tonal' || kind === 'split'
+}
+
+function uniqueId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }

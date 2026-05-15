@@ -417,7 +417,7 @@ describe('chooseLayoutArchetype', () => {
     expect(result.selected).toBe('image-top-stack')
   })
 
-  it('high text density selects text-dominant', () => {
+  it('high text density keeps an image layout when the image fits', () => {
     const scene: Scene = {
       ...masterWithImage,
       title: { ...masterWithImage.title!, text: 'Большой сезонный набор с подробным описанием преимуществ, условий доставки и ограниченного предложения' },
@@ -431,7 +431,29 @@ describe('chooseLayoutArchetype', () => {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
     })
 
+    expect(result.selected).not.toBe('text-dominant')
+  })
+
+  it('missing image selects text-dominant', () => {
+    const result = chooseLayoutArchetype({
+      format: getFormat('vk-square'),
+      scene: masterNoImage,
+      enabled: DEFAULT_ENABLED,
+      assetHint: null,
+    })
+
     expect(result.selected).toBe('text-dominant')
+  })
+
+  it('strongly unsuitable image can fall back to text-dominant', () => {
+    const result = select(masterWithImage, 'vk-landscape', {
+      ...hintWithGrid([[0.5]]),
+      aspectRatio: 5,
+      objectBounds: { x: 0.01, y: 0.02, w: 0.98, h: 0.96 },
+    })
+
+    expect(result.selected).toBe('text-dominant')
+    expect(result.selectionDebug.cropRisk).toBe('high')
   })
 
   it('left focal image prefers split-right-image', () => {

@@ -24,16 +24,22 @@ export function loadProject(): Project | null {
     const raw = localStorage.getItem(KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    const result = projectSchema.safeParse(parsed)
-    if (!result.success) {
+    const project = parseStoredProject(parsed)
+    if (!project) {
       // Shape mismatch — probably a stale schema. Drop it.
       localStorage.removeItem(KEY)
       return null
     }
-    return migrateProject(result.data as Project)
+    return project
   } catch {
     return null
   }
+}
+
+export function parseStoredProject(value: unknown): Project | null {
+  const result = projectSchema.safeParse(value)
+  if (!result.success) return null
+  return migrateProject(result.data as Project)
 }
 
 function migrateProject(project: Project): Project {
