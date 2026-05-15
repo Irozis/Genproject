@@ -96,6 +96,7 @@ export function compactCopyOverrides(copy: CompactCopy): BlockOverrides {
           text: copy.subtitle,
           charsPerLine: limits.subtitleChars,
           maxLines: limits.subtitleLines,
+          hidden: family.formats === CARD_FORMATS ? undefined : true,
         },
         cta: {
           text: cta,
