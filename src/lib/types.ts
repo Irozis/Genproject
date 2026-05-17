@@ -261,6 +261,8 @@ export type Palette = {
 
 export type BrandKit = {
   brandName: string
+  /** Optional short mark used when no logo image is uploaded. */
+  logoText?: string
   // Font pair: display drives headlines & CTA; text drives subtitle & badge.
   displayFont: string
   textFont: string

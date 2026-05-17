@@ -751,7 +751,7 @@ export function LayoutEditor({
                 rules={rules}
                 displayFont={brandKit.displayFont}
                 textFont={brandKit.textFont}
-                brandInitials={brandKit.brandName}
+                brandInitials={brandKit.logoText ?? brandKit.brandName}
                 brandColor={brandKit.palette.accent}
                 imageAspectRatio={assetHint?.aspectRatio ?? null}
                 className="layout-editor__svg"

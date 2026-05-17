@@ -161,7 +161,7 @@ function TemplateMiniPreview({
           rules={rules}
           displayFont={template.brandKit.displayFont}
           textFont={template.brandKit.textFont}
-          brandInitials={template.brandKit.brandName}
+          brandInitials={template.brandKit.logoText ?? template.brandKit.brandName}
           brandColor={template.brandKit.palette.accent}
           className="template-card__svg"
         />
