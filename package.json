@@ -57,6 +57,7 @@
       "package.json"
     ],
     "win": {
+      "icon": "public/app-logo.ico",
       "target": "nsis",
       "signAndEditExecutable": false
     },

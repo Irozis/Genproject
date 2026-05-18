@@ -147,6 +147,21 @@ input, select, textarea {
   line-height: 1.1;
   margin: 0 0 12px;
 }
+.app-logo {
+  display: block;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.app-logo--onboarding {
+  width: 82px;
+  height: 82px;
+  border-radius: 18px;
+}
+.app-logo--header {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+}
 .onboarding__sub {
   color: var(--ink-2);
   margin: 0 0 32px;
@@ -248,13 +263,24 @@ input, select, textarea {
 
 .editor-header {
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: auto auto 1fr auto auto;
   align-items: center;
   gap: 12px;
   height: var(--header-h);
   padding: 0 16px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+.editor-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 .editor-header__name {
   width: 100%;
@@ -2055,8 +2081,13 @@ summary:focus-visible {
   grid-column: 1;
 }
 .onboarding__brand {
-  margin: 0 0 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 28px;
   color: var(--accent-2);
+  font-weight: 800;
+  letter-spacing: 0;
 }
 .onboarding__title {
   max-width: 640px;
@@ -2282,7 +2313,7 @@ summary:focus-visible {
 
 @media (max-width: 1180px) {
   .editor-header {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto auto 1fr;
   }
   .export-group,
   .export-menu {
@@ -2376,11 +2407,19 @@ summary:focus-visible {
   .onboarding {
     padding: 32px 16px 48px;
   }
+  .app-logo--onboarding {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+  }
   .onboarding__title {
     font-size: 34px;
   }
   .onboarding__pair {
     grid-template-columns: 1fr;
+  }
+  .editor-header__brand {
+    justify-content: flex-start;
   }
   .onboarding-download__actions .btn {
     width: 100%;

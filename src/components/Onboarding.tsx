@@ -12,7 +12,10 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   return (
     <div className="onboarding">
-      <header className="onboarding__brand">Генератор креативов</header>
+      <header className="onboarding__brand">
+        <img className="app-logo app-logo--onboarding" src="/app-logo.png" alt="" aria-hidden="true" />
+        <span>Ad Layout Generator</span>
+      </header>
 
       <h1 className="onboarding__title">Один макет - все форматы для маркетплейсов.</h1>
       <p className="onboarding__sub">

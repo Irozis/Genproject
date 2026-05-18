@@ -5,6 +5,12 @@ const { pathToFileURL } = require('node:url')
 const APP_TITLE = 'Ad Layout Generator'
 const DEV_SERVER_URL = 'http://localhost:5173'
 
+function getIconPath() {
+  return app.isPackaged
+    ? path.join(__dirname, '..', 'dist', 'app-logo.png')
+    : path.join(__dirname, '..', 'public', 'app-logo.png')
+}
+
 function getAppUrl() {
   if (!app.isPackaged) {
     return DEV_SERVER_URL
@@ -45,6 +51,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 720,
     title: APP_TITLE,
+    icon: getIconPath(),
     show: false,
     webPreferences: {
       contextIsolation: true,
