@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { createGuidedProject, enterFormatEditMode, exitFormatEditMode } from '../App'
+import {
+  closeProjectEditor,
+  createGuidedProject,
+  enterFormatEditMode,
+  exitFormatEditMode,
+  openProjectEditor,
+  setProjectCreationStep,
+} from '../App'
 import { buildScene } from '../lib/buildScene'
 import { newProject } from '../lib/defaults'
 import { ensureProjectFormatDocuments, selectDocumentObject } from '../lib/formatDocuments'
@@ -73,6 +80,64 @@ describe('format edit mode state', () => {
     expect(next.activeFormatKey).toBeUndefined()
     expect(next.activeObjectId).toBeUndefined()
     expect(next.editorMode).toBe('preview')
+  })
+
+  it('keeps the same project and wizard state when moving wizard -> editor -> back', () => {
+    const project = {
+      ...newProject('wizard-back'),
+      brandKit: {
+        ...newProject('brand').brandKit,
+        brandName: 'Saved Brand',
+      },
+      selectedFormats: ['vk-square', 'instagram-story'] as FormatKey[],
+      selectedPaletteId: 'palette-accent',
+      paletteSeed: 42,
+    }
+    const withStep = setProjectCreationStep(project, 'preview')
+    const editor = openProjectEditor(withStep, { returnToStep: withStep.currentStep })
+    const back = closeProjectEditor(editor)
+
+    expect(back.id).toBe(project.id)
+    expect(back.projectId).toBe(project.projectId)
+    expect(back.currentStep).toBe('preview')
+    expect(back.returnToStep).toBe('preview')
+    expect(back.brandKit.brandName).toBe('Saved Brand')
+    expect(back.selectedFormats).toEqual(['vk-square', 'instagram-story'])
+    expect(back.selectedPaletteId).toBe('palette-accent')
+    expect(back.paletteSeed).toBe(42)
+  })
+
+  it('preserves generated scenes and manual edits after closing editor', () => {
+    const generated = ensureProjectFormatDocuments(
+      { ...newProject('manual-edit-back'), selectedFormats: ['vk-square'] },
+      new Date('2026-05-14T00:00:00.000Z'),
+    )
+    const document = generated.formatDocuments!['vk-square']!
+    const edited = {
+      ...generated,
+      currentStep: 'colors' as const,
+      returnToStep: 'colors' as const,
+      formatDocuments: {
+        ...generated.formatDocuments,
+        'vk-square': {
+          ...document,
+          isEdited: true,
+          objects: document.objects.map((object, index) => index === 0 ? { ...object, x: object.x + 1 } : object),
+        },
+      },
+      blockOverrides: {
+        'vk-square': {
+          title: { x: 12, y: 12, w: 50, h: 12 },
+        },
+      },
+    }
+
+    const back = closeProjectEditor(enterFormatEditMode(edited, 'vk-square'))
+
+    expect(back.currentStep).toBe('colors')
+    expect(back.formatDocuments?.['vk-square']?.isEdited).toBe(true)
+    expect(back.formatDocuments?.['vk-square']?.objects[0]?.x).toBe(document.objects[0]!.x + 1)
+    expect(back.blockOverrides?.['vk-square']?.title?.x).toBe(12)
   })
 
   it('selecting a layer makes its object available for properties', () => {

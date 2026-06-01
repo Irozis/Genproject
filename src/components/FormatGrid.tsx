@@ -131,6 +131,7 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
   return (
     <div
       className="format-grid"
+      data-testid="preview-grid"
       style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(360px, 100%), 1fr))' }}
     >
       {formatGroups.map((group) => {

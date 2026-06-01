@@ -47,7 +47,7 @@ export function EditorHeader({
 
   return (
     <header className="editor-header">
-      <button className="btn btn-ghost btn-sm btn-with-icon" onClick={onBack}>
+      <button className="btn btn-ghost btn-sm btn-with-icon" onClick={onBack} data-testid="back-button">
         <Icon name="arrow-left" />
         <span>Назад</span>
       </button>
@@ -116,12 +116,13 @@ export function EditorHeader({
       <details className="export-menu">
         <summary
           className="btn btn-primary btn-sm export-menu__trigger"
+          data-testid="export-all-button"
           aria-label="Экспортировать проект"
         >
           {exporting ? 'Экспорт...' : 'Экспорт'} <span aria-hidden="true">▾</span>
         </summary>
         <div className="export-menu__list" role="menu">
-          <button type="button" role="menuitem" onClick={() => onExport('png')} disabled={exporting !== null}>
+          <button type="button" role="menuitem" onClick={() => onExport('png')} disabled={exporting !== null} data-testid="download-zip-button">
             <strong>PNG ZIP</strong>
             <span>Готовые изображения для публикации</span>
           </button>
@@ -129,7 +130,7 @@ export function EditorHeader({
             <strong>PDF</strong>
             <span>Презентация или согласование</span>
           </button>
-          <button type="button" role="menuitem" onClick={() => onExport('svg')} disabled={exporting !== null}>
+          <button type="button" role="menuitem" onClick={() => onExport('svg')} disabled={exporting !== null} data-testid="export-selected-button">
             <strong>SVG ZIP</strong>
             <span>Векторные исходники</span>
           </button>

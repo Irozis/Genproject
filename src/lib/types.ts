@@ -154,6 +154,7 @@ export type ImageBlock = Block & {
 
 export type ImageFitMode = 'cover' | 'contain'
 export type ImageFitPreference = 'auto' | 'cover' | 'contain'
+export type RecommendedImageMode = 'cover' | 'contain' | 'smart-crop' | 'background-blur' | 'thumbnail'
 
 export type ImageFitDecision = {
   usedSource: 'original' | 'extended'
@@ -346,15 +347,64 @@ export type AssetHint = {
   objectBounds?: { x: number; y: number; w: number; h: number }
 }
 
+export type Rect = { x: number; y: number; width: number; height: number }
+
+export type UploadedImageAnalysis = {
+  width: number
+  height: number
+  aspectRatio: number
+  orientation: 'horizontal' | 'vertical' | 'square'
+  subjectBounds: Rect
+  dominantArea: Rect
+  hasEnoughResolution: boolean
+  qualityWarnings: string[]
+  recommendedUsage: 'hero' | 'background' | 'thumbnail' | 'product' | 'not_recommended'
+  emptySpace: number
+  centerCropSafety: number
+  canBeUsedAsBackground: boolean
+  canBeUsedAsHeroImage: boolean
+  recommendedObjectFit: RecommendedImageMode
+}
+
+export type FormatRecommendationLevel = 'excellent' | 'good' | 'acceptable' | 'risky' | 'not_recommended'
+export type FormatRecommendation = {
+  formatId: string
+  platformName: string
+  placementName: string
+  width: number
+  height: number
+  aspectRatio: number
+  score: number
+  level: FormatRecommendationLevel
+  reason: string
+  cropRisk: 'low' | 'medium' | 'high'
+  recommendedImageMode: RecommendedImageMode
+  warnings: string[]
+}
+
+export type SelectedFormatImageStrategy = {
+  formatId: string
+  recommendedImageMode: RecommendedImageMode
+  cropRisk: 'low' | 'medium' | 'high'
+  score: number
+  warnings: string[]
+}
+
 export type Project = {
   id: string
+  projectId?: string
   name: string
+  currentStep?: CreationStep
+  previousStep?: CreationStep
+  returnToStep?: CreationStep
+  updatedAt?: string
   master: Scene
   enabled: EnabledMap
   brandKit: BrandKit
   goal: GoalKey
   visualSystem: VisualSystemKey
   assetHint: AssetHint | null
+  imageAnalysis?: UploadedImageAnalysis
   imageSrc: string | null
   originalImageSrc?: string | null
   extendedImageSrc?: string | null
@@ -367,6 +417,7 @@ export type Project = {
   backgroundExtensionByFormat?: Record<string, BackgroundExtensionMetadata>
   logoSrc: string | null
   selectedFormats: FormatKey[]
+  selectedFormatImageStrategy?: Partial<Record<FormatKey, SelectedFormatImageStrategy>>
   formatDocuments?: Record<string, ProjectFormatDocument>
   activeFormatKey?: string
   activeObjectId?: string

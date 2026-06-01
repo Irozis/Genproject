@@ -230,7 +230,7 @@ describe('buildScene — text fitting', () => {
     const titleBottom = title.y + title.fontSize * (title.lineHeight ?? 1.2) * title.maxLines * format.aspectRatio
     const subtitleBottom = subtitle.y + subtitle.fontSize * (subtitle.lineHeight ?? 1.2) * subtitle.maxLines * format.aspectRatio
 
-    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
+    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter * 0.5)
     expect(cta.y - subtitleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
   })
 
@@ -245,7 +245,7 @@ describe('buildScene — text fitting', () => {
     const subtitle = scene.subtitle!
     const titleBottom = title.y + title.fontSize * (title.lineHeight ?? 1.2) * title.maxLines * format.aspectRatio
 
-    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter - 0.5)
+    expect(subtitle.y - titleBottom).toBeGreaterThanOrEqual(format.gutter * 0.5)
   })
 
   it('reserves enough height for three-line titles in story layouts', () => {

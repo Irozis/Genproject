@@ -314,7 +314,12 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   const issues = useMemo(() => checkOverflow(scene, rules), [scene, rules])
 
   return (
-    <article className={`preview${aspectClass}`} data-format-key={formatKey}>
+    <article
+      className={`preview${aspectClass}`}
+      data-testid="preview-card"
+      data-format-key={formatKey}
+      data-validation-status={issues.some((issue) => issue.level === 'warn') ? 'warning' : 'ready'}
+    >
       <header className="preview__head">
         <div>
           <div className="preview__title" title={displayLabel ?? rules.label}>{displayLabel ?? rules.label}</div>
@@ -363,6 +368,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             <button
               type="button"
               className="btn btn-primary btn-xs preview__open-editor"
+              data-testid="edit-format-button"
               onClick={() => onOpenLayoutEditor(formatKey)}
               title="Открыть редактор формата"
             >
@@ -650,6 +656,7 @@ function IssuesBadge({ issues, onFix }: { issues: LayoutIssue[]; onFix: () => vo
     >
       <summary
         className={cls}
+        data-testid="validation-status"
         aria-expanded={open}
         title={issues.map((i) => `• ${humanIssue(i)}`).join('\n')}
       >

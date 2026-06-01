@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#dbeafe"/>
+  <rect x="120" y="130" width="760" height="640" rx="60" fill="#2563eb"/>
+  <circle cx="1150" cy="450" r="260" fill="#f97316"/>
+  <text x="180" y="490" font-family="Arial" font-size="120" font-weight="700" fill="#ffffff">Horizontal</text>
+</svg>

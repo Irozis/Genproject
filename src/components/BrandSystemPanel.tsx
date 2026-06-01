@@ -28,7 +28,7 @@ export function BrandSystemPanel({
     onChange({ ...brandKit, palette: { ...brandKit.palette, ...patch } })
 
   return (
-    <section className={`panel${open ? ' is-open' : ''}`}>
+    <section className={`panel${open ? ' is-open' : ''}`} data-testid="brand-step">
       <button className="panel__head" onClick={() => setOpen((o) => !o)}>
         <span>Цветовая схема</span>
         <span>{open ? '▴' : '▾'}</span>
@@ -72,6 +72,7 @@ export function BrandSystemPanel({
           <label className="field">
             <span>Название</span>
             <input
+              data-testid="brand-name-input"
               type="text"
               value={brandKit.brandName}
               onChange={(e) => onChange({ ...brandKit, brandName: e.target.value })}

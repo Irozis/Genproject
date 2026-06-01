@@ -322,6 +322,38 @@ const imageFitDecisionSchema = z.object({
   ]),
 })
 
+const rectSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  width: z.number(),
+  height: z.number(),
+})
+
+const uploadedImageAnalysisSchema = z.object({
+  width: z.number(),
+  height: z.number(),
+  aspectRatio: z.number(),
+  orientation: z.enum(['horizontal', 'vertical', 'square']),
+  subjectBounds: rectSchema,
+  dominantArea: rectSchema,
+  hasEnoughResolution: z.boolean(),
+  qualityWarnings: z.array(z.string()),
+  recommendedUsage: z.enum(['hero', 'background', 'thumbnail', 'product', 'not_recommended']),
+  emptySpace: z.number(),
+  centerCropSafety: z.number(),
+  canBeUsedAsBackground: z.boolean(),
+  canBeUsedAsHeroImage: z.boolean(),
+  recommendedObjectFit: z.enum(['cover', 'contain', 'smart-crop', 'background-blur', 'thumbnail']),
+})
+
+const selectedFormatImageStrategySchema = z.object({
+  formatId: z.string(),
+  recommendedImageMode: z.enum(['cover', 'contain', 'smart-crop', 'background-blur', 'thumbnail']),
+  cropRisk: z.enum(['low', 'medium', 'high']),
+  score: z.number(),
+  warnings: z.array(z.string()),
+})
+
 const formatKeySchema = z.enum([
   'vk-square',
   'vk-vertical',
@@ -418,13 +450,19 @@ const compositionSettingsSchema = z.object({
 
 export const projectSchema = z.object({
   id: z.string(),
+  projectId: z.string().optional(),
   name: z.string(),
+  currentStep: z.enum(['image', 'elements', 'content', 'colors', 'formats', 'preview']).optional(),
+  previousStep: z.enum(['image', 'elements', 'content', 'colors', 'formats', 'preview']).optional(),
+  returnToStep: z.enum(['image', 'elements', 'content', 'colors', 'formats', 'preview']).optional(),
+  updatedAt: z.string().optional(),
   master: sceneSchema,
   enabled: enabledMapSchema,
   brandKit: brandKitSchema,
   goal: z.enum(['promo-pack', 'product-highlight', 'announcement']),
   visualSystem: z.enum(['product-card', 'minimal', 'bold-editorial']),
   assetHint: assetHintSchema.nullable(),
+  imageAnalysis: uploadedImageAnalysisSchema.optional(),
   imageSrc: z.string().nullable(),
   originalImageSrc: z.string().nullable().optional(),
   extendedImageSrc: z.string().nullable().optional(),
@@ -437,6 +475,7 @@ export const projectSchema = z.object({
   backgroundExtensionByFormat: z.record(z.string(), backgroundExtensionSchema).optional(),
   logoSrc: z.string().nullable(),
   selectedFormats: z.array(anyFormatKeySchema),
+  selectedFormatImageStrategy: z.record(anyFormatKeySchema, selectedFormatImageStrategySchema).optional(),
   formatDocuments: z.record(z.string(), projectFormatDocumentSchema).optional(),
   activeFormatKey: z.string().optional(),
   activeObjectId: z.string().optional(),

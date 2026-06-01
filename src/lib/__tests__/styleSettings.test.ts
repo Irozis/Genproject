@@ -47,4 +47,35 @@ describe('style settings palette generation', () => {
     expect(nextBrand.palette.accent).toBe(blue[0]!.accent)
     expect(nextBrand.gradient[0]).toBe(blue[0]!.background)
   })
+
+  it('keeps palette variants stable until the seed changes', () => {
+    const first = generatePaletteVariants(brand('#2563EB'), 'product', { seed: 11 })
+    const same = generatePaletteVariants(brand('#2563EB'), 'product', { seed: 11 })
+    const regenerated = generatePaletteVariants(brand('#2563EB'), 'product', { seed: 12 })
+
+    expect(first).toEqual(same)
+    expect(first.map((variant) => variant.accent)).not.toEqual(regenerated.map((variant) => variant.accent))
+  })
+
+  it('preserves selected palette id externally and exposes semantic color tokens', () => {
+    const variants = generatePaletteVariants(brand('#0F766E'), 'editorial', { seed: 3 })
+    const selectedPaletteId = variants[2]!.id
+
+    expect(selectedPaletteId).toBe('soft-calm')
+    for (const variant of variants) {
+      expect(variant.primaryText).toMatch(/^#[0-9A-F]{6}$/i)
+      expect(variant.secondaryText).toMatch(/^#[0-9A-F]{6}$/i)
+      expect(variant.ctaBackground).toMatch(/^#[0-9A-F]{6}$/i)
+      expect(variant.ctaText).toMatch(/^#[0-9A-F]{6}$/i)
+    }
+  })
+
+  it('keeps dark palettes readable on dark backgrounds', () => {
+    const premiumDark = generatePaletteVariants(brand('#7C3AED'), 'premium', { seed: 5 })
+      .find((variant) => variant.id === 'premium-dark')!
+
+    expect(contrastRatio(premiumDark.primaryText, premiumDark.background)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(premiumDark.secondaryText, premiumDark.background)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(premiumDark.ctaText, premiumDark.ctaBackground)).toBeGreaterThanOrEqual(4.5)
+  })
 })

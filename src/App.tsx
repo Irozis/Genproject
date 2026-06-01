@@ -7,9 +7,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { FormatGrid, type FormatGridHandle } from './components/FormatGrid'
 import { LayoutEditor } from './components/LayoutEditor'
 import { PropagateDialog } from './components/PropagateDialog'
+import { AD_FORMAT_CATALOG } from './data/adFormats'
 import { projectOverrides } from './lib/propagateLayout'
 import { newProject } from './lib/defaults'
-import { loadProject, saveProject } from './lib/storage'
+import { loadProject, saveProjectDraft } from './lib/storage'
 import {
   deleteProjectFromHistory,
   duplicateProjectFromHistory,
@@ -21,6 +22,7 @@ import { exportZip, exportPdf } from './lib/export'
 import { exportSvgZip } from './lib/exportSvg'
 import { exportJson, importJson } from './lib/serialize'
 import { analyzeImage } from './lib/imageAnalysis'
+import { analyzeImageDimensions, recommendFormatsForImage, selectedStrategyFromRecommendation } from './lib/imageFormatRecommendations'
 import { paletteAlternatives, type DerivedBrandColors } from './lib/paletteFromImage'
 import { buildScene, resolveCompositionModel } from './lib/buildScene'
 import { COMPOSITION_MODEL_LABELS } from './lib/composition'
@@ -50,6 +52,7 @@ import type {
   Scene,
   SceneObject,
   PaletteVariant,
+  SelectedFormatImageStrategy,
   TypographySettings,
   CompositionSettings,
   View,
@@ -57,10 +60,13 @@ import type {
 
 export default function App() {
   const [view, setView] = useState<View>('onboarding')
-  const [project, setProject, history] = useHistory<Project>(
-    () => normalizeBackgroundExtensionState(loadProject() ?? newProject()),
+  const [project, setProjectRaw, history] = useHistory<Project>(
+    () => ensureProjectStateMetadata(normalizeBackgroundExtensionState(loadProject() ?? newProject())),
     350,
   )
+  const setProject = useCallback((updater: ProjectUpdater) => {
+    setProjectRaw((previous) => touchProject(typeof updater === 'function' ? updater(previous) : updater))
+  }, [setProjectRaw])
   const [selectedKind, setSelectedKind] = useState<BlockKind | null>(null)
   const [selectedFormat, setSelectedFormat] = useState<FormatKey | null>(null)
   const [exporting, setExporting] = useState<ExportFormat | null>(null)
@@ -83,6 +89,7 @@ export default function App() {
   const imageGenRef = useRef(0)
   const bgAutoStartedForRef = useRef<string | null>(null)
   const toastIdRef = useRef(0)
+  const screenKeyRef = useRef<string | null>(null)
 
   const dismissToast = useCallback((id: number) => {
     setToasts((list) => list.filter((t) => t.id !== id))
@@ -193,14 +200,62 @@ export default function App() {
     if (view !== 'editor') return
     setIsSaving(true)
     const t = window.setTimeout(() => {
-      saveProject(project)
-      saveProjectToHistory(project)
+      const draft = touchProject(project)
+      saveProjectDraft(draft)
+      saveProjectToHistory(draft)
       setProjectHistoryItems(listProjectHistory())
       setLastSavedAt(Date.now())
       setIsSaving(false)
     }, 300)
     return () => window.clearTimeout(t)
   }, [project, view])
+
+  const setWizardStep = useCallback((step: CreationStep) => {
+    setCreationStep(step)
+    setProject((p) => setProjectCreationStep(p, step))
+  }, [setProject])
+
+  const finishWizard = useCallback(() => {
+    const step = creationStep ?? project.currentStep ?? 'preview'
+    setCreationStep(null)
+    setProject((p) => openProjectEditor(p, { returnToStep: step }))
+  }, [creationStep, project.currentStep, setProject])
+
+  const handleAppBack = useCallback(() => {
+    if (editingFormat) {
+      setEditingFormat(null)
+      setProject((p) => exitFormatEditMode(p))
+      return
+    }
+    if (view !== 'editor') return
+    if (creationStep) {
+      const currentIndex = CREATION_STEPS.indexOf(creationStep)
+      const previous = currentIndex > 0 ? CREATION_STEPS[currentIndex - 1]! : creationStep
+      setWizardStep(previous)
+      return
+    }
+    setWizardStep(project.returnToStep ?? project.currentStep ?? 'preview')
+  }, [creationStep, editingFormat, project.currentStep, project.returnToStep, setProject, setWizardStep, view])
+
+  useEffect(() => {
+    if (view !== 'editor') return
+    const key = editingFormat
+      ? `editor:${project.id}:${editingFormat}`
+      : creationStep
+        ? `wizard:${project.id}:${creationStep}`
+        : `preview:${project.id}:${project.returnToStep ?? project.currentStep ?? 'preview'}`
+    if (screenKeyRef.current === key) return
+    screenKeyRef.current = key
+    window.history.pushState({ appScreen: key }, '', window.location.href)
+  }, [creationStep, editingFormat, project.currentStep, project.id, project.returnToStep, view])
+
+  useEffect(() => {
+    const onPopState = () => {
+      handleAppBack()
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [handleAppBack])
 
   // auto-clear toasts after 4s. Each entry is removed independently so the
   // user can see a stack of recent messages.
@@ -462,7 +517,7 @@ export default function App() {
   }
 
   function regeneratePaletteVariants() {
-    setProject((p) => ({ ...p, paletteSeed: (p.paletteSeed ?? 1) + 1, selectedPaletteId: undefined }))
+    setProject((p) => ({ ...p, paletteSeed: (p.paletteSeed ?? 1) + 1, selectedPaletteId: 'fresh-bright' }))
   }
 
   function togglePinnedPalette(id: string) {
@@ -499,8 +554,9 @@ export default function App() {
   }
 
   function handleOpenHistoryProject(id: string) {
-    saveProject(project)
-    saveProjectToHistory(project)
+    const draft = touchProject(project)
+    saveProjectDraft(draft)
+    saveProjectToHistory(draft)
     const stored = loadProjectFromHistory(id)
     if (!stored) {
       refreshProjectHistory()
@@ -508,7 +564,7 @@ export default function App() {
       return
     }
     imageGenRef.current += 1
-    history.reset(normalizeBackgroundExtensionState(stored))
+    history.reset(ensureProjectStateMetadata(normalizeBackgroundExtensionState(stored)))
     setSelectedKind(null)
     setSelectedFormat(null)
     setEditingFormat(null)
@@ -527,6 +583,7 @@ export default function App() {
   }
 
   function handleDeleteHistoryProject(id: string) {
+    if (!window.confirm(RESET_CONFIRM_MESSAGE)) return
     deleteProjectFromHistory(id)
     refreshProjectHistory()
   }
@@ -544,6 +601,8 @@ export default function App() {
       extendedImageSrc: null,
       useExtendedImage: false,
       imageFitDecisionByFormat: {},
+      imageAnalysis: undefined,
+      selectedFormatImageStrategy: undefined,
       backgroundExtensionStatus: 'calculating',
       backgroundExtension: undefined,
       extendedImageByFormat: {},
@@ -553,7 +612,15 @@ export default function App() {
     void analyzeImage(dataUrl)
       .then((hint) => {
         if (gen !== imageGenRef.current) return // a newer image is in flight
-        setProject((p) => applyImageHint(p, hint))
+        setProject((p) => {
+          const imageAnalysis = analyzeImageDimensions(hint.width, hint.height)
+          const withHint = applyImageHint(p, hint)
+          return {
+            ...withHint,
+            imageAnalysis,
+            selectedFormatImageStrategy: buildSelectedFormatImageStrategies(withHint, withHint.selectedFormats, imageAnalysis),
+          }
+        })
       })
       .catch(() => {})
     prepareBackgroundExtensionsForFormats(dataUrl, gen, project, project.selectedFormats)
@@ -670,7 +737,11 @@ export default function App() {
     setProject((p) => {
       const has = p.selectedFormats.includes(key)
       const next = has ? p.selectedFormats.filter((k) => k !== key) : [...p.selectedFormats, key]
-      return { ...p, selectedFormats: next }
+      return {
+        ...p,
+        selectedFormats: next,
+        selectedFormatImageStrategy: buildSelectedFormatImageStrategies(p, next),
+      }
     })
   }
 
@@ -1089,6 +1160,7 @@ export default function App() {
     try {
       if (kind === 'json') {
         exportJson(project)
+        pushToast('Материалы готовы.', 'info')
         return
       }
       const svgs: Partial<Record<FormatKey, SVGSVGElement>> = {}
@@ -1103,6 +1175,7 @@ export default function App() {
       } else if (kind === 'pdf') {
         await exportPdf(svgs, project.selectedFormats, project.name || 'project', project.customFormats)
       }
+      pushToast('Материалы готовы.', 'info')
     } catch (e) {
       pushToast(e instanceof Error ? e.message : 'Не удалось выполнить экспорт.')
     } finally {
@@ -1118,16 +1191,16 @@ export default function App() {
       const hasImportedBackgroundExtension = !!imported.backgroundExtension || Object.keys(imported.backgroundExtensionByFormat ?? {}).length > 0
       if (imported.imageSrc && !hasImportedBackgroundExtension) {
         const gen = ++imageGenRef.current
-        history.reset({
+        history.reset(ensureProjectStateMetadata({
           ...imported,
           originalImageSrc: imported.originalImageSrc ?? imported.imageSrc,
           extendedImageSrc: null,
           useExtendedImage: false,
           backgroundExtensionStatus: 'calculating',
-        })
+        }))
         prepareBackgroundExtensionsForFormats(imported.imageSrc, gen, imported, imported.selectedFormats)
       } else {
-        history.reset(imported)
+        history.reset(ensureProjectStateMetadata(imported))
       }
       setCreationStep(null)
       setView('editor')
@@ -1137,13 +1210,15 @@ export default function App() {
   }
 
   function handleCreateProject() {
+    const storedDraft = loadProject()
+    if (storedDraft && storedDraft.id === project.id && !window.confirm(RESET_CONFIRM_MESSAGE)) return
     const fresh = createGuidedProject()
     history.reset(fresh)
     setSelectedKind(null)
     setSelectedFormat(null)
     setEditingFormat(null)
     setPropagateState(null)
-    setCreationStep('image')
+    setCreationStep(fresh.currentStep ?? 'image')
     setView('editor')
   }
 
@@ -1162,6 +1237,8 @@ export default function App() {
       extendedImageByFormat: {},
       backgroundExtensionByFormat: {},
       assetHint: null,
+      imageAnalysis: undefined,
+      selectedFormatImageStrategy: undefined,
       imageFocals: undefined,
       enabled: { ...p.enabled, image: false },
     }))
@@ -1169,7 +1246,14 @@ export default function App() {
 
   function setSelectedFormats(keys: FormatKey[]) {
     setSelectedFormat((current) => current && keys.includes(current) ? current : null)
-    setProject((p) => ({ ...p, selectedFormats: [...new Set(keys)] }))
+    setProject((p) => {
+      const selectedFormats = [...new Set(keys)]
+      return {
+        ...p,
+        selectedFormats,
+        selectedFormatImageStrategy: buildSelectedFormatImageStrategies(p, selectedFormats),
+      }
+    })
   }
 
   if (view === 'onboarding') {
@@ -1187,14 +1271,20 @@ export default function App() {
   }
 
   return (
-    <div className="editor">
+    <div
+      className="editor"
+      data-testid={editingFormat ? 'editor-step' : creationStep ? undefined : 'editor-step'}
+      data-project-id={project.id}
+      data-current-step={creationStep ?? project.currentStep ?? ''}
+      data-selected-format-count={project.selectedFormats.length}
+      data-selected-palette-id={project.selectedPaletteId ?? ''}
+      data-brand-name={project.brandKit.brandName}
+      data-selected-formats={project.selectedFormats.join(',')}
+    >
       <EditorHeader
         projectName={project.name}
         onRename={(n) => setProject((p) => ({ ...p, name: n }))}
-        onBack={() => {
-          setCreationStep(null)
-          setView('onboarding')
-        }}
+        onBack={handleAppBack}
         onExport={handleExport}
         onImportJson={handleImportJson}
         exporting={exporting}
@@ -1224,8 +1314,8 @@ export default function App() {
             <CreationWizard
               project={sidebarProject}
               step={creationStep}
-              onStepChange={setCreationStep}
-              onFinish={() => setCreationStep(null)}
+              onStepChange={setWizardStep}
+              onFinish={finishWizard}
               onPatchScene={patchEditableScene}
               onToggleEnabled={toggleEnabled}
               onSetImage={setImage}
@@ -1403,6 +1493,27 @@ function pluralEnding(n: number): string {
 
 type ToastEntry = { id: number; text: string; tone: 'error' | 'info' }
 type ThemeMode = 'light' | 'dark' | 'system'
+type ProjectUpdater = Project | ((previous: Project) => Project)
+
+const CREATION_STEPS: CreationStep[] = ['image', 'elements', 'content', 'colors', 'formats', 'preview']
+const RESET_CONFIRM_MESSAGE = 'Текущий проект будет сброшен. Продолжить?'
+
+function touchProject(project: Project, now = new Date()): Project {
+  return {
+    ...project,
+    projectId: project.projectId ?? project.id,
+    updatedAt: now.toISOString(),
+  }
+}
+
+function ensureProjectStateMetadata(project: Project): Project {
+  return touchProject({
+    ...project,
+    currentStep: project.currentStep ?? project.returnToStep ?? 'image',
+    previousStep: project.previousStep,
+    returnToStep: project.returnToStep ?? project.currentStep ?? 'preview',
+  })
+}
 
 function readStoredTheme(): ThemeMode {
   try {
@@ -1534,6 +1645,36 @@ export function exitFormatEditMode(project: Project): Project {
   return { ...rest, editorMode: 'preview' }
 }
 
+export function setProjectCreationStep(project: Project, step: CreationStep): Project {
+  return {
+    ...project,
+    previousStep: project.currentStep,
+    currentStep: step,
+    returnToStep: step,
+  }
+}
+
+export function openProjectEditor(project: Project, options: { returnToStep?: CreationStep } = {}): Project {
+  const returnToStep = options.returnToStep ?? project.currentStep ?? project.returnToStep ?? 'preview'
+  return {
+    ...project,
+    previousStep: project.currentStep,
+    currentStep: returnToStep,
+    returnToStep,
+    editorMode: project.editorMode ?? 'preview',
+  }
+}
+
+export function closeProjectEditor(project: Project): Project {
+  const step = project.returnToStep ?? project.currentStep ?? 'preview'
+  return {
+    ...exitFormatEditMode(project),
+    previousStep: project.currentStep,
+    currentStep: step,
+    returnToStep: step,
+  }
+}
+
 function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene {
   const m = project.master
   const imageSrc = getActiveImageSrc(project, formatKey)
@@ -1545,7 +1686,7 @@ function sceneWithAssetsForFormat(project: Project, formatKey: FormatKey): Scene
   }
 }
 
-function computeImageFitDecisions(project: Project): NonNullable<Project['imageFitDecisionByFormat']> {
+export function computeImageFitDecisions(project: Project): NonNullable<Project['imageFitDecisionByFormat']> {
   const decisions: NonNullable<Project['imageFitDecisionByFormat']> = {}
   const preference = project.imageFitPreference ?? 'auto'
   for (const formatKey of project.selectedFormats) {
@@ -1559,6 +1700,17 @@ function computeImageFitDecisions(project: Project): NonNullable<Project['imageF
     const imageBoxHeight = image ? ((image.h ?? 100) / 100) * rules.height : rules.height
     const metadata = project.backgroundExtensionByFormat?.[formatKey] ?? project.backgroundExtension
     const extendedEntry = project.extendedImageByFormat?.[formatKey]
+    const strategy = project.selectedFormatImageStrategy?.[formatKey]
+    if (strategy?.recommendedImageMode === 'contain' || strategy?.recommendedImageMode === 'background-blur' || strategy?.recommendedImageMode === 'thumbnail') {
+      decisions[formatKey] = {
+        usedSource: 'original',
+        fitMode: 'contain',
+        objectFullyVisible: true,
+        objectCropped: false,
+        reason: 'manual-contain',
+      }
+      continue
+    }
     decisions[formatKey] = resolveImageFitDecisionForFormat({
       originalImageSrc: project.imageSrc,
       extendedImageSrc: extendedEntry?.imageSrc,
@@ -1597,6 +1749,31 @@ function buildMeasurementSceneForImageFit(project: Project, formatKey: FormatKey
     typographySettings: project.typographySettings,
     compositionSettings: project.compositionSettings,
   })
+}
+
+function buildSelectedFormatImageStrategies(
+  project: Project,
+  selectedFormats: FormatKey[],
+  analysis = project.imageAnalysis,
+): Partial<Record<FormatKey, SelectedFormatImageStrategy>> | undefined {
+  if (!analysis) return undefined
+  const recommendations = recommendFormatsForImage(analysis, allProjectFormats(project))
+  const byId = new Map(recommendations.map((item) => [item.formatId, item]))
+  const out: Partial<Record<FormatKey, SelectedFormatImageStrategy>> = {}
+  for (const key of selectedFormats) {
+    const recommendation = byId.get(key)
+    if (recommendation) out[key] = selectedStrategyFromRecommendation(recommendation)
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+function allProjectFormats(project: Project): FormatRuleSet[] {
+  const custom = project.customFormats ?? []
+  const customKeys = new Set(custom.map((format) => format.key))
+  return [
+    ...AD_FORMAT_CATALOG.filter((format) => !customKeys.has(format.key)),
+    ...custom,
+  ]
 }
 
 function hasBackgroundExtensionMetadataForAllFormats(project: Project): boolean {

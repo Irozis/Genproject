@@ -45,6 +45,46 @@ describe('ad format catalog', () => {
     }
   })
 
+  it('has required platform metadata and file constraints', () => {
+    for (const format of AD_FORMAT_CATALOG) {
+      expect(format.platformName?.trim()).toBeTruthy()
+      expect(format.placementName?.trim()).toBeTruthy()
+      if (format.supportsPng || format.supportsJpeg || format.supportsSvg || format.supportsHtml5) {
+        expect(format.allowedFileTypes.length).toBeGreaterThan(0)
+      }
+      if (format.maxFileSizeKb !== undefined) expect(format.maxFileSizeKb).toBeGreaterThanOrEqual(0)
+    }
+  })
+
+  it('keeps visible areas inside the canvas', () => {
+    for (const format of AD_FORMAT_CATALOG) {
+      if (!format.visibleArea) continue
+      expect(format.visibleArea.x).toBeGreaterThanOrEqual(0)
+      expect(format.visibleArea.y).toBeGreaterThanOrEqual(0)
+      expect(format.visibleArea.x + format.visibleArea.width).toBeLessThanOrEqual(format.width)
+      expect(format.visibleArea.y + format.visibleArea.height).toBeLessThanOrEqual(format.height)
+    }
+  })
+
+  it('covers each platform and preserves legacy format ids', () => {
+    const platforms = new Set(AD_FORMAT_CATALOG.map((format) => format.platformId))
+    for (const expected of ['vk', 'yandex-direct', 'avito', 'ozon', 'wildberries', 'telegram-post']) {
+      expect(platforms.has(expected)).toBe(true)
+    }
+
+    const ids = new Set(AD_FORMAT_CATALOG.map((format) => format.id))
+    for (const legacy of ['vk-square', 'vk-vertical', 'vk-landscape', 'instagram-story', 'yandex-market-card', 'wb-card', 'ozon-card', 'avito-listing']) {
+      expect(ids.has(legacy)).toBe(true)
+    }
+  })
+
+  it('contains critical generated and marketplace dimensions', () => {
+    const sizes = new Set(AD_FORMAT_CATALOG.map((format) => `${format.width}x${format.height}`))
+    for (const size of ['320x50', '320x100', '319x57', '728x90', '1456x180', '2880x300', '2880x400', '3000x360', '300x250', '300x600', '1080x1080', '1080x1350', '1080x1920', '1472x600', '600x750', '145x165']) {
+      expect(sizes.has(size)).toBe(true)
+    }
+  })
+
   it('generates a scene for every built-in format', () => {
     for (const format of AD_FORMAT_CATALOG) {
       const scene = buildScene(DEFAULT_MASTER, format.key, DEFAULT_BRAND_KIT, DEFAULT_ENABLED)

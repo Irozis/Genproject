@@ -6,6 +6,7 @@ import { formatGroupTitle, formatGroupUsageLabel, groupFormatsByResolution } fro
 import { useMemo, useState, type ReactNode } from 'react'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
 import { buildScene } from '../lib/buildScene'
+import { recommendFormatsForImage } from '../lib/imageFormatRecommendations'
 import { applyLayoutDensity } from '../lib/layoutDensity'
 import {
   COMPOSITION_PRESETS,
@@ -16,7 +17,7 @@ import {
   normalizeTypographySettings,
   validateStyleScene,
 } from '../lib/styleSettings'
-import type { BlockKind, BrandKit, CompositionSettings, CreationStep, FormatKey, ImageFitPreference, PaletteVariant, Project, Scene, TypographySettings } from '../lib/types'
+import type { BlockKind, BrandKit, CompositionSettings, CreationStep, FormatKey, FormatRecommendation, ImageFitPreference, PaletteVariant, Project, Scene, TypographySettings } from '../lib/types'
 
 type ExportKind = 'png' | 'svg' | 'pdf' | 'json'
 
@@ -147,6 +148,13 @@ export function CreationWizard({
     () => filterFormatKeys([...BASE_FORMAT_KEYS, ...RU_MARKETPLACE_FORMAT_KEYS], formatFilters, project.customFormats),
     [formatFilters, project.customFormats],
   )
+  const formatRecommendations = useMemo(() => {
+    if (!project.imageAnalysis) return []
+    const formats = [...BASE_FORMAT_KEYS, ...RU_MARKETPLACE_FORMAT_KEYS]
+      .map((key) => getFormat(key, project.customFormats))
+      .concat(project.customFormats ?? [])
+    return recommendFormatsForImage(project.imageAnalysis, formats)
+  }, [project.customFormats, project.imageAnalysis])
 
   return (
     <aside className="sidebar creation-wizard" aria-label="Создание проекта">
@@ -168,6 +176,7 @@ export function CreationWizard({
         {step === 'image' ? (
           <WizardSection title="1. Изображение" note="Можно создать материалы только на основе текста, цветов и графических блоков.">
             <FilePicker
+              testId="upload-image-input"
               label={project.imageSrc ? 'Заменить изображение' : 'Загрузить изображение'}
               hint={project.imageSrc ? 'Изображение добавлено' : 'PNG / JPG или перетащите файл сюда'}
               onFile={(dataUrl) => onSetImage(dataUrl)}
@@ -219,7 +228,7 @@ export function CreationWizard({
         ) : null}
 
         {step === 'content' ? (
-          <WizardSection title="3. Настройка элементов" note="Заполните только выбранные элементы. Все это можно изменить позже в редакторе.">
+          <WizardSection title="3. Настройка элементов" note="Заполните только выбранные элементы. Все это можно изменить позже в редакторе." testId="content-step">
             {selectedElements.length === 0 ? (
               <div className="sidebar-card">
                 <div className="sidebar-card__title">Элементы не выбраны</div>
@@ -232,6 +241,7 @@ export function CreationWizard({
                 value={getText(project.master, 'title')}
                 placeholder="Введите основной заголовок"
                 helper="Короткий заголовок лучше адаптируется под разные форматы."
+                testId="content-title-input"
                 onChange={(value) => setText(onPatchScene, 'title', value)}
               />
             ) : null}
@@ -242,6 +252,7 @@ export function CreationWizard({
                 placeholder="Добавьте описание предложения"
                 helper="Описание можно отключить для компактных форматов."
                 multiline
+                testId="content-subtitle-input"
                 onChange={(value) => setText(onPatchScene, 'subtitle', value)}
               />
             ) : null}
@@ -251,6 +262,7 @@ export function CreationWizard({
                 value={getText(project.master, 'cta')}
                 placeholder="Текст кнопки"
                 helper="Короткий текст кнопки лучше читается в маленьких форматах."
+                testId="content-cta-input"
                 onChange={(value) => setText(onPatchScene, 'cta', value)}
               />
             ) : null}
@@ -296,7 +308,7 @@ export function CreationWizard({
         ) : null}
 
         {step === 'colors' ? (
-          <WizardSection title="4. Цвета, текст и композиция" note="Настройте визуальную систему: палитры вычисляются из бренда, изображения и типа макета, а типографика и расстояния сразу влияют на генерацию.">
+          <WizardSection title="4. Цвета, текст и композиция" note="Настройте визуальную систему: палитры вычисляются из бренда, изображения и типа макета, а типографика и расстояния сразу влияют на генерацию." testId="style-step">
             <StylePanel
               project={project}
               paletteVariants={paletteVariants}
@@ -353,7 +365,12 @@ export function CreationWizard({
         ) : null}
 
         {step === 'formats' ? (
-          <WizardSection title="5. Форматы" note="Выберите площадки и размеры, которые нужно подготовить.">
+          <WizardSection title="5. Форматы" note="Выберите площадки и размеры, которые нужно подготовить." testId="format-step">
+            <ImageFormatRecommendations
+              recommendations={formatRecommendations}
+              selected={project.selectedFormats}
+              onSetFormats={onSetFormats}
+            />
             <FormatGroup
               title="Площадки и размеры"
               keys={catalogFormatKeys}
@@ -377,7 +394,7 @@ export function CreationWizard({
         ) : null}
 
         {step === 'preview' ? (
-          <WizardSection title="6. Просмотр материалов" note="Проверьте карточки форматов в области предпросмотра. Отдельные форматы можно доработать вручную.">
+          <WizardSection title="6. Экспорт и скачивание" note="Проверьте карточки форматов в области предпросмотра. Отдельные форматы можно доработать вручную." testId="export-step">
             <div className="wizard-summary">
               <div><strong>{project.selectedFormats.length}</strong><span>размещений выбрано</span></div>
               <div><strong>{selectedElements.length}</strong><span>элементов включено</span></div>
@@ -386,8 +403,8 @@ export function CreationWizard({
             <button className="btn btn-primary" type="button" onClick={onFinish}>
               Перейти к редактированию
             </button>
-            <button className="btn btn-ghost" type="button" onClick={() => onExport('png')}>
-              Экспортировать PNG ZIP
+            <button className="btn btn-ghost" type="button" onClick={() => onExport('png')} data-testid="download-zip-button">
+              Скачать все материалы
             </button>
             <button className="btn btn-ghost" type="button" onClick={() => onExport('json')}>
               Сохранить JSON проекта
@@ -400,6 +417,7 @@ export function CreationWizard({
             className="btn btn-ghost"
             type="button"
             disabled={currentIndex === 0}
+            data-testid="back-button"
             onClick={() => onStepChange(STEPS[Math.max(0, currentIndex - 1)]!.id)}
           >
             Назад
@@ -424,9 +442,9 @@ export function CreationWizard({
   )
 }
 
-function WizardSection({ title, note, children }: { title: string; note: string; children: ReactNode }) {
+function WizardSection({ title, note, children, testId }: { title: string; note: string; children: ReactNode; testId?: string }) {
   return (
-    <section className="wizard-section">
+    <section className="wizard-section" data-testid={testId}>
       <h2>{title}</h2>
       <p>{note}</p>
       <div className="wizard-section__body">{children}</div>
@@ -440,6 +458,7 @@ function TextField({
   placeholder,
   helper,
   multiline,
+  testId,
   onChange,
 }: {
   label: string
@@ -447,15 +466,16 @@ function TextField({
   placeholder: string
   helper: string
   multiline?: boolean
+  testId?: string
   onChange: (value: string) => void
 }) {
   return (
     <label className="field wizard-card">
       <span>{label}</span>
       {multiline ? (
-        <textarea value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+        <textarea data-testid={testId} value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
       ) : (
-        <input type="text" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+        <input data-testid={testId} type="text" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
       )}
       <small>{helper}</small>
     </label>
@@ -504,7 +524,7 @@ function StylePanel({
       <section className="style-group">
         <div className="style-group__head">
           <strong>Палитры</strong>
-          <button className="btn btn-ghost btn-xs" type="button" onClick={onRegeneratePalettes}>Сгенерировать ещё</button>
+          <button className="btn btn-ghost btn-xs" type="button" onClick={onRegeneratePalettes} data-testid="regenerate-palettes-button">Сгенерировать ещё</button>
         </div>
         <div className="style-preset-row">
           {(['Auto', 'Brand', 'Contrast', 'Dark', 'Light', 'Accent'] as const).map((name) => (
@@ -528,6 +548,9 @@ function StylePanel({
               key={variant.id}
               className={`style-palette-card${project.selectedPaletteId === variant.id ? ' is-on' : ''}`}
               type="button"
+              data-testid="palette-card"
+              data-palette-id={variant.id}
+              data-palette-signature={`${variant.background}|${variant.primaryText}|${variant.accent}|${variant.ctaBackground}`}
               onClick={() => onApplyPalette(variant)}
             >
               <span className="style-palette-card__preview" style={{ background: variant.background, color: variant.primaryText, borderColor: variant.border }}>
@@ -652,6 +675,98 @@ function Select({ label, value, values, onChange }: { label: string; value: stri
   )
 }
 
+function ImageFormatRecommendations({
+  recommendations,
+  selected,
+  onSetFormats,
+}: {
+  recommendations: FormatRecommendation[]
+  selected: FormatKey[]
+  onSetFormats: (keys: FormatKey[]) => void
+}) {
+  if (recommendations.length === 0) {
+    return (
+      <div className="image-recommendations image-recommendations--empty" data-testid="recommended-formats-panel">
+        <strong>Лучше всего подходят к изображению</strong>
+        <small>Загрузите изображение, чтобы ранжировать форматы по пропорциям и риску обрезки.</small>
+      </div>
+    )
+  }
+  const excellent = recommendations.filter((item) => item.level === 'excellent')
+  const good = recommendations.filter((item) => item.level === 'good')
+  const recommended = recommendations.filter((item) => item.score >= 72 && item.level !== 'not_recommended')
+  const visible = recommendations.slice(0, 8)
+  return (
+    <section className="image-recommendations" data-testid="recommended-formats-panel">
+      <div className="image-recommendations__head">
+        <strong>Лучше всего подходят к изображению</strong>
+        <small>Форматы отсортированы по пропорциям, риску обрезки и разрешению.</small>
+      </div>
+      <div className="image-recommendations__actions">
+        <button type="button" className="btn btn-primary btn-xs" data-testid="select-recommended-formats" onClick={() => onSetFormats(uniqueKeys(selected, recommended.map((item) => item.formatId as FormatKey)))}>
+          Выбрать рекомендованные
+        </button>
+        <button type="button" className="btn btn-ghost btn-xs" onClick={() => onSetFormats(uniqueKeys(selected, excellent.map((item) => item.formatId as FormatKey)))}>
+          Только отличные
+        </button>
+        <button type="button" className="btn btn-ghost btn-xs" onClick={() => onSetFormats(uniqueKeys(selected, [...excellent, ...good].map((item) => item.formatId as FormatKey)))}>
+          Хорошие и отличные
+        </button>
+      </div>
+      <div className="image-recommendations__list">
+        {visible.map((item) => (
+          <button
+            key={item.formatId}
+            type="button"
+            className={`image-rec image-rec--${item.level}${selected.includes(item.formatId as FormatKey) ? ' is-selected' : ''}`}
+            data-testid="recommended-format"
+            data-format-id={item.formatId}
+            data-recommendation-level={item.level}
+            data-recommendation-score={item.score}
+            data-image-mode={item.recommendedImageMode}
+            data-warning-count={item.warnings.length}
+            onClick={() => {
+              const key = item.formatId as FormatKey
+              onSetFormats(selected.includes(key) ? selected.filter((candidate) => candidate !== key) : [...selected, key])
+            }}
+          >
+            <span>
+              <strong>{item.platformName} · {item.placementName}</strong>
+              <small>{item.width}×{item.height} · {ratioText(item.width, item.height)} · {imageModeLabel(item.recommendedImageMode)}</small>
+            </span>
+            <b>{item.score}</b>
+            <em>{item.reason}</em>
+            {item.warnings[0] ? <i>{item.warnings[0]}</i> : null}
+          </button>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function uniqueKeys(current: FormatKey[], additions: FormatKey[]): FormatKey[] {
+  return [...new Set([...current, ...additions])]
+}
+
+function imageModeLabel(mode: FormatRecommendation['recommendedImageMode']): string {
+  if (mode === 'background-blur') return 'фон/размытие'
+  if (mode === 'smart-crop') return 'умная обрезка'
+  if (mode === 'thumbnail') return 'миниатюра'
+  return mode
+}
+
+function ratioText(width: number, height: number): string {
+  const d = gcd(width, height)
+  return `${width / d}:${height / d}`
+}
+
+function gcd(a: number, b: number): number {
+  let x = Math.abs(a)
+  let y = Math.abs(b)
+  while (y) [x, y] = [y, x % y]
+  return x || 1
+}
+
 function FormatGroup({
   title,
   keys,
@@ -707,7 +822,15 @@ function FormatGroup({
           const enabled = group.formatKeys.every((key) => selected.includes(key))
           const partiallyEnabled = !enabled && group.formatKeys.some((key) => selected.includes(key))
           return (
-            <label key={group.key} className={`format-row format-row--group${enabled ? ' is-on' : ''}${partiallyEnabled ? ' is-partial' : ''}`}>
+            <label
+              key={group.key}
+              className={`format-row format-row--group${enabled ? ' is-on' : ''}${partiallyEnabled ? ' is-partial' : ''}`}
+              data-testid="format-row"
+              data-format-key={group.key}
+              data-format-width={group.width}
+              data-format-height={group.height}
+              data-selected={enabled ? 'true' : partiallyEnabled ? 'partial' : 'false'}
+            >
               <input
                 type="checkbox"
                 checked={enabled}

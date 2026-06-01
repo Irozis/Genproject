@@ -134,9 +134,16 @@ export const DEFAULT_FORMATS: FormatKey[] = [
 ]
 
 export function newProject(name = 'novyy-proekt'): Project {
+  const id = cryptoId()
+  const updatedAt = new Date().toISOString()
   return {
-    id: cryptoId(),
+    id,
+    projectId: id,
     name,
+    currentStep: 'image',
+    previousStep: undefined,
+    returnToStep: undefined,
+    updatedAt,
     master: DEFAULT_MASTER,
     enabled: { ...DEFAULT_ENABLED },
     brandKit: { ...DEFAULT_BRAND_KIT, palette: { ...DEFAULT_BRAND_KIT.palette } },

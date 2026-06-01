@@ -5,9 +5,10 @@ type Props = {
   accept?: string
   onFile: (dataUrl: string, file: File) => void
   hint?: string
+  testId?: string
 }
 
-export function FilePicker({ label, accept = 'image/*', onFile, hint }: Props) {
+export function FilePicker({ label, accept = 'image/*', onFile, hint, testId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [drag, setDrag] = useState(false)
 
@@ -41,6 +42,7 @@ export function FilePicker({ label, accept = 'image/*', onFile, hint }: Props) {
       {hint ? <span className="file-picker__hint">{hint}</span> : null}
       <input
         ref={inputRef}
+        data-testid={testId}
         type="file"
         accept={accept}
         hidden

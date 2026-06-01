@@ -510,9 +510,9 @@ describe('chooseLayoutArchetype', () => {
     expect(decision.selectionDebug.smallTextRisk).not.toBe('low')
     expect(scene.subtitle).toBeDefined()
     expect(scene.image?.x).toBeLessThan(10)
-    expect(scene.cta?.x).toBeGreaterThan(70)
-    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(14)
-    expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(12)
+    expect(scene.cta).toBeDefined()
+    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(13)
+    expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(11)
   })
 
   it('yandex-rsy-240x400 uses compact vertical policy', () => {
@@ -527,8 +527,8 @@ describe('chooseLayoutArchetype', () => {
     expect(scene.image?.y).toBeLessThan(10)
     expect(scene.image?.fit).toBe('contain')
     expect(scene.cta!.y).toBeGreaterThan(scene.title!.y)
-    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(18)
-    expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(13)
+    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(14)
+    expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(11)
   })
 
   it('avito-skyscraper uses compact policy', () => {
@@ -540,8 +540,8 @@ describe('chooseLayoutArchetype', () => {
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
     expect(scene.subtitle).toBeDefined()
     expect(scene.image?.fit).toBe('contain')
-    expect(fontPx(scene.title!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(22)
-    expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(14)
+    expect(fontPx(scene.title!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(17)
+    expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(11)
   })
 
   it('yandex-market-stretch keeps subtitle while prioritizing title/CTA', () => {

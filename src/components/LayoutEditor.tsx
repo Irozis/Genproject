@@ -647,6 +647,7 @@ export function LayoutEditor({
   return (
     <div
       className="layout-editor"
+      data-testid="editor-step"
       role="dialog"
       aria-modal="true"
       aria-label={`Редактор макета: ${rules.label}`}
@@ -708,7 +709,7 @@ export function LayoutEditor({
                 Сбросить к авто-версии
               </button>
             ) : null}
-            <button type="button" className="btn btn-ghost btn-xs" onClick={onCancel}>
+            <button type="button" className="btn btn-ghost btn-xs" onClick={onCancel} data-testid="back-button">
               Назад к форматам
             </button>
             {formatDocument ? (

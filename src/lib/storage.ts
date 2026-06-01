@@ -17,6 +17,10 @@ export function saveProject(p: Project): void {
   }
 }
 
+export function saveProjectDraft(projectState: Project): void {
+  saveProject(projectState)
+}
+
 export function loadProject(): Project | null {
   try {
     // Drop any legacy payloads so they can't haunt future loads.
@@ -42,10 +46,21 @@ export function parseStoredProject(value: unknown): Project | null {
   return migrateProject(result.data as Project)
 }
 
+export function restoreProjectDraft(projectId?: string): Project | null {
+  const project = loadProject()
+  if (!project) return null
+  if (projectId && project.id !== projectId && project.projectId !== projectId) return null
+  return project
+}
+
 function migrateProject(project: Project): Project {
+  const id = project.id
   let next: Project = {
     ...project,
+    projectId: project.projectId ?? id,
+    updatedAt: project.updatedAt ?? new Date().toISOString(),
     selectedFormats: normalizeFormats(project.selectedFormats),
+    selectedFormatImageStrategy: remapFormatRecord(project.selectedFormatImageStrategy),
     formatOverrides: remapFormatRecord(project.formatOverrides),
     imageFocals: remapFormatRecord(project.imageFocals),
     blockOverrides: remapFormatRecord(project.blockOverrides),

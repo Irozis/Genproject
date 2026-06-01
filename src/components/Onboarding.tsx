@@ -15,7 +15,7 @@ export function Onboarding({ onCreate, onImportJson, recentProjects, onOpenRecen
   const recent = recentProjects.slice(0, 4)
 
   return (
-    <div className="onboarding">
+    <div className="onboarding" data-testid="app-start">
       <header className="onboarding__brand">
         <img className="app-logo app-logo--onboarding" src="/app-logo.png" alt="" aria-hidden="true" />
         <span>Ad Layout Generator</span>
@@ -33,7 +33,7 @@ export function Onboarding({ onCreate, onImportJson, recentProjects, onOpenRecen
             Один понятный путь: изображение, элементы, тексты, цветовая схема, форматы и просмотр материалов.
           </div>
           <div className="onboarding__actions">
-            <button className="btn btn-primary" type="button" onClick={onCreate}>
+            <button className="btn btn-primary" type="button" onClick={onCreate} data-testid="create-project-button">
               Создать проект
             </button>
             <button className="btn btn-ghost" type="button" onClick={() => fileRef.current?.click()}>
@@ -97,7 +97,7 @@ export function Onboarding({ onCreate, onImportJson, recentProjects, onOpenRecen
           <button className="btn btn-ghost" type="button" disabled>
             Скачать EXE
           </button>
-          <button className="btn btn-primary" type="button" onClick={onCreate}>
+          <button className="btn btn-primary" type="button" onClick={onCreate} data-testid="create-project-button">
             Продолжить в браузере
           </button>
           <span className="onboarding-download__release-note">
