@@ -13,6 +13,7 @@ import {
 import { SceneRenderer } from '../renderers/SceneRenderer'
 import { buildScene, normalizeCompositionOverride, resolveCompositionSelection } from '../lib/buildScene'
 import { COMPOSITION_MODEL_LABELS } from '../lib/composition'
+import { overlayZoneToPercentRect, safeAreaToPercentRect, visibleAreaToPercentRect } from '../lib/formatGeometry'
 import { checkOverflow, type LayoutIssue } from '../lib/fixLayout'
 import { getFormat } from '../lib/formats'
 import { applyLayoutDensity } from '../lib/layoutDensity'
@@ -28,6 +29,8 @@ import type {
   LayoutDensity,
   Scene,
   SceneObject,
+  TypographySettings,
+  CompositionSettings,
 } from '../lib/types'
 
 type Props = {
@@ -54,6 +57,8 @@ type Props = {
   onSetBlockText?: (kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => void
   blockOverride?: Partial<Record<BlockKind, BlockOverride>>
   density?: LayoutDensity
+  typographySettings?: TypographySettings
+  compositionSettings?: CompositionSettings
   isCustom?: boolean
   onEnableCustom?: (formatKey: FormatKey, scene: Scene) => void
   onDisableCustom?: (formatKey: FormatKey) => void
@@ -93,6 +98,8 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
     onSetBlockText,
     blockOverride,
     density,
+    typographySettings,
+    compositionSettings,
     isCustom,
     onEnableCustom,
     onDisableCustom,
@@ -108,7 +115,13 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
 ) {
   const svgRef = useRef<SVGSVGElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
-  const [showGuides, setShowGuides] = useState(false)
+  const [guides, setGuides] = useState({
+    safe: false,
+    overlays: false,
+    visible: false,
+    crop: false,
+  })
+  const showGuides = guides.safe
   const [editing, setEditing] = useState<EditableTextKind | null>(null)
   const [view, setView] = useState<{ zoom: number; tx: number; ty: number }>({
     zoom: 1,
@@ -263,8 +276,10 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
         locale,
         customFormats,
         density,
+        typographySettings,
+        compositionSettings,
       }),
-    [sceneOverride, effectiveMaster, formatKey, brandKit, enabled, manualOverride, assetHint, blockOverride, locale, customFormats, density],
+    [sceneOverride, effectiveMaster, formatKey, brandKit, enabled, manualOverride, assetHint, blockOverride, locale, customFormats, density, typographySettings, compositionSettings],
   )
   /** Что выберет авто-подбор (для подписи пункта «Авто» в списке). */
   const compositionSelection = useMemo(
@@ -338,6 +353,12 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             ))}
           </select>
           <IssuesBadge issues={issues} onFix={() => onFix(formatKey)} />
+          <div className="preview__guide-toggles" aria-label="Preview guide toggles">
+            <button type="button" className={`btn btn-ghost btn-xs${guides.safe ? ' is-on' : ''}`} onClick={() => setGuides((v) => ({ ...v, safe: !v.safe }))}>Safe</button>
+            <button type="button" className={`btn btn-ghost btn-xs${guides.overlays ? ' is-on' : ''}`} onClick={() => setGuides((v) => ({ ...v, overlays: !v.overlays }))}>Marks</button>
+            <button type="button" className={`btn btn-ghost btn-xs${guides.visible ? ' is-on' : ''}`} onClick={() => setGuides((v) => ({ ...v, visible: !v.visible }))}>Visible</button>
+            <button type="button" className={`btn btn-ghost btn-xs${guides.crop ? ' is-on' : ''}`} onClick={() => setGuides((v) => ({ ...v, crop: !v.crop }))}>Crop</button>
+          </div>
           {onOpenLayoutEditor ? (
             <button
               type="button"
@@ -381,8 +402,8 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
                 type="button"
                 className="kebab__item"
                 role="menuitem"
-                onClick={() => setShowGuides((v) => !v)}
-                aria-pressed={showGuides}
+                onClick={() => setGuides((v) => ({ ...v, safe: !v.safe }))}
+                aria-pressed={guides.safe}
               >
                 {showGuides ? 'Скрыть safe-area' : 'Показать safe-area'}
               </button>
@@ -461,7 +482,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             }
             onTextDoubleClick={onSetBlockText ? (kind) => setEditing(kind) : undefined}
           />
-          {showGuides ? <SafeAreaOverlay safeZone={rules.safeZone} /> : null}
+          <FormatGuideOverlays rules={rules} guides={guides} />
           {editing && onSetBlockText ? (
             <InlineTextEditor
               kind={editing}
@@ -495,6 +516,8 @@ export const FormatPreview = memo(
     prev.assetHint === next.assetHint &&
     prev.blockOverride === next.blockOverride &&
     prev.density === next.density &&
+    prev.typographySettings === next.typographySettings &&
+    prev.compositionSettings === next.compositionSettings &&
     prev.isCustom === next.isCustom &&
     prev.onEnableCustom === next.onEnableCustom &&
     prev.onDisableCustom === next.onDisableCustom &&
@@ -566,22 +589,43 @@ function clampNum(v: number, lo: number, hi: number): number {
 // Dashed outline showing the safeZone rectangle — flips on with the Guides
 // toggle. Percent-based so it stays accurate at every preview size; sits on
 // top of the SVG + hotspots but stays non-interactive.
-function SafeAreaOverlay({
-  safeZone,
+function FormatGuideOverlays({
+  rules,
+  guides,
 }: {
-  safeZone: { top: number; right: number; bottom: number; left: number }
+  rules: FormatRuleSet
+  guides: { safe: boolean; overlays: boolean; visible: boolean; crop: boolean }
 }) {
+  const safe = safeAreaToPercentRect(rules)
+  const visible = visibleAreaToPercentRect(rules)
+  const overlays = (rules.overlayZones ?? [])
+    .map((zone) => ({ zone, rect: overlayZoneToPercentRect(zone, rules) }))
+    .filter((item): item is { zone: NonNullable<typeof item.zone>; rect: NonNullable<typeof item.rect> } => !!item.rect)
+
   return (
-    <div
-      className="preview__guides"
-      style={{
-        left: `${safeZone.left}%`,
-        top: `${safeZone.top}%`,
-        right: `${safeZone.right}%`,
-        bottom: `${safeZone.bottom}%`,
-      }}
-      aria-hidden="true"
-    />
+    <div className="preview__guide-layer" aria-hidden="true">
+      {guides.crop ? <div className="preview__guide preview__guide--canvas" /> : null}
+      {guides.safe ? (
+        <div
+          className="preview__guide preview__guide--safe"
+          style={{ left: `${safe.x}%`, top: `${safe.y}%`, width: `${safe.w}%`, height: `${safe.h}%` }}
+        />
+      ) : null}
+      {guides.visible && visible ? (
+        <div
+          className="preview__guide preview__guide--visible"
+          style={{ left: `${visible.x}%`, top: `${visible.y}%`, width: `${visible.w}%`, height: `${visible.h}%` }}
+        />
+      ) : null}
+      {guides.overlays ? overlays.map(({ zone, rect }) => (
+        <div
+          key={`${zone.name}-${rect.x}-${rect.y}`}
+          className="preview__guide preview__guide--overlay"
+          title={zone.description}
+          style={{ left: `${rect.x}%`, top: `${rect.y}%`, width: `${rect.w}%`, height: `${rect.h}%` }}
+        />
+      )) : null}
+    </div>
   )
 }
 
@@ -640,6 +684,9 @@ function humanIssue(issue: LayoutIssue): string {
   if (message.includes('below fold')) return `${block} выходит за нижнюю безопасную область.`
   if (message.includes('text likely truncated')) return `${block}: текст может обрезаться.`
   if (message.includes('overlaps')) return `${block} пересекается с другим элементом.`
+  if (message.includes('overlay zone')) return `${block} попадает в зону маркировки или интерфейса.`
+  if (message.includes('visible area')) return `${block} выходит за видимую область.`
+  if (message.includes('minimum font size')) return `${block}: текст мельче минимального размера площадки.`
   if (message.includes('low contrast')) return `${block}: низкий контраст с фоном.`
   if (message.includes('Cta too small')) return 'Кнопка слишком мелкая для рекламного формата.'
   if (message.includes('too long for small ad format')) return `${block}: текст длинный для малого баннера.`

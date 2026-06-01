@@ -56,13 +56,16 @@ export async function exportZip(
   for (const k of formatKeys) {
     const svg = svgNodes[k]
     if (!svg) continue
-    const { width, height } = getFormat(k, customFormats)
+    const format = getFormat(k, customFormats)
+    const { width, height } = format
     // sequential to avoid GPU contention
     // eslint-disable-next-line no-await-in-loop
     const dataUrl = await svgToPngDataUrl(svg, width, height)
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
     zip.file(`${safe}__${k}.png`, base64, { base64: true })
   }
+
+  zip.file('ad-format-manifest.json', JSON.stringify(formatKeys.map((key) => getFormat(key, customFormats)), null, 2))
 
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' })
   triggerDownload(URL.createObjectURL(blob), `${safe}.zip`)

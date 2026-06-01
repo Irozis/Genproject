@@ -30,6 +30,20 @@ export function runCompliance(scene: Scene, format: FormatRuleSet, brand: BrandK
     detail: safeZoneIssues.length > 0 ? safeZoneIssues.map((issue) => issue.message).join('; ') : undefined,
   })
 
+  const overlayIssues = checkOverflow(scene, format).filter((issue) => /overlay zone/.test(issue.message))
+  checks.push({
+    rule: 'overlay zones',
+    status: overlayIssues.length > 0 ? 'fail' : 'pass',
+    detail: overlayIssues.length > 0 ? overlayIssues.map((issue) => issue.message).join('; ') : undefined,
+  })
+
+  const visibleIssues = checkOverflow(scene, format).filter((issue) => /visible area/.test(issue.message))
+  checks.push({
+    rule: 'visible area',
+    status: visibleIssues.length > 0 ? 'fail' : 'pass',
+    detail: visibleIssues.length > 0 ? visibleIssues.map((issue) => issue.message).join('; ') : undefined,
+  })
+
   const bg = approximateBackgroundColor(scene, brand)
   const textBlocks = [scene.title, scene.subtitle, scene.badge, scene.cta].filter(
     (block): block is NonNullable<typeof block> => !!block,
@@ -57,11 +71,29 @@ export function runCompliance(scene: Scene, format: FormatRuleSet, brand: BrandK
     detail: overflowBlocks.length > 0 ? `out of frame: ${overflowBlocks.join(', ')}` : undefined,
   })
 
+  const textLimitIssues = checkOverflow(scene, format).filter((issue) => /exceeds|Text area may exceed/.test(issue.message))
+  checks.push({
+    rule: 'platform text limits',
+    status: textLimitIssues.some((issue) => issue.level === 'warn') ? 'fail' : textLimitIssues.length > 0 ? 'warn' : 'pass',
+    detail: textLimitIssues.length > 0 ? textLimitIssues.map((issue) => issue.message).join('; ') : undefined,
+  })
+
+  const estimatedKb = estimatePngExportKb(format.width, format.height)
+  checks.push({
+    rule: 'estimated export size',
+    status: format.maxFileSizeKb && estimatedKb > format.maxFileSizeKb ? 'warn' : 'pass',
+    detail: format.maxFileSizeKb ? `~${estimatedKb} KB PNG estimate, limit ${format.maxFileSizeKb} KB` : undefined,
+  })
+
   return {
     formatId: format.key,
     locale: 'default',
     checks,
   }
+}
+
+function estimatePngExportKb(width: number, height: number): number {
+  return Math.round((width * height * 0.55) / 1024)
 }
 
 function approximateBackgroundColor(scene: Scene, brand: BrandKit): string {

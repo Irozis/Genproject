@@ -1,261 +1,15 @@
-// Single source of truth for format dimensions and constraints.
-// Add a new format ONLY by adding an entry here.
+// Single source of truth adapter for format dimensions and constraints.
+// The expanded catalog lives in src/data/adFormats.ts; this module keeps the
+// legacy API that the generator, preview, export and saved projects already use.
 
+import { AD_FORMAT_CATALOG } from '../data/adFormats'
 import type { BuiltinFormatKey, CompositionModel, FormatKey, FormatRuleSet } from './types'
 
-export const FORMATS: Record<BuiltinFormatKey, FormatRuleSet> = {
-  'vk-square': {
-    key: 'vk-square',
-    label: 'VK Пост 1:1',
-    width: 1080,
-    height: 1080,
-    aspectRatio: 1,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 4,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    requiredElements: ['title', 'image'],
-  },
-  'vk-vertical': {
-    key: 'vk-vertical',
-    label: 'VK Пост 4:5',
-    width: 1080,
-    height: 1350,
-    aspectRatio: 1080 / 1350,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 3.5,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    typescaleBoost: 1.08,
-    requiredElements: ['title', 'image'],
-  },
-  'vk-landscape': {
-    key: 'vk-landscape',
-    label: 'VK Баннер 16:9',
-    width: 1080,
-    height: 607,
-    aspectRatio: 1080 / 607,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 4,
-    minTitleSize: 4,
-    maxTitleLines: 3,
-    requiredElements: ['title', 'image'],
-  },
-  'vk-stories': {
-    key: 'vk-stories',
-    label: 'VK История',
-    width: 1080,
-    height: 1920,
-    aspectRatio: 1080 / 1920,
-    safeZone: { top: 12, right: 6, bottom: 10, left: 6 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 4,
-    typescaleBoost: 1.18,
-    requiredElements: ['title', 'image'],
-  },
-  'telegram-story': {
-    key: 'telegram-story',
-    label: 'Telegram История',
-    width: 1080,
-    height: 1920,
-    aspectRatio: 1080 / 1920,
-    safeZone: { top: 12, right: 6, bottom: 10, left: 6 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 4,
-    typescaleBoost: 1.18,
-    requiredElements: ['title', 'image'],
-  },
-  'instagram-story': {
-    key: 'instagram-story',
-    label: 'Instagram Story',
-    width: 1080,
-    height: 1920,
-    aspectRatio: 1080 / 1920,
-    safeZone: { top: 14, right: 6, bottom: 12, left: 6 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 4,
-    typescaleBoost: 1.18,
-    requiredElements: ['title', 'image'],
-  },
-  'wb-card': {
-    key: 'wb-card',
-    label: 'WB Карточка 3:4',
-    width: 900,
-    height: 1200,
-    aspectRatio: 900 / 1200,
-    safeZone: { top: 6, right: 5, bottom: 7, left: 5 },
-    gutter: 3.5,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    typescaleBoost: 1.08,
-    requiredElements: ['title', 'image'],
-  },
-  'wb-infographic': {
-    key: 'wb-infographic',
-    label: 'WB Инфографика',
-    width: 900,
-    height: 1200,
-    aspectRatio: 900 / 1200,
-    safeZone: { top: 7, right: 6, bottom: 8, left: 6 },
-    gutter: 3.5,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    typescaleBoost: 1.08,
-    requiredElements: ['title', 'image'],
-  },
-  'ozon-card': {
-    key: 'ozon-card',
-    label: 'Ozon Карточка 3:4',
-    width: 900,
-    height: 1200,
-    aspectRatio: 900 / 1200,
-    safeZone: { top: 6, right: 5, bottom: 7, left: 5 },
-    gutter: 3.5,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    typescaleBoost: 1.08,
-    requiredElements: ['title', 'image'],
-  },
-  'ozon-fresh-square': {
-    key: 'ozon-fresh-square',
-    label: 'Ozon Fresh 1:1',
-    width: 1080,
-    height: 1080,
-    aspectRatio: 1,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 4,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    requiredElements: ['title', 'image'],
-  },
-  'yandex-market-card': {
-    key: 'yandex-market-card',
-    label: 'Я.Маркет Карточка',
-    width: 1080,
-    height: 1080,
-    aspectRatio: 1,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 4,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    requiredElements: ['title', 'image'],
-  },
-  'yandex-market-banner': {
-    key: 'yandex-market-banner',
-    label: 'Я.Маркет Баннер',
-    width: 1080,
-    height: 450,
-    aspectRatio: 1080 / 450,
-    safeZone: { top: 5, right: 5, bottom: 5, left: 5 },
-    gutter: 4,
-    minTitleSize: 3.5,
-    maxTitleLines: 2,
-    requiredElements: ['title', 'cta'],
-  },
-  'yandex-market-stretch': {
-    key: 'yandex-market-stretch',
-    label: 'Я.Маркет Растяжка',
-    width: 1706,
-    height: 184,
-    aspectRatio: 1706 / 184,
-    safeZone: { top: 4, right: 8, bottom: 4, left: 8 },
-    gutter: 2,
-    minTitleSize: 2.2,
-    maxTitleLines: 1,
-    requiredElements: ['title', 'cta'],
-  },
-  'yandex-market-vertical': {
-    key: 'yandex-market-vertical',
-    label: 'Я.Маркет Вертикаль',
-    width: 940,
-    height: 1524,
-    aspectRatio: 940 / 1524,
-    safeZone: { top: 7, right: 7, bottom: 8, left: 7 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    typescaleBoost: 1.15,
-    requiredElements: ['title', 'image'],
-  },
-  'avito-listing': {
-    key: 'avito-listing',
-    label: 'Avito Объявление',
-    width: 1280,
-    height: 960,
-    aspectRatio: 1280 / 960,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 4,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    requiredElements: ['title', 'image'],
-  },
-  'avito-fullscreen': {
-    key: 'avito-fullscreen',
-    label: 'Avito Видеолента',
-    width: 1080,
-    height: 1920,
-    aspectRatio: 1080 / 1920,
-    safeZone: { top: 12, right: 6, bottom: 10, left: 6 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 4,
-    typescaleBoost: 1.18,
-    requiredElements: ['title', 'image'],
-  },
-  'avito-skyscraper': {
-    key: 'avito-skyscraper',
-    label: 'Avito Небоскреб',
-    width: 300,
-    height: 900,
-    aspectRatio: 300 / 900,
-    safeZone: { top: 7, right: 7, bottom: 8, left: 7 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 4,
-    typescaleBoost: 1.25,
-    requiredElements: ['title', 'image'],
-  },
-  'yandex-rsy-240x400': {
-    key: 'yandex-rsy-240x400',
-    label: 'Яндекс Баннер 240×400',
-    width: 240,
-    height: 400,
-    aspectRatio: 240 / 400,
-    safeZone: { top: 7, right: 7, bottom: 8, left: 7 },
-    gutter: 3,
-    minTitleSize: 5,
-    maxTitleLines: 3,
-    typescaleBoost: 1.15,
-    requiredElements: ['title', 'cta'],
-  },
-  'yandex-rsy-300x250': {
-    key: 'yandex-rsy-300x250',
-    label: 'Яндекс Баннер 300×250',
-    width: 300,
-    height: 250,
-    aspectRatio: 300 / 250,
-    safeZone: { top: 6, right: 6, bottom: 6, left: 6 },
-    gutter: 4,
-    minTitleSize: 4.5,
-    maxTitleLines: 3,
-    requiredElements: ['title', 'cta'],
-  },
-  'yandex-rsy-728x90': {
-    key: 'yandex-rsy-728x90',
-    label: 'Яндекс Баннер 728×90',
-    width: 728,
-    height: 90,
-    aspectRatio: 728 / 90,
-    safeZone: { top: 4, right: 4, bottom: 4, left: 4 },
-    gutter: 1.8,
-    minTitleSize: 2,
-    maxTitleLines: 1,
-    requiredElements: ['title', 'cta'],
-  },
-}
+export const FORMATS: Record<BuiltinFormatKey, FormatRuleSet> = Object.fromEntries(
+  AD_FORMAT_CATALOG.map((format) => [format.key, format]),
+) as Record<BuiltinFormatKey, FormatRuleSet>
+
+export const FORMAT_KEYS: BuiltinFormatKey[] = AD_FORMAT_CATALOG.map((format) => format.key)
 
 export const BASE_FORMAT_KEYS: BuiltinFormatKey[] = [
   'vk-square',
@@ -264,55 +18,34 @@ export const BASE_FORMAT_KEYS: BuiltinFormatKey[] = [
   'vk-stories',
   'telegram-story',
   'instagram-story',
-]
+].filter((key) => key in FORMATS)
 
-export const RU_MARKETPLACE_FORMAT_KEYS: BuiltinFormatKey[] = [
-  'wb-card',
-  'wb-infographic',
-  'ozon-card',
-  'ozon-fresh-square',
-  'yandex-market-card',
-  'yandex-market-banner',
-  'yandex-market-stretch',
-  'yandex-market-vertical',
-  'avito-listing',
-  'avito-fullscreen',
-  'avito-skyscraper',
-  'yandex-rsy-240x400',
-  'yandex-rsy-300x250',
-  'yandex-rsy-728x90',
-]
+export const RU_MARKETPLACE_FORMAT_KEYS: BuiltinFormatKey[] = FORMAT_KEYS.filter(
+  (key) => !BASE_FORMAT_KEYS.includes(key),
+)
 
-export const FORMAT_KEYS: BuiltinFormatKey[] = [...BASE_FORMAT_KEYS, ...RU_MARKETPLACE_FORMAT_KEYS]
-
-export const DEFAULT_COMPOSITION_BY_FORMAT: Partial<Record<BuiltinFormatKey, CompositionModel>> = {
-  'vk-square': 'hero-overlay',
-  'vk-vertical': 'hero-overlay',
-  'vk-landscape': 'split-right-image',
-  'vk-stories': 'hero-overlay',
-  'telegram-story': 'hero-overlay',
-  'instagram-story': 'hero-overlay',
-  'wb-card': 'image-top-text-bottom',
-  'wb-infographic': 'image-top-text-bottom',
-  'ozon-card': 'image-top-text-bottom',
-  'ozon-fresh-square': 'split-right-image',
-  'yandex-market-card': 'split-right-image',
-  'yandex-market-banner': 'split-right-image',
-  'yandex-market-stretch': 'split-right-image',
-  'yandex-market-vertical': 'image-top-text-bottom',
-  'avito-listing': 'split-right-image',
-  'avito-fullscreen': 'hero-overlay',
-  'avito-skyscraper': 'image-top-text-bottom',
-  'yandex-rsy-240x400': 'image-top-text-bottom',
-  'yandex-rsy-300x250': 'split-right-image',
-  'yandex-rsy-728x90': 'split-right-image',
-}
+export const DEFAULT_COMPOSITION_BY_FORMAT: Partial<Record<BuiltinFormatKey, CompositionModel>> = Object.fromEntries(
+  AD_FORMAT_CATALOG.flatMap((format) => {
+    const composition = format.defaultComposition ?? inferDefaultComposition(format)
+    return composition ? [[format.key, composition]] : []
+  }),
+) as Partial<Record<BuiltinFormatKey, CompositionModel>>
 
 export function getFormat(key: FormatKey, custom?: FormatRuleSet[]): FormatRuleSet {
   if (key.startsWith('custom:')) {
     const hit = custom?.find((f) => f.key === key)
-    if (!hit) throw new Error(`Неизвестный пользовательский формат: ${key}`)
+    if (!hit) throw new Error(`Unknown custom format: ${key}`)
     return hit
   }
-  return FORMATS[key as BuiltinFormatKey]
+  const format = FORMATS[key as BuiltinFormatKey]
+  if (!format) throw new Error(`Unknown built-in format: ${key}`)
+  return format
+}
+
+function inferDefaultComposition(format: FormatRuleSet): CompositionModel {
+  if (format.aspectRatio > 2.2) return 'split-right-image'
+  if (format.aspectRatio < 0.7) return 'hero-overlay'
+  if (format.device === 'marketplace') return 'image-top-text-bottom'
+  if (format.goal === 'display') return 'split-right-image'
+  return 'hero-overlay'
 }

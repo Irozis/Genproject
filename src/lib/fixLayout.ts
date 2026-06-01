@@ -2,6 +2,7 @@
 // Does NOT change composition model. Only nudges sizes/colors to fix readability.
 
 import { luminance } from './color'
+import { overlayZoneToPercentRect, rectInside, rectsOverlap as percentRectsOverlap, safeAreaToPercentEdges, visibleAreaToPercentRect } from './formatGeometry'
 import { isBannerCopyFormat } from './formatCopy'
 import { fitFontSize, wrapText } from './textMeasure'
 import type { Background, BlockKind, FormatRuleSet, Scene, TextBlock } from './types'
@@ -16,7 +17,7 @@ export type LayoutIssue = {
 }
 
 export function fixLayout(scene: Scene, rules: FormatRuleSet): Scene {
-  const sz = rules.safeZone
+  const sz = effectiveSafeZone(rules)
   const out: Scene = { background: scene.background, accent: scene.accent }
   if (scene.scrim) out.scrim = scene.scrim
   if (scene.decor) out.decor = scene.decor
@@ -125,8 +126,9 @@ function approxBackgroundColor(bg: Background): string {
 // ---------------------------------------------------------------------------
 
 export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[] {
-  const sz = rules.safeZone
+  const sz = effectiveSafeZone(rules)
   const issues: LayoutIssue[] = []
+  const visible = visibleAreaToPercentRect(rules)
 
   const kinds: BlockKind[] = ['title', 'subtitle', 'cta', 'badge', 'logo', 'image']
   for (const k of kinds) {
@@ -148,6 +150,16 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
     }
     if (!imageIsIntentionalBleed && bottom > 100 - sz.bottom + 0.5) {
       issues.push({ block: k, message: `${label(k)} below fold (safe area)`, level: 'warn' })
+    }
+    if (visible && isImportantBlock(k) && !rectInside({ x: b.x, y: b.y, w: b.w, h }, visible, 0.5)) {
+      issues.push({ block: k, message: `${label(k)} outside visible area`, level: 'warn' })
+    }
+    for (const zone of rules.overlayZones ?? []) {
+      const overlay = overlayZoneToPercentRect(zone, rules)
+      if (!overlay || !isImportantBlock(k)) continue
+      if (percentRectsOverlap({ x: b.x, y: b.y, w: b.w, h }, overlay, 0.2)) {
+        issues.push({ block: k, message: `${label(k)} intersects overlay zone ${zone.name}`, level: 'warn' })
+      }
     }
   }
 
@@ -230,6 +242,37 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
     }
   }
 
+  const minFontSize = rules.minFontSize
+  if (minFontSize) {
+    for (const k of ['title', 'subtitle', 'cta', 'badge'] as const) {
+      const t = scene[k] as TextBlock | undefined
+      if (!t) continue
+      const fontPx = (t.fontSize / 100) * rules.width
+      if (fontPx < minFontSize) {
+        issues.push({ block: k, message: `${label(k)} below minimum font size ${minFontSize}px`, level: 'warn' })
+      }
+    }
+  }
+
+  const limits = rules.textLimits
+  if (limits) {
+    if (limits.titleMaxChars && scene.title && stripMarkup(scene.title.text).length > limits.titleMaxChars) {
+      issues.push({ block: 'title', message: `Title exceeds ${limits.titleMaxChars} chars`, level: 'warn' })
+    }
+    if (limits.descriptionMaxChars && scene.subtitle && stripMarkup(scene.subtitle.text).length > limits.descriptionMaxChars) {
+      issues.push({ block: 'subtitle', message: `Subtitle exceeds ${limits.descriptionMaxChars} chars`, level: 'warn' })
+    }
+    if (limits.ctaMaxChars && scene.cta && stripMarkup(scene.cta.text).length > limits.ctaMaxChars) {
+      issues.push({ block: 'cta', message: `Cta exceeds ${limits.ctaMaxChars} chars`, level: 'warn' })
+    }
+    if (limits.sponsoredMessageMaxChars && scene.title && totalTextLength(scene) > limits.sponsoredMessageMaxChars) {
+      issues.push({ block: 'title', message: `Sponsored message exceeds ${limits.sponsoredMessageMaxChars} chars`, level: 'warn' })
+    }
+    if (limits.imageTextMaxAreaPercent && estimatedTextAreaPercent(scene, rules) > limits.imageTextMaxAreaPercent) {
+      issues.push({ block: 'title', message: `Text area may exceed ${limits.imageTextMaxAreaPercent}% image limit`, level: 'info' })
+    }
+  }
+
   if (smallAd && scene.title && scene.cta) {
     const titlePx = scene.title.fontSize * rules.width / 100
     const ctaPx = scene.cta.fontSize * rules.width / 100
@@ -264,6 +307,47 @@ export function checkOverflow(scene: Scene, rules: FormatRuleSet): LayoutIssue[]
   }
 
   return issues
+}
+
+function effectiveSafeZone(rules: FormatRuleSet): FormatRuleSet['safeZone'] {
+  const safe = rules.safeArea ? safeAreaToPercentEdges(rules.safeArea, rules.width, rules.height) : rules.safeZone
+  const visible = visibleAreaToPercentRect(rules)
+  const fromVisible = visible
+    ? {
+        top: Math.max(safe.top, visible.y),
+        right: Math.max(safe.right, 100 - (visible.x + visible.w)),
+        bottom: Math.max(safe.bottom, 100 - (visible.y + visible.h)),
+        left: Math.max(safe.left, visible.x),
+      }
+    : safe
+  const pad = rules.requiredPadding ? (rules.requiredPadding / Math.min(rules.width, rules.height)) * 100 : 0
+  return {
+    top: fromVisible.top + pad,
+    right: fromVisible.right + pad,
+    bottom: fromVisible.bottom + pad,
+    left: fromVisible.left + pad,
+  }
+}
+
+function isImportantBlock(kind: BlockKind): boolean {
+  return kind === 'title' || kind === 'subtitle' || kind === 'cta' || kind === 'badge' || kind === 'logo'
+}
+
+function totalTextLength(scene: Scene): number {
+  return [scene.title, scene.subtitle, scene.cta, scene.badge]
+    .map((block) => stripMarkup(block?.text ?? ''))
+    .join(' ')
+    .trim().length
+}
+
+function estimatedTextAreaPercent(scene: Scene, rules: FormatRuleSet): number {
+  let area = 0
+  for (const k of ['title', 'subtitle', 'cta', 'badge'] as const) {
+    const t = scene[k] as TextBlock | undefined
+    if (!t?.text.trim()) continue
+    area += t.w * (t.h ?? estimateTextHeight(t, rules))
+  }
+  return area / 100
 }
 
 function isSmallAdFormat(rules: FormatRuleSet): boolean {

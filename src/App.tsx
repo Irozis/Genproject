@@ -32,6 +32,7 @@ import { applyImageHint } from './lib/applyImageHint'
 import { extendImageBackgroundForFormat } from './lib/imageBackgroundExtension'
 import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
 import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
+import { paletteVariantToBrandKit } from './lib/styleSettings'
 import { clearFormatLayoutOverrides, normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
 import { addSceneObject, ensureProjectFormatDocuments, moveLayer, resetProjectFormatDocument, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene, type CreatableSceneObjectType } from './lib/formatDocuments'
 import type {
@@ -48,6 +49,9 @@ import type {
   ProjectHistoryItem,
   Scene,
   SceneObject,
+  PaletteVariant,
+  TypographySettings,
+  CompositionSettings,
   View,
 } from './lib/types'
 
@@ -443,6 +447,53 @@ export default function App() {
     }))
   }
 
+  function applyPaletteVariant(variant: PaletteVariant) {
+    const nextBrand = paletteVariantToBrandKit(project.brandKit, variant)
+    setProject((p) => ({
+      ...p,
+      selectedPaletteId: variant.id,
+      brandKit: nextBrand,
+      master: {
+        ...p.master,
+        background: { kind: 'gradient', stops: nextBrand.gradient },
+        accent: nextBrand.palette.accent,
+      },
+    }))
+  }
+
+  function regeneratePaletteVariants() {
+    setProject((p) => ({ ...p, paletteSeed: (p.paletteSeed ?? 1) + 1, selectedPaletteId: undefined }))
+  }
+
+  function togglePinnedPalette(id: string) {
+    setProject((p) => {
+      const current = new Set(p.pinnedPaletteIds ?? [])
+      if (current.has(id)) current.delete(id)
+      else current.add(id)
+      return { ...p, pinnedPaletteIds: [...current] }
+    })
+  }
+
+  function resetToBrandPalette() {
+    setProject((p) => ({
+      ...p,
+      selectedPaletteId: undefined,
+      master: {
+        ...p.master,
+        background: { kind: 'gradient', stops: p.brandKit.gradient },
+        accent: p.brandKit.palette.accent,
+      },
+    }))
+  }
+
+  function setTypographySettings(next: TypographySettings) {
+    setProject((p) => ({ ...p, typographySettings: next }))
+  }
+
+  function setCompositionSettings(next: CompositionSettings) {
+    setProject((p) => ({ ...p, compositionSettings: next }))
+  }
+
   function refreshProjectHistory() {
     setProjectHistoryItems(listProjectHistory())
   }
@@ -738,6 +789,8 @@ export default function App() {
           locale: p.activeLocale,
           customFormats: p.customFormats,
           density,
+          typographySettings: p.typographySettings,
+          compositionSettings: p.compositionSettings,
         },
       )
       const fixed = fixLayout(positioned, rules)
@@ -940,6 +993,8 @@ export default function App() {
           assetHint: project.assetHint ?? undefined,
           customFormats: project.customFormats,
           density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+          typographySettings: project.typographySettings,
+          compositionSettings: project.compositionSettings,
         },
       )
       setProject((p) => {
@@ -1178,6 +1233,12 @@ export default function App() {
               onSetLogo={setLogo}
               onSetImageFitPreference={setImageFitPreference}
               onBrandChange={setBrand}
+              onApplyPaletteVariant={applyPaletteVariant}
+              onRegeneratePaletteVariants={regeneratePaletteVariants}
+              onTogglePinnedPalette={togglePinnedPalette}
+              onResetToBrandPalette={resetToBrandPalette}
+              onTypographySettingsChange={setTypographySettings}
+              onCompositionSettingsChange={setCompositionSettings}
               paletteAlternatives={paletteAlts}
               onApplyPaletteAlt={applyPaletteAlt}
               onTogglePaletteLock={setPaletteLocked}
@@ -1262,6 +1323,8 @@ export default function App() {
               formatDocuments={project.formatDocuments}
               blockOverrides={project.blockOverrides}
               layoutDensity={project.layoutDensity}
+              typographySettings={project.typographySettings}
+              compositionSettings={project.compositionSettings}
               formatDensities={project.formatDensities}
               layoutClipboard={layoutClipboard}
               imageFocals={project.imageFocals}
@@ -1403,6 +1466,8 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
       locale: project.activeLocale,
       customFormats: project.customFormats,
       density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+      typographySettings: project.typographySettings,
+      compositionSettings: project.compositionSettings,
     },
   )
 }
@@ -1529,6 +1594,8 @@ function buildMeasurementSceneForImageFit(project: Project, formatKey: FormatKey
     locale: project.activeLocale,
     customFormats: project.customFormats,
     density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+    typographySettings: project.typographySettings,
+    compositionSettings: project.compositionSettings,
   })
 }
 

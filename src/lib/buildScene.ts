@@ -5,8 +5,10 @@
 import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkForLuma } from './color'
 import { LAYOUTS, chooseLayoutArchetype } from './composition'
 import { computeCtaButtonSize } from './ctaSizing'
+import { safeAreaToPercentEdges, visibleAreaToPercentRect } from './formatGeometry'
 import { getFormat } from './formats'
 import { applyLayoutDensity } from './layoutDensity'
+import { applyStyleSettingsToScene } from './styleSettings'
 import type {
   AssetHint,
   BlockKind,
@@ -20,6 +22,8 @@ import type {
   FormatRuleSet,
   LayoutDensity,
   TextAlign,
+  TypographySettings,
+  CompositionSettings,
 } from './types'
 
 export type BuildOptions = {
@@ -32,6 +36,8 @@ export type BuildOptions = {
   /** Optional per-block geometry override for this format. */
   blockOverrides?: Partial<Record<BlockKind, BlockOverride>>
   density?: LayoutDensity
+  typographySettings?: TypographySettings
+  compositionSettings?: CompositionSettings
   locale?: string
   customFormats?: FormatRuleSet[]
 }
@@ -132,7 +138,12 @@ export function buildScene(
   const model = selection.selectedArchetype
 
   // 3. compute positioned scene
-  const positioned = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
+  const generated = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
+
+  // 3b. apply global style controls from the wizard. These are intentionally
+  // downstream of the layout archetype so the user can tune the visual system
+  // without pinning every format to hand-authored geometry.
+  const positioned = applyStyleSettingsToScene(generated, rules, options.typographySettings, options.compositionSettings)
 
   // 4. focal-aware background: when an image with non-default focal is placed,
   //    retarget a gradient background to radiate from the subject. Linear
@@ -147,7 +158,7 @@ export function buildScene(
   const localized = applyLocale(snapped, options.locale)
 
   // 7. clamp anything outside safe zone (defensive — does not move blocks, only shrinks widths)
-  const clamped = clampToFrame(localized, rules.safeZone)
+  const clamped = clampToFrame(localized, effectiveSafeZone(rules))
 
   // 8. Generated CTA geometry follows the label before user overrides apply.
   const ctaSized = applyGeneratedCtaSizing(clamped, rules, options.density ?? 'balanced')
@@ -158,11 +169,44 @@ export function buildScene(
   // 10. Clamp again because manual per-format overrides can move fixed-size
   // blocks (especially CTAs) past the safe-zone after the generated layout
   // was already clamped.
-  const reclamped = clampToFrame(overridden, rules.safeZone)
+  const reclamped = clampToFrame(overridden, effectiveSafeZone(rules))
 
   // 11. final readability guard. This is intentionally small and deterministic:
   // layout stays untouched; only text fills and existing scrim opacity can move.
-  return ensureReadableScene(reclamped, rules, options.assetHint ?? null)
+  return ensureReadableScene(enforceFormatMinFont(reclamped, rules), rules, options.assetHint ?? null)
+}
+
+function effectiveSafeZone(rules: FormatRuleSet): FormatRuleSet['safeZone'] {
+  const safe = rules.safeArea ? safeAreaToPercentEdges(rules.safeArea, rules.width, rules.height) : rules.safeZone
+  const visible = visibleAreaToPercentRect(rules)
+  const base = visible
+    ? {
+        top: Math.max(safe.top, visible.y),
+        right: Math.max(safe.right, 100 - (visible.x + visible.w)),
+        bottom: Math.max(safe.bottom, 100 - (visible.y + visible.h)),
+        left: Math.max(safe.left, visible.x),
+      }
+    : safe
+  const pad = rules.requiredPadding ? (rules.requiredPadding / Math.min(rules.width, rules.height)) * 100 : 0
+  return {
+    top: base.top + pad,
+    right: base.right + pad,
+    bottom: base.bottom + pad,
+    left: base.left + pad,
+  }
+}
+
+function enforceFormatMinFont(scene: Scene, rules: FormatRuleSet): Scene {
+  const min = rules.minFontSize
+  if (!min) return scene
+  const minPct = (min / rules.width) * 100
+  const out: Scene = { ...scene }
+  for (const k of ['title', 'subtitle', 'cta', 'badge'] as const) {
+    const block = out[k]
+    if (!block || block.fontSize >= minPct) continue
+    ;(out as Record<string, unknown>)[k] = { ...block, fontSize: minPct }
+  }
+  return out
 }
 
 function applyGeneratedCtaSizing(scene: Scene, rules: FormatRuleSet, density: LayoutDensity): Scene {

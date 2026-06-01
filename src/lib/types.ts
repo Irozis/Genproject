@@ -1,27 +1,7 @@
 // All core types for Adaptive Graphics live in this single file.
 // Keep flat. No deep nesting. No fallback/scoring/archetype shapes.
 
-export type BuiltinFormatKey =
-  | 'vk-square'
-  | 'vk-vertical'
-  | 'vk-landscape'
-  | 'vk-stories'
-  | 'telegram-story'
-  | 'instagram-story'
-  | 'wb-card'
-  | 'wb-infographic'
-  | 'ozon-card'
-  | 'ozon-fresh-square'
-  | 'yandex-market-card'
-  | 'yandex-market-banner'
-  | 'yandex-market-stretch'
-  | 'yandex-market-vertical'
-  | 'avito-listing'
-  | 'avito-fullscreen'
-  | 'avito-skyscraper'
-  | 'yandex-rsy-240x400'
-  | 'yandex-rsy-300x250'
-  | 'yandex-rsy-728x90'
+export type BuiltinFormatKey = string
 export type FormatKey = BuiltinFormatKey | `custom:${string}`
 
 export type CompositionModel =
@@ -62,6 +42,71 @@ export type TextAlign = 'left' | 'center' | 'right'
 export type TextFitMode = 'auto' | 'clamp' | 'ellipsis' | 'overflow'
 
 export type LayoutDensity = 'compact' | 'balanced' | 'spacious'
+
+export type LayoutStyleType = 'premium' | 'minimal' | 'bold' | 'editorial' | 'product' | 'social' | 'marketplace'
+
+export type PaletteVariant = {
+  id: string
+  name: string
+  description: string
+  background: string
+  surface: string
+  primaryText: string
+  secondaryText: string
+  accent: string
+  ctaBackground: string
+  ctaText: string
+  border: string
+  muted: string
+  warningColor: string
+  contrastScore: number
+  moodTags: string[]
+}
+
+export type TypographySettings = {
+  headingFontFamily: string
+  bodyFontFamily: string
+  ctaFontFamily: string
+  headingSizeScale: number
+  bodySizeScale: number
+  ctaSizeScale: number
+  headingWeight: number
+  bodyWeight: number
+  ctaWeight: number
+  letterSpacing: number
+  lineHeight: number
+  textTransform: 'none' | 'uppercase' | 'lowercase' | 'title-case'
+  textAlign: TextAlign
+  maxTextWidthRatio: number
+  textWrap: 'auto' | 'manual' | 'no-wrap'
+  textDensity: 'compact' | 'normal' | 'spacious'
+}
+
+export type CompositionSettings = {
+  density: 'compact' | 'balanced' | 'airy'
+  canvasPaddingScale: number
+  groupGapScale: number
+  logoTitleGap: number
+  titleBodyGap: number
+  bodyCtaGap: number
+  imageTextGap: number
+  objectGap: number
+  mainAxisAlign: TextAlign
+  crossAxisAlign: TextAlign
+  verticalPosition: 'top' | 'center' | 'bottom'
+  heroImageScale: number
+  logoScale: number
+  cornerRadiusScale: number
+  borderWidth: number
+  decorativeIntensity: number
+}
+
+export type StyleValidatorWarning = {
+  id: string
+  message: string
+  severity: 'info' | 'warning' | 'error'
+  target?: 'palette' | 'typography' | 'composition'
+}
 
 export type TextBlock = Block & {
   text: string
@@ -340,6 +385,11 @@ export type Project = {
   formatDensities?: Partial<Record<FormatKey, LayoutDensity>>
   // Prevent image analysis from rewriting brand palette + gradient.
   paletteLocked?: boolean
+  paletteSeed?: number
+  selectedPaletteId?: string
+  pinnedPaletteIds?: string[]
+  typographySettings?: TypographySettings
+  compositionSettings?: CompositionSettings
   activeLocale?: string
   availableLocales?: string[]
   customFormats?: FormatRuleSet[]
@@ -385,13 +435,47 @@ export type BackgroundExtensionMetadata = {
 
 export type FormatRuleSet = {
   key: FormatKey
+  id?: string
   label: string
+  platformId?: string
+  platformName?: string
+  placementName?: string
+  placementGroup?: string
+  device?: AdFormatDevice
+  goal?: AdFormatGoal
   width: number
   height: number
   aspectRatio: number
   safeZone: { top: number; right: number; bottom: number; left: number }   // %
+  safeArea?: AdSafeArea
+  visibleArea?: AdVisibleArea
+  overlayZones?: AdOverlayZone[]
+  recommendedWidth?: number
+  recommendedHeight?: number
+  minWidth?: number
+  minHeight?: number
+  maxWidth?: number
+  maxHeight?: number
+  exportScaleOptions?: number[]
+  allowedFileTypes?: AdFileType[]
+  maxFileSizeKb?: number
+  supportsSvg?: boolean
+  supportsPng?: boolean
+  supportsJpeg?: boolean
+  supportsHtml5?: boolean
+  animationAllowed?: boolean
+  textLimits?: AdTextLimits
+  logoRules?: AdLogoRules
+  moderationRules?: string[]
+  notes?: string
+  sourceName?: string
+  sourceType?: AdSourceType
+  verifiedAt?: string
+  confidence?: AdConfidence
   gutter: number                // spacing unit, % of width — drives all vertical rhythm
   minTitleSize: number          // %
+  requiredPadding?: number
+  minFontSize?: number
   maxTitleLines: number
   /** Multiplier on base title/subtitle font sizes. Tall/thin formats
    *  (story-vertical) read as having smaller type at the same %-of-width —
@@ -401,6 +485,59 @@ export type FormatRuleSet = {
 }
 
 export type Format = FormatRuleSet
+
+export type AdFormatDevice = 'desktop' | 'mobile' | 'app' | 'responsive' | 'social' | 'marketplace' | 'map'
+export type AdFormatGoal = 'reach' | 'performance' | 'marketplace' | 'social-post' | 'display' | 'map'
+export type AdSourceType = 'official' | 'industry_reference' | 'manual'
+export type AdConfidence = 'high' | 'medium' | 'low'
+export type AdFileType = 'jpg' | 'jpeg' | 'png' | 'gif' | 'svg' | 'zip' | 'html' | 'psd' | 'pdf'
+
+export type AdSafeArea = {
+  top: number
+  right: number
+  bottom: number
+  left: number
+  unit: 'px' | 'percent'
+  description: string
+}
+
+export type AdVisibleArea = {
+  x: number
+  y: number
+  width: number
+  height: number
+  unit: 'px' | 'percent'
+  description: string
+}
+
+export type AdOverlayZone = {
+  name: 'ad_label' | 'ui_controls' | 'bottom_caption' | 'platform_overlay' | string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  position?: 'top-right' | 'top-left' | 'bottom' | 'bottom-right' | 'center' | 'custom'
+  unit: 'px' | 'percent'
+  description: string
+}
+
+export type AdTextLimits = {
+  titleMaxChars?: number
+  descriptionMaxChars?: number
+  ctaMaxChars?: number
+  imageTextMaxAreaPercent?: number
+  sponsoredMessageMaxChars?: number
+}
+
+export type AdLogoRules = {
+  minWidth?: number
+  minHeight?: number
+  recommendedWidth?: number
+  recommendedHeight?: number
+  maxFileSizeKb?: number
+  circularSafeArea?: boolean
+  description?: string
+}
 
 export type ProjectFormatDocument = {
   formatKey: string

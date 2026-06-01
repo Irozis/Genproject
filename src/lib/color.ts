@@ -2,6 +2,28 @@
 // Used by the renderer to derive tonal stops from a single base hex.
 
 export type HSL = { h: number; s: number; l: number } // h: 0..360, s: 0..100, l: 0..100
+export type RGB = { r: number; g: number; b: number } // 0..255
+
+export function hexToRgb(hex: string): RGB {
+  const c = hex.replace('#', '').trim()
+  const full =
+    c.length === 3
+      ? c
+          .split('')
+          .map((ch) => ch + ch)
+          .join('')
+      : c
+  if (full.length !== 6) return { r: 128, g: 128, b: 128 }
+  return {
+    r: parseInt(full.slice(0, 2), 16),
+    g: parseInt(full.slice(2, 4), 16),
+    b: parseInt(full.slice(4, 6), 16),
+  }
+}
+
+export function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map((x) => clamp(Math.round(x), 0, 255).toString(16).padStart(2, '0')).join('').toUpperCase()
+}
 
 export function hexToHsl(hex: string): HSL {
   const c = hex.replace('#', '').trim()
@@ -41,6 +63,15 @@ export function hexToHsl(hex: string): HSL {
   return { h, s: s * 100, l: l * 100 }
 }
 
+export function rgbToHsl(r: number, g: number, b: number): HSL {
+  return hexToHsl(rgbToHex(r, g, b))
+}
+
+export function hslToRgb(h: number, s: number, l: number): RGB {
+  const hex = hslToHex(h, s, l)
+  return hexToRgb(hex)
+}
+
 export function hslToHex(h: number, s: number, l: number): string {
   const hh = ((h % 360) + 360) % 360 / 360
   const ss = clamp(s, 0, 100) / 100
@@ -76,6 +107,26 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v))
 }
 
+export function clampLightness(hex: string, lo: number, hi: number): string {
+  const { h, s, l } = hexToHsl(hex)
+  return hslToHex(h, s, clamp(l, lo, hi))
+}
+
+export function rotateHue(hex: string, degrees: number): string {
+  const { h, s, l } = hexToHsl(hex)
+  return hslToHex(h + degrees, s, l)
+}
+
+export function adjustSaturation(hex: string, delta: number): string {
+  const { h, s, l } = hexToHsl(hex)
+  return hslToHex(h, clamp(s + delta, 0, 100), l)
+}
+
+export function adjustLightness(hex: string, delta: number): string {
+  const { h, s, l } = hexToHsl(hex)
+  return hslToHex(h, s, clamp(l + delta, 0, 100))
+}
+
 /** Generate 3 tonal stops (lighter → base → darker) from one base color. */
 export function tonalStops(base: string): [string, string, string] {
   const { h, s, l } = hexToHsl(base)
@@ -100,11 +151,15 @@ export function luminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+export const getRelativeLuminance = luminance
+
 export function contrastRatio(fg: string, bg: string): number {
   const l1 = luminance(fg)
   const l2 = luminance(bg)
   return contrastRatioFromLuminance(l1, l2)
 }
+
+export const getContrastRatio = contrastRatio
 
 export function contrastRatioFromLuminance(fgLum: number, bgLum: number): number {
   const l1 = clamp(fgLum, 0, 1)
@@ -123,6 +178,8 @@ export function pickReadableInkForLuma(bgLum: number, light = '#FFFFFF', dark = 
 export function pickReadableInk(bg: string, light = '#FFFFFF', dark = '#0E1014'): string {
   return pickReadableInkForLuma(luminance(bg), light, dark)
 }
+
+export const chooseReadableTextColor = pickReadableInk
 
 export function wcagLevel(cr: number): 'AAA' | 'AA' | 'fail' {
   if (cr >= 7.0) return 'AAA'

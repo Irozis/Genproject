@@ -1,10 +1,22 @@
 import { BrandSystemPanel } from './BrandSystemPanel'
 import { FilePicker } from './FilePicker'
+import { AD_FORMAT_CATALOG, aspectRatioText } from '../data/adFormats'
 import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
 import { formatGroupTitle, formatGroupUsageLabel, groupFormatsByResolution } from '../lib/formatPlacements'
-import type { ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
-import type { BlockKind, BrandKit, CreationStep, FormatKey, ImageFitPreference, Project, Scene } from '../lib/types'
+import { buildScene } from '../lib/buildScene'
+import { applyLayoutDensity } from '../lib/layoutDensity'
+import {
+  COMPOSITION_PRESETS,
+  TYPOGRAPHY_PRESETS,
+  generatePaletteVariants,
+  layoutTypeFromProject,
+  normalizeCompositionSettings,
+  normalizeTypographySettings,
+  validateStyleScene,
+} from '../lib/styleSettings'
+import type { BlockKind, BrandKit, CompositionSettings, CreationStep, FormatKey, ImageFitPreference, PaletteVariant, Project, Scene, TypographySettings } from '../lib/types'
 
 type ExportKind = 'png' | 'svg' | 'pdf' | 'json'
 
@@ -20,8 +32,14 @@ type Props = {
   onSetLogo: (dataUrl: string) => void
   onSetImageFitPreference: (next: ImageFitPreference) => void
   onBrandChange: (next: BrandKit) => void
-  paletteAlternatives?: DerivedBrandColors[]
-  onApplyPaletteAlt?: (alt: DerivedBrandColors) => void
+  onApplyPaletteVariant: (variant: PaletteVariant) => void
+  onRegeneratePaletteVariants: () => void
+  onTogglePinnedPalette: (id: string) => void
+  onResetToBrandPalette: () => void
+  onTypographySettingsChange: (next: TypographySettings) => void
+  onCompositionSettingsChange: (next: CompositionSettings) => void
+  paletteAlternatives: DerivedBrandColors[]
+  onApplyPaletteAlt: (alt: DerivedBrandColors) => void
   onTogglePaletteLock: (next: boolean) => void
   onToggleFormat: (key: FormatKey) => void
   onSetFormats: (keys: FormatKey[]) => void
@@ -86,6 +104,12 @@ export function CreationWizard({
   onSetLogo,
   onSetImageFitPreference,
   onBrandChange,
+  onApplyPaletteVariant,
+  onRegeneratePaletteVariants,
+  onTogglePinnedPalette,
+  onResetToBrandPalette,
+  onTypographySettingsChange,
+  onCompositionSettingsChange,
   paletteAlternatives,
   onApplyPaletteAlt,
   onTogglePaletteLock,
@@ -93,9 +117,36 @@ export function CreationWizard({
   onSetFormats,
   onExport,
 }: Props) {
+  const [formatFilters, setFormatFilters] = useState<FormatFiltersState>(EMPTY_FORMAT_FILTERS)
   const currentIndex = STEPS.findIndex((item) => item.id === step)
   const selectedElements = ELEMENTS.filter((item) => project.enabled[item.kind])
   const canGoNext = step !== 'formats' || project.selectedFormats.length > 0
+  const activeStyleFormat = project.activeFormatKey ?? project.selectedFormats[0] ?? 'vk-square'
+  const typographySettings = normalizeTypographySettings(project.typographySettings, project.brandKit)
+  const compositionSettings = normalizeCompositionSettings(project.compositionSettings)
+  const paletteVariants = useMemo(
+    () => generatePaletteVariants(project.brandKit, layoutTypeFromProject(project), {
+      seed: project.paletteSeed ?? 1,
+      assetHint: project.assetHint,
+    }),
+    [project],
+  )
+  const styleWarnings = useMemo(() => {
+    if (!activeStyleFormat) return []
+    const format = applyLayoutDensity(getFormat(activeStyleFormat, project.customFormats), project.formatDensities?.[activeStyleFormat] ?? project.layoutDensity)
+    const scene = buildScene(project.master, activeStyleFormat, project.brandKit, project.enabled, {
+      assetHint: project.assetHint,
+      customFormats: project.customFormats,
+      density: project.formatDensities?.[activeStyleFormat] ?? project.layoutDensity,
+      typographySettings,
+      compositionSettings,
+    })
+    return validateStyleScene(scene, format, project.brandKit)
+  }, [activeStyleFormat, compositionSettings, project, typographySettings])
+  const catalogFormatKeys = useMemo(
+    () => filterFormatKeys([...BASE_FORMAT_KEYS, ...RU_MARKETPLACE_FORMAT_KEYS], formatFilters, project.customFormats),
+    [formatFilters, project.customFormats],
+  )
 
   return (
     <aside className="sidebar creation-wizard" aria-label="Создание проекта">
@@ -109,7 +160,7 @@ export function CreationWizard({
               onClick={() => onStepChange(item.id)}
             >
               <span>{index + 1}</span>
-              {item.label}
+              {item.id === 'colors' ? 'Стиль макета' : item.label}
             </button>
           ))}
         </div>
@@ -245,6 +296,28 @@ export function CreationWizard({
         ) : null}
 
         {step === 'colors' ? (
+          <WizardSection title="4. Цвета, текст и композиция" note="Настройте визуальную систему: палитры вычисляются из бренда, изображения и типа макета, а типографика и расстояния сразу влияют на генерацию.">
+            <StylePanel
+              project={project}
+              paletteVariants={paletteVariants}
+              typographySettings={typographySettings}
+              compositionSettings={compositionSettings}
+              warnings={styleWarnings}
+              onApplyPalette={onApplyPaletteVariant}
+              onRegeneratePalettes={onRegeneratePaletteVariants}
+              onTogglePinnedPalette={onTogglePinnedPalette}
+              onResetToBrandPalette={onResetToBrandPalette}
+              onTypographyChange={onTypographySettingsChange}
+              onCompositionChange={onCompositionSettingsChange}
+              onBrandChange={onBrandChange}
+              paletteAlternatives={paletteAlternatives}
+              onApplyPaletteAlt={onApplyPaletteAlt}
+              onTogglePaletteLock={onTogglePaletteLock}
+            />
+          </WizardSection>
+        ) : null}
+
+        {false && step === 'colors' ? (
           <WizardSection title="4. Цветовая схема" note={project.imageSrc ? 'Можно принять палитру на основе изображения или настроить цвета вручную.' : 'Выберите один из нейтральных вариантов или настройте цвета вручную.'}>
             {paletteAlternatives && paletteAlternatives.length > 0 && onApplyPaletteAlt ? (
               <button className="btn btn-primary btn-xs" type="button" onClick={() => onApplyPaletteAlt(paletteAlternatives[0]!)}>
@@ -283,10 +356,12 @@ export function CreationWizard({
           <WizardSection title="5. Форматы" note="Выберите площадки и размеры, которые нужно подготовить.">
             <FormatGroup
               title="Площадки и размеры"
-              keys={[...BASE_FORMAT_KEYS, ...RU_MARKETPLACE_FORMAT_KEYS]}
+              keys={catalogFormatKeys}
               selected={project.selectedFormats}
               onToggle={onToggleFormat}
               onSetFormats={onSetFormats}
+              filters={formatFilters}
+              onFiltersChange={setFormatFilters}
             />
             {(project.customFormats ?? []).length > 0 ? (
               <FormatGroup
@@ -387,6 +462,196 @@ function TextField({
   )
 }
 
+function StylePanel({
+  project,
+  paletteVariants,
+  typographySettings,
+  compositionSettings,
+  warnings,
+  onApplyPalette,
+  onRegeneratePalettes,
+  onTogglePinnedPalette,
+  onResetToBrandPalette,
+  onTypographyChange,
+  onCompositionChange,
+  onBrandChange,
+  paletteAlternatives,
+  onApplyPaletteAlt,
+  onTogglePaletteLock,
+}: {
+  project: Project
+  paletteVariants: PaletteVariant[]
+  typographySettings: TypographySettings
+  compositionSettings: CompositionSettings
+  warnings: ReturnType<typeof validateStyleScene>
+  onApplyPalette: (variant: PaletteVariant) => void
+  onRegeneratePalettes: () => void
+  onTogglePinnedPalette: (id: string) => void
+  onResetToBrandPalette: () => void
+  onTypographyChange: (next: TypographySettings) => void
+  onCompositionChange: (next: CompositionSettings) => void
+  onBrandChange: (next: BrandKit) => void
+  paletteAlternatives?: DerivedBrandColors[]
+  onApplyPaletteAlt?: (alt: DerivedBrandColors) => void
+  onTogglePaletteLock: (next: boolean) => void
+}) {
+  const pinned = new Set(project.pinnedPaletteIds ?? [])
+  const typePatch = (patch: Partial<TypographySettings>) => onTypographyChange({ ...typographySettings, ...patch })
+  const compPatch = (patch: Partial<CompositionSettings>) => onCompositionChange({ ...compositionSettings, ...patch })
+
+  return (
+    <div className="style-panel">
+      <section className="style-group">
+        <div className="style-group__head">
+          <strong>Палитры</strong>
+          <button className="btn btn-ghost btn-xs" type="button" onClick={onRegeneratePalettes}>Сгенерировать ещё</button>
+        </div>
+        <div className="style-preset-row">
+          {(['Auto', 'Brand', 'Contrast', 'Dark', 'Light', 'Accent'] as const).map((name) => (
+            <button
+              key={name}
+              className="btn btn-ghost btn-xs"
+              type="button"
+              onClick={() => {
+                const id = name === 'Brand' ? 'brand-core' : name === 'Contrast' ? 'high-contrast' : name === 'Dark' ? 'premium-dark' : name === 'Light' ? 'soft-calm' : name === 'Accent' ? 'mono-accent' : 'fresh-bright'
+                const variant = paletteVariants.find((item) => item.id === id) ?? paletteVariants[0]
+                if (variant) onApplyPalette(variant)
+              }}
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+        <div className="style-palette-list">
+          {paletteVariants.map((variant) => (
+            <button
+              key={variant.id}
+              className={`style-palette-card${project.selectedPaletteId === variant.id ? ' is-on' : ''}`}
+              type="button"
+              onClick={() => onApplyPalette(variant)}
+            >
+              <span className="style-palette-card__preview" style={{ background: variant.background, color: variant.primaryText, borderColor: variant.border }}>
+                <b style={{ color: variant.primaryText }}>Sale headline</b>
+                <small style={{ color: variant.secondaryText }}>Описание предложения</small>
+                <i style={{ background: variant.accent }} />
+                <em style={{ background: variant.ctaBackground, color: variant.ctaText }}>CTA</em>
+              </span>
+              <span className="style-palette-card__meta">
+                <strong>{variant.name}</strong>
+                <small>{variant.description}</small>
+                <small>Контраст {variant.contrastScore.toFixed(1)}</small>
+              </span>
+              <span
+                className={`style-pin${pinned.has(variant.id) ? ' is-on' : ''}`}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onTogglePinnedPalette(variant.id)
+                }}
+              >
+                {pinned.has(variant.id) ? 'Закреплена' : 'Закрепить'}
+              </span>
+            </button>
+          ))}
+        </div>
+        <div className="style-actions">
+          <button className="btn btn-ghost btn-xs" type="button" onClick={onResetToBrandPalette}>Вернуться к цветам бренда</button>
+          {paletteAlternatives && paletteAlternatives.length > 0 && onApplyPaletteAlt ? (
+            <button className="btn btn-ghost btn-xs" type="button" onClick={() => onApplyPaletteAlt(paletteAlternatives[0]!)}>Из изображения</button>
+          ) : null}
+        </div>
+        <BrandSystemPanel
+          brandKit={project.brandKit}
+          onChange={onBrandChange}
+          alternatives={paletteAlternatives}
+          onApplyAlternative={onApplyPaletteAlt}
+          paletteLocked={project.paletteLocked}
+          onTogglePaletteLock={onTogglePaletteLock}
+        />
+      </section>
+
+      <section className="style-group">
+        <div className="style-group__head"><strong>Текст</strong></div>
+        <div className="style-preset-row">
+          {Object.keys(TYPOGRAPHY_PRESETS).map((name) => (
+            <button key={name} className="btn btn-ghost btn-xs" type="button" onClick={() => typePatch(TYPOGRAPHY_PRESETS[name]!)}>{name}</button>
+          ))}
+        </div>
+        <label className="field"><span>Шрифт заголовка</span><input value={typographySettings.headingFontFamily} onChange={(e) => typePatch({ headingFontFamily: e.target.value })} /></label>
+        <label className="field"><span>Шрифт текста</span><input value={typographySettings.bodyFontFamily} onChange={(e) => typePatch({ bodyFontFamily: e.target.value })} /></label>
+        <label className="field"><span>Шрифт CTA</span><input value={typographySettings.ctaFontFamily} onChange={(e) => typePatch({ ctaFontFamily: e.target.value })} /></label>
+        <Range label="Размер заголовка" min={0.65} max={1.45} step={0.01} value={typographySettings.headingSizeScale} onChange={(v) => typePatch({ headingSizeScale: v })} />
+        <Range label="Размер описания" min={0.7} max={1.3} step={0.01} value={typographySettings.bodySizeScale} onChange={(v) => typePatch({ bodySizeScale: v })} />
+        <Range label="Размер CTA" min={0.7} max={1.35} step={0.01} value={typographySettings.ctaSizeScale} onChange={(v) => typePatch({ ctaSizeScale: v })} />
+        <div className="style-grid-2">
+          <Select label="Начертание заголовка" value={String(typographySettings.headingWeight)} values={['400', '500', '600', '700', '800', '900']} onChange={(v) => typePatch({ headingWeight: Number(v) })} />
+          <Select label="Начертание текста" value={String(typographySettings.bodyWeight)} values={['400', '500', '600', '700']} onChange={(v) => typePatch({ bodyWeight: Number(v) })} />
+          <Select label="Начертание CTA" value={String(typographySettings.ctaWeight)} values={['400', '500', '600', '700', '800']} onChange={(v) => typePatch({ ctaWeight: Number(v) })} />
+          <Select label="Регистр" value={typographySettings.textTransform} values={['none', 'uppercase', 'lowercase', 'title-case']} onChange={(v) => typePatch({ textTransform: v as TypographySettings['textTransform'] })} />
+          <Select label="Выравнивание" value={typographySettings.textAlign} values={['left', 'center', 'right']} onChange={(v) => typePatch({ textAlign: v as TypographySettings['textAlign'] })} />
+          <Select label="Перенос" value={typographySettings.textWrap} values={['auto', 'manual', 'no-wrap']} onChange={(v) => typePatch({ textWrap: v as TypographySettings['textWrap'] })} />
+          <Select label="Плотность текста" value={typographySettings.textDensity} values={['compact', 'normal', 'spacious']} onChange={(v) => typePatch({ textDensity: v as TypographySettings['textDensity'] })} />
+        </div>
+        <Range label="Межбуквенный интервал" min={-0.05} max={0.08} step={0.005} value={typographySettings.letterSpacing} onChange={(v) => typePatch({ letterSpacing: v })} />
+        <Range label="Межстрочный интервал" min={0.95} max={1.45} step={0.01} value={typographySettings.lineHeight} onChange={(v) => typePatch({ lineHeight: v })} />
+        <Range label="Макс. ширина текста" min={0.55} max={1.08} step={0.01} value={typographySettings.maxTextWidthRatio} onChange={(v) => typePatch({ maxTextWidthRatio: v })} />
+      </section>
+
+      <section className="style-group">
+        <div className="style-group__head"><strong>Расположение</strong></div>
+        <div className="style-preset-row">
+          {Object.keys(COMPOSITION_PRESETS).map((name) => (
+            <button key={name} className="btn btn-ghost btn-xs" type="button" onClick={() => compPatch(COMPOSITION_PRESETS[name]!)}>{name}</button>
+          ))}
+        </div>
+        <div className="style-grid-2">
+          <Select label="Плотность" value={compositionSettings.density} values={['compact', 'balanced', 'airy']} onChange={(v) => compPatch({ density: v as CompositionSettings['density'] })} />
+          <Select label="Группа" value={compositionSettings.mainAxisAlign} values={['left', 'center', 'right']} onChange={(v) => compPatch({ mainAxisAlign: v as CompositionSettings['mainAxisAlign'] })} />
+          <Select label="Вертикаль" value={compositionSettings.verticalPosition} values={['top', 'center', 'bottom']} onChange={(v) => compPatch({ verticalPosition: v as CompositionSettings['verticalPosition'] })} />
+        </div>
+        <Range label="Внутренние поля" min={0.7} max={1.35} step={0.01} value={compositionSettings.canvasPaddingScale} onChange={(v) => compPatch({ canvasPaddingScale: v })} />
+        <Range label="Общие расстояния" min={0.55} max={1.6} step={0.01} value={compositionSettings.groupGapScale} onChange={(v) => compPatch({ groupGapScale: v })} />
+        <Range label="Лого → заголовок" min={0.4} max={1.8} step={0.01} value={compositionSettings.logoTitleGap} onChange={(v) => compPatch({ logoTitleGap: v })} />
+        <Range label="Заголовок → описание" min={0.4} max={1.8} step={0.01} value={compositionSettings.titleBodyGap} onChange={(v) => compPatch({ titleBodyGap: v })} />
+        <Range label="Описание → CTA" min={0.4} max={1.8} step={0.01} value={compositionSettings.bodyCtaGap} onChange={(v) => compPatch({ bodyCtaGap: v })} />
+        <Range label="CTA → изображение" min={0.4} max={1.8} step={0.01} value={compositionSettings.imageTextGap} onChange={(v) => compPatch({ imageTextGap: v })} />
+        <Range label="Интервал объектов" min={0.45} max={1.8} step={0.01} value={compositionSettings.objectGap} onChange={(v) => compPatch({ objectGap: v })} />
+        <Range label="Декоративные объекты" min={0} max={1.4} step={0.01} value={compositionSettings.decorativeIntensity} onChange={(v) => compPatch({ decorativeIntensity: v })} />
+        <Range label="Hero image" min={0.65} max={1.45} step={0.01} value={compositionSettings.heroImageScale} onChange={(v) => compPatch({ heroImageScale: v })} />
+        <Range label="Логотип" min={0.65} max={1.35} step={0.01} value={compositionSettings.logoScale} onChange={(v) => compPatch({ logoScale: v })} />
+        <Range label="Скругления" min={0} max={1.8} step={0.01} value={compositionSettings.cornerRadiusScale} onChange={(v) => compPatch({ cornerRadiusScale: v })} />
+        <Range label="Толщина рамки" min={0} max={8} step={1} value={compositionSettings.borderWidth} onChange={(v) => compPatch({ borderWidth: v })} />
+      </section>
+
+      {warnings.length > 0 ? (
+        <section className="style-group style-warnings">
+          <strong>Предупреждения</strong>
+          {warnings.map((warning) => <div key={warning.id} className={`style-warning style-warning--${warning.severity}`}>{warning.message}</div>)}
+        </section>
+      ) : null}
+    </div>
+  )
+}
+
+function Range({ label, min, max, step, value, onChange }: { label: string; min: number; max: number; step: number; value: number; onChange: (value: number) => void }) {
+  return (
+    <label className="field style-range">
+      <span>{label}<b>{value.toFixed(step >= 1 ? 0 : 2)}</b></span>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </label>
+  )
+}
+
+function Select({ label, value, values, onChange }: { label: string; value: string; values: string[]; onChange: (value: string) => void }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        {values.map((item) => <option key={item} value={item}>{item}</option>)}
+      </select>
+    </label>
+  )
+}
+
 function FormatGroup({
   title,
   keys,
@@ -394,6 +659,8 @@ function FormatGroup({
   customFormats,
   onToggle,
   onSetFormats,
+  filters,
+  onFiltersChange,
 }: {
   title: string
   keys: FormatKey[]
@@ -401,6 +668,8 @@ function FormatGroup({
   customFormats?: Project['customFormats']
   onToggle: (key: FormatKey) => void
   onSetFormats: (keys: FormatKey[]) => void
+  filters?: FormatFiltersState
+  onFiltersChange?: (next: FormatFiltersState) => void
 }) {
   const allSelected = keys.every((key) => selected.includes(key))
   const groups = customFormats
@@ -430,6 +699,9 @@ function FormatGroup({
           {allSelected ? 'Снять все' : 'Выбрать все'}
         </button>
       </div>
+      {filters && onFiltersChange ? (
+        <FormatFilters filters={filters} onChange={onFiltersChange} />
+      ) : null}
       <div className="format-list">
         {groups.map((group) => {
           const enabled = group.formatKeys.every((key) => selected.includes(key))
@@ -453,6 +725,7 @@ function FormatGroup({
               <span className="format-row__label">
                 {customFormats ? group.label : formatGroupTitle(group)}
                 <small>{customFormats ? group.label : formatGroupUsageLabel(group)}</small>
+                {!customFormats ? <FormatRowMeta format={getFormat(group.previewKey)} /> : null}
               </span>
               <span className="format-row__dim">{group.width}×{group.height}</span>
             </label>
@@ -461,6 +734,119 @@ function FormatGroup({
       </div>
     </section>
   )
+}
+
+type FormatFiltersState = {
+  platformId: string
+  placementGroup: string
+  device: string
+  aspectRatio: string
+  goal: string
+  staticOnly: boolean
+  supportsHtml5: boolean
+  requiresSafeZone: boolean
+}
+
+const EMPTY_FORMAT_FILTERS: FormatFiltersState = {
+  platformId: '',
+  placementGroup: '',
+  device: '',
+  aspectRatio: '',
+  goal: '',
+  staticOnly: false,
+  supportsHtml5: false,
+  requiresSafeZone: false,
+}
+
+function FormatFilters({
+  filters,
+  onChange,
+}: {
+  filters: FormatFiltersState
+  onChange: (next: FormatFiltersState) => void
+}) {
+  const catalog = AD_FORMAT_CATALOG
+  return (
+    <div className="format-filters">
+      <SelectFilter label="Площадка" value={filters.platformId} values={unique(catalog.map((f) => f.platformId))} labelFor={(v) => catalog.find((f) => f.platformId === v)?.platformName ?? v} onChange={(platformId) => onChange({ ...filters, platformId })} />
+      <SelectFilter label="Тип размещения" value={filters.placementGroup} values={unique(catalog.map((f) => f.placementGroup))} onChange={(placementGroup) => onChange({ ...filters, placementGroup })} />
+      <SelectFilter label="Устройство" value={filters.device} values={unique(catalog.map((f) => f.device))} onChange={(device) => onChange({ ...filters, device })} />
+      <SelectFilter label="Соотношение" value={filters.aspectRatio} values={unique(catalog.map((f) => aspectRatioText(f)))} onChange={(aspectRatio) => onChange({ ...filters, aspectRatio })} />
+      <SelectFilter label="Цель" value={filters.goal} values={unique(catalog.map((f) => f.goal))} onChange={(goal) => onChange({ ...filters, goal })} />
+      <div className="format-filters__checks">
+        <label><input type="checkbox" checked={filters.staticOnly} onChange={(e) => onChange({ ...filters, staticOnly: e.target.checked })} /> только статичные</label>
+        <label><input type="checkbox" checked={filters.supportsHtml5} onChange={(e) => onChange({ ...filters, supportsHtml5: e.target.checked })} /> HTML5</label>
+        <label><input type="checkbox" checked={filters.requiresSafeZone} onChange={(e) => onChange({ ...filters, requiresSafeZone: e.target.checked })} /> safe zone</label>
+      </div>
+    </div>
+  )
+}
+
+function SelectFilter({
+  label,
+  value,
+  values,
+  labelFor,
+  onChange,
+}: {
+  label: string
+  value: string
+  values: string[]
+  labelFor?: (value: string) => string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Все</option>
+        {values.map((item) => (
+          <option key={item} value={item}>{labelFor ? labelFor(item) : item}</option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function FormatRowMeta({ format }: { format: ReturnType<typeof getFormat> }) {
+  const fileTypes = format.allowedFileTypes?.join(', ').toUpperCase() || 'PNG/JPG'
+  const parts = [
+    format.platformName,
+    aspectRatioText(format),
+    `${fileTypes}${format.maxFileSizeKb ? ` <= ${format.maxFileSizeKb} KB` : ''}`,
+    format.safeArea && (format.safeArea.top || format.safeArea.right || format.safeArea.bottom || format.safeArea.left) ? 'safe zone' : '',
+    format.visibleArea ? 'visible area' : '',
+    (format.overlayZones?.length ?? 0) > 0 ? 'маркировка' : '',
+  ].filter(Boolean)
+  return (
+    <span className="format-row__meta">
+      {parts.map((part) => <span key={part} className="format-row__chip">{part}</span>)}
+    </span>
+  )
+}
+
+function filterFormatKeys(keys: FormatKey[], filters: FormatFiltersState, customFormats?: Project['customFormats']): FormatKey[] {
+  return keys.filter((key) => {
+    const format = getFormat(key, customFormats)
+    if (filters.platformId && format.platformId !== filters.platformId) return false
+    if (filters.placementGroup && format.placementGroup !== filters.placementGroup) return false
+    if (filters.device && format.device !== filters.device) return false
+    if (filters.aspectRatio && aspectRatioText(format) !== filters.aspectRatio) return false
+    if (filters.goal && format.goal !== filters.goal) return false
+    if (filters.staticOnly && format.animationAllowed) return false
+    if (filters.supportsHtml5 && !format.supportsHtml5) return false
+    if (filters.requiresSafeZone && !hasSafeArea(format)) return false
+    return true
+  })
+}
+
+function hasSafeArea(format: ReturnType<typeof getFormat>): boolean {
+  const safe = format.safeArea
+  return !!safe && (safe.top > 0 || safe.right > 0 || safe.bottom > 0 || safe.left > 0)
+}
+
+function unique(values: string[]): string[] {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b))
 }
 
 function getText(scene: Scene, kind: 'title' | 'subtitle' | 'cta' | 'badge') {

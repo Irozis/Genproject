@@ -115,6 +115,8 @@ function placementSortRank(group: ResolutionFormatGroup): number {
 }
 
 function isStricterFormat(a: FormatRuleSet, b: FormatRuleSet): boolean {
+  if (a.key.includes('infographic') && !b.key.includes('infographic')) return true
+  if (b.key.includes('infographic') && !a.key.includes('infographic')) return false
   const safeA = a.safeZone.left + a.safeZone.right + a.safeZone.top + a.safeZone.bottom
   const safeB = b.safeZone.left + b.safeZone.right + b.safeZone.top + b.safeZone.bottom
   if (safeA !== safeB) return safeA > safeB

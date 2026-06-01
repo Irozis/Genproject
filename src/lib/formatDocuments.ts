@@ -452,6 +452,8 @@ function buildSceneForFormatDocument(project: Project, formatKey: FormatKey): Sc
     locale: project.activeLocale,
     customFormats: project.customFormats,
     density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
+    typographySettings: project.typographySettings,
+    compositionSettings: project.compositionSettings,
   })
 }
 

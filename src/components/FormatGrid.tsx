@@ -14,6 +14,8 @@ import type {
   ProjectFormatDocument,
   Scene,
   FormatRuleSet,
+  TypographySettings,
+  CompositionSettings,
 } from '../lib/types'
 
 type Props = {
@@ -39,6 +41,8 @@ type Props = {
   onSetBlockText?: (formatKey: FormatKey, kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => void
   blockOverrides?: Partial<Record<FormatKey, Partial<Record<BlockKind, BlockOverride>>>>
   layoutDensity?: LayoutDensity
+  typographySettings?: TypographySettings
+  compositionSettings?: CompositionSettings
   formatDensities?: Partial<Record<FormatKey, LayoutDensity>>
   layoutClipboard?: Partial<Record<BlockKind, BlockOverride>> | null
   onCopyLayout?: (layout: Partial<Record<BlockKind, BlockOverride>>) => void
@@ -81,6 +85,8 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
     onSetBlockText,
     blockOverrides,
     layoutDensity,
+    typographySettings,
+    compositionSettings,
     formatDensities,
     layoutClipboard,
     onCopyLayout,
@@ -152,6 +158,8 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
             sceneObjects={editedDocument ? editedDocument.objects : undefined}
             blockOverride={blockOverrides?.[k]}
             density={formatDensities?.[k] ?? layoutDensity}
+            typographySettings={typographySettings}
+            compositionSettings={compositionSettings}
             focal={imageFocals?.[k]}
             assetHint={assetHint}
             isCustom={!!blockOverrides?.[k] || !!editedDocument?.isEdited}

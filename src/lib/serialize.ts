@@ -379,6 +379,42 @@ const projectFormatDocumentSchema = z.object({
 
 const blockOverridesSchema = z.record(anyFormatKeySchema, z.record(blockKindEnum, blockOverrideSchema).optional())
 const layoutDensitySchema = z.enum(['compact', 'balanced', 'spacious'])
+const typographySettingsSchema = z.object({
+  headingFontFamily: z.string(),
+  bodyFontFamily: z.string(),
+  ctaFontFamily: z.string(),
+  headingSizeScale: z.number(),
+  bodySizeScale: z.number(),
+  ctaSizeScale: z.number(),
+  headingWeight: z.number(),
+  bodyWeight: z.number(),
+  ctaWeight: z.number(),
+  letterSpacing: z.number(),
+  lineHeight: z.number(),
+  textTransform: z.enum(['none', 'uppercase', 'lowercase', 'title-case']),
+  textAlign: z.enum(['left', 'center', 'right']),
+  maxTextWidthRatio: z.number(),
+  textWrap: z.enum(['auto', 'manual', 'no-wrap']).optional().default('auto'),
+  textDensity: z.enum(['compact', 'normal', 'spacious']),
+})
+const compositionSettingsSchema = z.object({
+  density: z.enum(['compact', 'balanced', 'airy']),
+  canvasPaddingScale: z.number(),
+  groupGapScale: z.number(),
+  logoTitleGap: z.number(),
+  titleBodyGap: z.number(),
+  bodyCtaGap: z.number(),
+  imageTextGap: z.number(),
+  objectGap: z.number(),
+  mainAxisAlign: z.enum(['left', 'center', 'right']),
+  crossAxisAlign: z.enum(['left', 'center', 'right']),
+  verticalPosition: z.enum(['top', 'center', 'bottom']),
+  heroImageScale: z.number(),
+  logoScale: z.number(),
+  cornerRadiusScale: z.number(),
+  borderWidth: z.number(),
+  decorativeIntensity: z.number(),
+})
 
 export const projectSchema = z.object({
   id: z.string(),
@@ -413,6 +449,11 @@ export const projectSchema = z.object({
   layoutDensity: layoutDensitySchema.optional(),
   formatDensities: z.record(anyFormatKeySchema, layoutDensitySchema).optional(),
   paletteLocked: z.boolean().optional(),
+  paletteSeed: z.number().optional(),
+  selectedPaletteId: z.string().optional(),
+  pinnedPaletteIds: z.array(z.string()).optional(),
+  typographySettings: typographySettingsSchema.optional(),
+  compositionSettings: compositionSettingsSchema.optional(),
   activeLocale: z.string().optional(),
   availableLocales: z.array(z.string()).optional(),
   customFormats: z.array(formatRuleSetSchema).optional(),
