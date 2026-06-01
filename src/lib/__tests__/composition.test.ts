@@ -101,6 +101,7 @@ describe('chooseModel', () => {
       textDensity: 'medium',
       hasSubtitle: true,
       hasCTA: true,
+      ctaLength: 8,
       hasBadge: false,
       imageImportance: 'medium',
       totalEnabledBlocks: 4,

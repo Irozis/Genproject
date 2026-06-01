@@ -33,6 +33,7 @@ import type {
 type Props = {
   formatKey: FormatKey
   displayLabel?: string
+  platformLabel?: string
   master: Scene
   brandKit: BrandKit
   enabled: EnabledMap
@@ -77,6 +78,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
   {
     formatKey,
     displayLabel,
+    platformLabel,
     master,
     brandKit,
     enabled,
@@ -302,6 +304,9 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
         <div>
           <div className="preview__title" title={displayLabel ?? rules.label}>{displayLabel ?? rules.label}</div>
           <div className="preview__dim">{rules.width}×{rules.height}</div>
+          {platformLabel && platformLabel !== displayLabel ? (
+            <div className="preview__platforms" title={platformLabel}>{platformLabel}</div>
+          ) : null}
         </div>
         <div className="preview__head-actions">
           <select
@@ -348,7 +353,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
             type="button"
             className={`btn btn-ghost btn-xs preview__mode${isCustom ? ' is-on' : ''}`}
             onClick={() => isCustom ? onDisableCustom?.(formatKey) : onEnableCustom?.(formatKey, scene)}
-            title={isCustom ? 'Использовать master-настройки' : 'Настроить этот формат отдельно'}
+            title={isCustom ? 'Использовать настройки базового макета' : 'Настроить этот формат отдельно'}
             aria-pressed={!!isCustom}
           >
             {isCustom ? 'Отдельно' : 'Настроить'}
@@ -395,7 +400,7 @@ const FormatPreviewBase = forwardRef<FormatPreviewHandle, Props>(function Format
                 role="menuitem"
                 onClick={() => isCustom ? onDisableCustom?.(formatKey) : onEnableCustom?.(formatKey, scene)}
               >
-                {isCustom ? 'Наследовать master' : 'Настроить формат'}
+                {isCustom ? 'Наследовать базовый макет' : 'Настроить формат'}
               </button>
               <button
                 type="button"
@@ -479,6 +484,7 @@ export const FormatPreview = memo(
   (prev, next) =>
     prev.formatKey === next.formatKey &&
     prev.displayLabel === next.displayLabel &&
+    prev.platformLabel === next.platformLabel &&
     prev.master === next.master &&
     prev.brandKit === next.brandKit &&
     prev.enabled === next.enabled &&

@@ -21,6 +21,7 @@ export type ContentProfile = {
   textDensity: 'low' | 'medium' | 'high'
   hasSubtitle: boolean
   hasCTA: boolean
+  ctaLength: number
   hasBadge: boolean
   imageImportance: 'low' | 'medium' | 'high'
   totalEnabledBlocks: number
@@ -38,11 +39,13 @@ export type FormatProfile = {
 export type LayoutArchetypeSelectionDebug = {
   archetypeScores: Record<CompositionModel, number>
   scores: Record<CompositionModel, number>
+  candidates: LayoutCandidateScore[]
   chosen: CompositionModel
   selectedArchetype: CompositionModel
   formatFamily: FormatProfile['family']
   textDensity: ContentProfile['textDensity']
   imageImportance: ContentProfile['imageImportance']
+  ctaFitRisk: 'low' | 'medium' | 'high'
   smallTextRisk: 'low' | 'medium' | 'high'
   cropRisk: 'low' | 'medium' | 'high'
   compactTextPolicyApplied: boolean
@@ -52,6 +55,13 @@ export type LayoutArchetypeSelectionDebug = {
   smallTextRiskPenalty: number
   tooManyBlocksForCompactFormat: boolean
   minFontGuardApplied: boolean
+}
+
+export type LayoutCandidateScore = {
+  archetype: CompositionModel
+  score: number
+  reasons: string[]
+  penalties: string[]
 }
 
 export type LayoutArchetypeSelection = {
@@ -75,12 +85,13 @@ export function profile(scene: Scene, rules: FormatRuleSet, enabled: EnabledMap)
   const isWide = rules.aspectRatio > 1.1
   const hasSubtitle = enabled.subtitle && !!scene.subtitle?.text
   const hasCTA = enabled.cta && !!scene.cta?.text
+  const ctaLength = hasCTA ? (scene.cta?.text.trim().length ?? 0) : 0
   const hasBadge = enabled.badge && !!scene.badge?.text
   const totalEnabledBlocks = (['title', 'subtitle', 'cta', 'badge', 'logo', 'image'] as const)
     .filter((kind) => enabled[kind] && !!scene[kind]).length
   const titleLen = enabled.title ? (scene.title?.text.length ?? 0) : 0
   const subtitleLen = hasSubtitle ? (scene.subtitle?.text.length ?? 0) : 0
-  const textLoad = titleLen + subtitleLen * 0.75 + (hasCTA ? 18 : 0) + (hasBadge ? 12 : 0)
+  const textLoad = titleLen + subtitleLen * 0.75 + (hasCTA ? Math.max(18, ctaLength * 0.7) : 0) + (hasBadge ? 12 : 0)
   const textDensity: ContentProfile['textDensity'] = textLoad >= 125 || totalEnabledBlocks >= 6
     ? 'high'
     : textLoad >= 58 || totalEnabledBlocks >= 4
@@ -93,7 +104,7 @@ export function profile(scene: Scene, rules: FormatRuleSet, enabled: EnabledMap)
       : imageIsLarge || textDensity === 'medium'
         ? 'medium'
         : 'low'
-  return { hasImage, imageIsLarge, isPortrait, isWide, textDensity, hasSubtitle, hasCTA, hasBadge, imageImportance, totalEnabledBlocks }
+  return { hasImage, imageIsLarge, isPortrait, isWide, textDensity, hasSubtitle, hasCTA, ctaLength, hasBadge, imageImportance, totalEnabledBlocks }
 }
 
 export function profileFormat(rules: FormatRuleSet): FormatProfile {
@@ -149,6 +160,7 @@ function chooseLayoutArchetypeFromProfiles(
   const productSafeFormat = isProductSafeFormatKey(format.key)
   const tooManyBlocksForCompactFormat = compactTextPolicyApplied && content.totalEnabledBlocks >= 5
   const smallTextRisk = estimateSmallTextRisk(content, format)
+  const ctaFitRisk = estimateCtaFitRisk(content, format)
   const cropRiskPenalty = cropRisk === 'high' ? 24 : cropRisk === 'medium' ? 8 : 0
   const smallTextRiskPenalty = smallTextRisk === 'high' ? 22 : smallTextRisk === 'medium' ? 10 : 0
   const scores: Record<CompositionModel, number> = {
@@ -198,10 +210,18 @@ function chooseLayoutArchetypeFromProfiles(
     scores['split-left-image'] -= 24
     scores['image-top-stack'] -= format.family === 'wide' || format.family === 'square' ? 16 : 0
   }
+  applyCtaFitScoring(scores, content, format, ctaFitRisk)
 
-  const chosen = (Object.keys(scores) as CompositionModel[])
+  const candidates = (Object.keys(scores) as CompositionModel[])
     .filter((model) => model !== 'image-top-text-bottom')
-    .sort((a, b) => scores[b] - scores[a] || archetypeTieRank(a) - archetypeTieRank(b))[0] ?? 'text-dominant'
+    .map((model) => ({
+      archetype: model,
+      score: scores[model],
+      reasons: candidateReasons(model, content, format, cropRisk, ctaFitRisk),
+      penalties: candidatePenalties(model, content, format, cropRisk, ctaFitRisk),
+    }))
+    .sort((a, b) => b.score - a.score || archetypeTieRank(a.archetype) - archetypeTieRank(b.archetype))
+  const chosen = candidates[0]?.archetype ?? 'text-dominant'
   const imageFitMode = chosen === 'product-card-safe' ? 'contain' : 'cover'
 
   return {
@@ -209,11 +229,13 @@ function chooseLayoutArchetypeFromProfiles(
     selectionDebug: {
       archetypeScores: scores,
       scores,
+      candidates,
       chosen,
       selectedArchetype: chosen,
       formatFamily: format.family,
       textDensity: content.textDensity,
       imageImportance: content.imageImportance,
+      ctaFitRisk,
       smallTextRisk,
       cropRisk,
       compactTextPolicyApplied,
@@ -234,6 +256,83 @@ function estimateSmallTextRisk(content: ContentProfile, format: FormatProfile): 
   return 'low'
 }
 
+function estimateCtaFitRisk(content: ContentProfile, format: FormatProfile): 'low' | 'medium' | 'high' {
+  if (!content.hasCTA || content.ctaLength <= 12) return 'low'
+  const available = format.family === 'wide'
+    ? 22
+    : format.family === 'square'
+      ? 18
+      : format.family === 'portrait'
+        ? 20
+        : 16
+  const compactPenalty = format.isCompact || format.isNarrow ? 4 : 0
+  const threshold = available - compactPenalty
+  if (content.ctaLength > threshold + 10) return 'high'
+  if (content.ctaLength > threshold) return 'medium'
+  return 'low'
+}
+
+function applyCtaFitScoring(
+  scores: Record<CompositionModel, number>,
+  content: ContentProfile,
+  format: FormatProfile,
+  risk: 'low' | 'medium' | 'high',
+): void {
+  if (!content.hasCTA || risk === 'low') return
+  const penalty = risk === 'high' ? 22 : 10
+  scores['centered-card'] -= penalty
+  scores['hero-overlay'] -= format.family === 'wide' ? 6 : penalty
+  scores['image-top-stack'] += format.family === 'portrait' || format.family === 'tall' ? 12 : 0
+  scores['split-right-image'] += format.family === 'wide' || format.family === 'square' ? 14 : -8
+  scores['split-left-image'] += format.family === 'wide' || format.family === 'square' ? 10 : -8
+  scores['text-dominant'] += content.textDensity === 'high' || !content.hasImage ? 12 : 4
+}
+
+function candidateReasons(
+  model: CompositionModel,
+  content: ContentProfile,
+  format: FormatProfile,
+  cropRisk: 'low' | 'medium' | 'high',
+  ctaFitRisk: 'low' | 'medium' | 'high',
+): string[] {
+  const reasons: string[] = []
+  if (model === 'split-right-image' || model === 'split-left-image') {
+    if (format.family === 'wide' || format.family === 'square') reasons.push('fits wide/square format')
+    if (content.hasImage && content.textDensity === 'medium') reasons.push('balances image and copy')
+    if (ctaFitRisk !== 'low') reasons.push('gives CTA a wider row')
+  }
+  if (model === 'image-top-stack' && (format.family === 'portrait' || format.family === 'tall')) reasons.push('matches portrait stack')
+  if (model === 'hero-overlay' && content.hasImage && content.imageImportance === 'high') reasons.push('keeps image dominant')
+  if (model === 'product-card-safe' && cropRisk !== 'low') reasons.push('reduces crop risk')
+  if (model === 'text-dominant' && (!content.hasImage || content.textDensity === 'high')) reasons.push('prioritizes text fit')
+  if (model === 'centered-card' && content.textDensity === 'low') reasons.push('simple low-density content')
+  return reasons
+}
+
+function candidatePenalties(
+  model: CompositionModel,
+  content: ContentProfile,
+  format: FormatProfile,
+  cropRisk: 'low' | 'medium' | 'high',
+  ctaFitRisk: 'low' | 'medium' | 'high',
+): string[] {
+  const penalties: string[] = []
+  if ((model === 'hero-overlay' || model === 'split-right-image' || model === 'split-left-image') && cropRisk === 'high') {
+    penalties.push('high image crop risk')
+  }
+  if ((model === 'hero-overlay' || model === 'centered-card') && content.textDensity === 'high') {
+    penalties.push('dense text may become small')
+  }
+  if ((model === 'hero-overlay' || model === 'centered-card') && ctaFitRisk !== 'low') {
+    penalties.push('long CTA has limited width')
+  }
+  if ((model === 'split-right-image' || model === 'split-left-image') && (format.family === 'portrait' || format.family === 'tall')) {
+    penalties.push('narrow format limits columns')
+  }
+  if (!content.hasImage && model !== 'text-dominant' && model !== 'centered-card') penalties.push('no image available')
+  return penalties
+}
+
 function scoreHeroOverlay(
   scores: Record<CompositionModel, number>,
   content: ContentProfile,
@@ -248,6 +347,9 @@ function scoreHeroOverlay(
   scores['hero-overlay'] -= cropRisk === 'high' ? 24 : cropRisk === 'medium' ? 8 : 0
   if (imageReadsDark && (format.family === 'wide' || format.family === 'square') && content.textDensity !== 'high') {
     scores['hero-overlay'] += 70
+  }
+  if (imageReadsDark && (format.family === 'portrait' || format.family === 'tall') && content.textDensity !== 'high') {
+    scores['hero-overlay'] += 34
   }
   if (content.hasSubtitle) scores['hero-overlay'] -= 4
   if (content.totalEnabledBlocks >= 5) scores['hero-overlay'] -= 16

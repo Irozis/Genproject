@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { FONT_PAIRS, findMatchingPair } from '../lib/fontPairs'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
-import type { BrandKit, BrandSnapshot, CtaStyle, Palette, Tone } from '../lib/types'
+import type { BrandKit, CtaStyle, Palette, Tone } from '../lib/types'
 
 type Props = {
   brandKit: BrandKit
@@ -12,10 +12,6 @@ type Props = {
   onApplyAlternative?: (alt: DerivedBrandColors) => void
   paletteLocked?: boolean
   onTogglePaletteLock?: (next: boolean) => void
-  snapshots?: BrandSnapshot[]
-  onSaveSnapshot?: (name: string) => void
-  onApplySnapshot?: (id: string) => void
-  onDeleteSnapshot?: (id: string) => void
 }
 
 export function BrandSystemPanel({
@@ -25,13 +21,8 @@ export function BrandSystemPanel({
   onApplyAlternative,
   paletteLocked,
   onTogglePaletteLock,
-  snapshots,
-  onSaveSnapshot,
-  onApplySnapshot,
-  onDeleteSnapshot,
 }: Props) {
   const [open, setOpen] = useState(true)
-  const [snapshotName, setSnapshotName] = useState('')
 
   const updatePalette = (patch: Partial<Palette>) =>
     onChange({ ...brandKit, palette: { ...brandKit.palette, ...patch } })
@@ -39,14 +30,14 @@ export function BrandSystemPanel({
   return (
     <section className={`panel${open ? ' is-open' : ''}`}>
       <button className="panel__head" onClick={() => setOpen((o) => !o)}>
-        <span>Бренд-система</span>
+        <span>Цветовая схема</span>
         <span>{open ? '▴' : '▾'}</span>
       </button>
       {open ? (
         <div className="panel__body">
           {alternatives && alternatives.length > 1 && onApplyAlternative ? (
             <div className="field">
-              <span>Варианты палитры</span>
+              <span>Предложенные палитры</span>
               <div className="palette-alts">
                 {alternatives.map((alt, i) => {
                   const active = alt.palette.accent.toLowerCase() === brandKit.palette.accent.toLowerCase()
@@ -79,7 +70,7 @@ export function BrandSystemPanel({
             </div>
           ) : null}
           <label className="field">
-            <span>Название бренда</span>
+            <span>Название</span>
             <input
               type="text"
               value={brandKit.brandName}
@@ -109,7 +100,7 @@ export function BrandSystemPanel({
                 title={paletteLocked ? 'Разрешить обновление палитры по изображению' : 'Зафиксировать палитру'}
                 aria-pressed={!!paletteLocked}
               >
-                {paletteLocked ? '🔒' : '🔓'}
+                {paletteLocked ? 'Закреплено' : 'Авто'}
               </button>
             </div>
           </label>
@@ -200,7 +191,7 @@ export function BrandSystemPanel({
             </select>
           </label>
           <label className="field">
-            <span>Тон коммуникации</span>
+            <span>Тон текста</span>
             <select
               value={brandKit.toneOfVoice}
               onChange={(e) => onChange({ ...brandKit, toneOfVoice: e.target.value as Tone })}
@@ -212,51 +203,6 @@ export function BrandSystemPanel({
               <option value="editorial">редакционный</option>
             </select>
           </label>
-          <div className="field">
-            <span>Наборы бренда</span>
-            <div style={{ display: 'grid', gap: 6 }}>
-              {(snapshots ?? []).map((snap) => (
-                <div key={snap.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                  <span>{snap.name}</span>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-xs"
-                      onClick={() => onApplySnapshot?.(snap.id)}
-                    >
-                      Применить
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-xs"
-                      onClick={() => onDeleteSnapshot?.(snap.id)}
-                      aria-label={`Удалить ${snap.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                </div>
-              ))}
-              <div style={{ display: 'flex', gap: 6 }}>
-                <input
-                  type="text"
-                  value={snapshotName}
-                  onChange={(e) => setSnapshotName(e.target.value)}
-                  placeholder="Название набора"
-                />
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-xs"
-                  onClick={() => {
-                    onSaveSnapshot?.(snapshotName)
-                    setSnapshotName('')
-                  }}
-                >
-                  Сохранить текущий
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       ) : null}
     </section>

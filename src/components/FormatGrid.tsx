@@ -1,7 +1,7 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
 import { FormatPreview, type FormatPreviewHandle } from './FormatPreview'
 import { sceneFromFormatDocument } from '../lib/formatDocuments'
-import { groupFormatsByResolution } from '../lib/formatPlacements'
+import { formatGroupTitle, formatGroupUsageLabel, groupFormatsByResolution } from '../lib/formatPlacements'
 import type {
   AssetHint,
   BlockKind,
@@ -23,7 +23,7 @@ type Props = {
   imageFitByFormat?: Partial<Record<FormatKey, 'cover' | 'contain'>>
   brandKit: BrandKit
   enabled: EnabledMap
-  /** Per-format composition override (template preferredModels merged with user overrides). */
+  /** Per-format composition override merged with user overrides. */
   overrides?: Partial<Record<FormatKey, CompositionModel>>
   formatDocuments?: Record<string, ProjectFormatDocument>
   /** Per-format image focal override. When a key is absent, master focal is used. */
@@ -139,10 +139,11 @@ export const FormatGrid = forwardRef<FormatGridHandle, Props>(function FormatGri
           <FormatPreview
             key={group.key}
             ref={(el) => {
-              previewRefs.current[k] = el
+              for (const key of group.formatKeys) previewRefs.current[key] = el
             }}
             formatKey={k}
-            displayLabel={group.label}
+            displayLabel={formatGroupTitle(group)}
+            platformLabel={formatGroupUsageLabel(group, customFormats)}
             master={previewMaster}
             brandKit={brandKit}
             enabled={enabled}

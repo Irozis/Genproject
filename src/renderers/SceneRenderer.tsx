@@ -1229,12 +1229,14 @@ function CtaNode({
   const baseFontSizePx = resolveFontSizePx(block.fontSize, W)
   const rx = Math.min(block.rx, h / 2)
   const label = applyCase(block.text, block.transform)
-  const labelMaxWidth = w * 0.82
-  const fontSizePx = fitCtaFontSize(label, baseFontSizePx, Math.max(8, baseFontSizePx * 0.72), labelMaxWidth, block.weight, fontFamily)
+  const minFontSizePx = Math.max(8, baseFontSizePx * 0.72)
+  const labelMaxWidth = Math.max(0, w - baseFontSizePx * 1.7)
+  const fontSizePx = fitCtaFontSize(label, baseFontSizePx, minFontSizePx, labelMaxWidth, block.weight, fontFamily)
   const letterSpacingPx = fontSizePx * (block.letterSpacing ?? 0.02)
+  const renderRx = Math.min(block.rx, h / 2, w / 2)
   return (
     <g data-role={role} opacity={block.opacity}>
-      <rect x={x} y={y} width={w} height={h} rx={rx} ry={rx} fill={block.bg} />
+      <rect x={x} y={y} width={w} height={h} rx={renderRx || rx} ry={renderRx || rx} fill={block.bg} />
       <text
         x={x + w / 2}
         y={y + h / 2}

@@ -4,11 +4,11 @@ import { ElementRow } from './ElementRow'
 import { FilePicker } from './FilePicker'
 import { SidebarTabs, type SidebarTab } from './SidebarTabs'
 import { BASE_FORMAT_KEYS, RU_MARKETPLACE_FORMAT_KEYS, getFormat } from '../lib/formats'
-import { groupFormatsByResolution } from '../lib/formatPlacements'
+import { formatGroupTitle, formatGroupUsageLabel, groupFormatsByResolution, type ResolutionFormatGroup } from '../lib/formatPlacements'
 import { densityLabel } from '../lib/layoutDensity'
 import type { DerivedBrandColors } from '../lib/paletteFromImage'
 import { getActiveImageSrc } from '../lib/projectImages'
-import type { BackgroundExtensionMetadata, BlockKind, BrandKit, BrandSnapshot, EnabledMap, FormatKey, FormatRuleSet, ImageFitPreference, LayoutDensity, Project, ProjectHistoryItem, Scene } from '../lib/types'
+import type { BackgroundExtensionMetadata, BlockKind, BrandKit, EnabledMap, FormatKey, FormatRuleSet, ImageFitPreference, LayoutDensity, Project, ProjectHistoryItem, Scene } from '../lib/types'
 
 const ELEMENT_ROWS: { kind: BlockKind; label: string }[] = [
   { kind: 'title', label: 'Заголовок' },
@@ -33,16 +33,13 @@ type Props = {
   onSetLogo: (dataUrl: string) => void
   onSetImageFitPreference: (next: ImageFitPreference) => void
   onToggleFormat: (key: FormatKey) => void
+  onSetFormats: (keys: FormatKey[]) => void
   /** Per-format focal override. Pass null to clear (inherit master). */
   onSetFormatFocal: (key: FormatKey, focal: { x: number; y: number } | null) => void
   /** Palette variants derived from the analyzed image. Empty when no image. */
   paletteAlternatives?: DerivedBrandColors[]
   onApplyPaletteAlt?: (alt: DerivedBrandColors) => void
   onTogglePaletteLock: (next: boolean) => void
-  snapshots: BrandSnapshot[]
-  onSaveSnapshot: (name: string) => void
-  onApplySnapshot: (id: string) => void
-  onDeleteSnapshot: (id: string) => void
   projectHistoryItems: ProjectHistoryItem[]
   currentProjectId: string
   onOpenHistoryProject: (id: string) => void
@@ -67,14 +64,11 @@ export function Sidebar({
   onSetLogo,
   onSetImageFitPreference,
   onToggleFormat,
+  onSetFormats,
   onSetFormatFocal,
   paletteAlternatives,
   onApplyPaletteAlt,
   onTogglePaletteLock,
-  snapshots,
-  onSaveSnapshot,
-  onApplySnapshot,
-  onDeleteSnapshot,
   projectHistoryItems,
   currentProjectId,
   onOpenHistoryProject,
@@ -225,37 +219,12 @@ export function Sidebar({
 
             <SectionHeader>Форматы</SectionHeader>
             <div className="format-list">
-              {BASE_FORMAT_KEYS.map((k) => {
-                const enabled = project.selectedFormats.includes(k)
-                const f = getFormat(k)
-                return (
-                  <label key={k} className={`format-row${enabled ? ' is-on' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={() => onToggleFormat(k)}
-                    />
-                    <span className="format-row__label">{f.label}</span>
-                    <span className="format-row__dim">{f.width}×{f.height}</span>
-                  </label>
-                )
-              })}
-              <div style={{ fontSize: 12, opacity: 0.7, marginTop: 8, marginBottom: 4 }}>Маркетплейсы и баннеры</div>
-              {RU_MARKETPLACE_FORMAT_KEYS.map((k) => {
-                const enabled = project.selectedFormats.includes(k)
-                const f = getFormat(k)
-                return (
-                  <label key={k} className={`format-row${enabled ? ' is-on' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={enabled}
-                      onChange={() => onToggleFormat(k)}
-                    />
-                    <span className="format-row__label">{f.label}</span>
-                    <span className="format-row__dim">{f.width}×{f.height}</span>
-                  </label>
-                )
-              })}
+              <GroupedFormatRows
+                groups={groupFormatsByResolution([...BASE_FORMAT_KEYS, ...RU_MARKETPLACE_FORMAT_KEYS])}
+                selected={project.selectedFormats}
+                customFormats={project.customFormats}
+                onSetFormats={onSetFormats}
+              />
               {(project.customFormats ?? []).map((f) => {
                 const enabled = project.selectedFormats.includes(f.key)
                 return (
@@ -389,10 +358,6 @@ export function Sidebar({
               onApplyAlternative={onApplyPaletteAlt}
               paletteLocked={project.paletteLocked}
               onTogglePaletteLock={onTogglePaletteLock}
-              snapshots={snapshots}
-              onSaveSnapshot={onSaveSnapshot}
-              onApplySnapshot={onApplySnapshot}
-              onDeleteSnapshot={onDeleteSnapshot}
             />
           </>
         ) : tab === 'editor' ? (
@@ -464,7 +429,7 @@ export function Sidebar({
                     {imageFitStatus(project, editingFormatKey)}
                     {hasPreparedExtendedImage ? ` · ${backgroundExtensionStatus(project, editingFormatKey)}` : ''}
                   </div>
-                  <div className="focal-label">Фокус master</div>
+                  <div className="focal-label">Фокус базового макета</div>
                   <FocalGrid
                     fx={project.master.image?.focalX ?? 0.5}
                     fy={project.master.image?.focalY ?? 0.5}
@@ -590,6 +555,46 @@ function formatHistoryDate(value: string): string {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return <div className="section-header">{children}</div>
+}
+
+function GroupedFormatRows({
+  groups,
+  selected,
+  customFormats,
+  onSetFormats,
+}: {
+  groups: ResolutionFormatGroup[]
+  selected: FormatKey[]
+  customFormats?: FormatRuleSet[]
+  onSetFormats: (keys: FormatKey[]) => void
+}) {
+  return (
+    <>
+      {groups.map((group) => {
+        const enabled = group.formatKeys.every((key) => selected.includes(key))
+        const partiallyEnabled = !enabled && group.formatKeys.some((key) => selected.includes(key))
+        return (
+          <label key={group.key} className={`format-row format-row--group${enabled ? ' is-on' : ''}${partiallyEnabled ? ' is-partial' : ''}`}>
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={() => {
+                const next = new Set(selected)
+                if (enabled || partiallyEnabled) group.formatKeys.forEach((key) => next.delete(key))
+                else group.formatKeys.forEach((key) => next.add(key))
+                onSetFormats([...next])
+              }}
+            />
+            <span className="format-row__label">
+              {formatGroupTitle(group)}
+              <small>{formatGroupUsageLabel(group, customFormats)}</small>
+            </span>
+            <span className="format-row__dim">{group.width}×{group.height}</span>
+          </label>
+        )
+      })}
+    </>
+  )
 }
 
 function imageFitStatus(project: Project, formatKey?: FormatKey | null): string {
@@ -775,7 +780,7 @@ function OverridePanel({
             ))}
           </div>
         ) : (
-          <div className="override-panel__empty">Все блоки наследуют master-настройки.</div>
+          <div className="override-panel__empty">Все блоки наследуют настройки базового макета.</div>
         )}
       </div>
     </>
@@ -1024,7 +1029,7 @@ function PerFormatFocals({
                     className="focal-perfmt__reset"
                     disabled={!override}
                     onClick={() => onSet(k, null)}
-                    title={override ? 'Сбросить к master' : 'Наследует master'}
+                    title={override ? 'Сбросить к базовому макету' : 'Наследует базовый макет'}
                   >
                     {override ? 'Сбросить' : 'Наследует'}
                   </button>

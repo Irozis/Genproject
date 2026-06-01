@@ -1,15 +1,19 @@
 import { useRef } from 'react'
-import { FilePicker } from './FilePicker'
-import { Icon } from './Icon'
-import type { OnboardingMode } from '../lib/types'
+import type { ProjectHistoryItem } from '../lib/types'
 
 type Props = {
-  onChoose: (mode: OnboardingMode, payload?: { imageDataUrl?: string }) => void
+  onCreate: () => void
   onImportJson: (file: File) => void
+  recentProjects: ProjectHistoryItem[]
+  onOpenRecent: (id: string) => void
 }
 
-export function Onboarding({ onChoose, onImportJson }: Props) {
+const STEPS = ['Изображение', 'Элементы', 'Тексты', 'Цвета', 'Форматы', 'Просмотр', 'Экспорт']
+
+export function Onboarding({ onCreate, onImportJson, recentProjects, onOpenRecent }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const recent = recentProjects.slice(0, 4)
+
   return (
     <div className="onboarding">
       <header className="onboarding__brand">
@@ -17,22 +21,35 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
         <span>Ad Layout Generator</span>
       </header>
 
-      <h1 className="onboarding__title">Один макет - все форматы для маркетплейсов.</h1>
+      <h1 className="onboarding__title">Создание рекламных материалов в несколько шагов</h1>
       <p className="onboarding__sub">
-        Соберите мастер-креатив и быстро адаптируйте его под карточки, сторис, объявления и инфографику.
+        Загрузите изображение, выберите элементы и форматы, а затем отредактируйте или экспортируйте результат.
       </p>
 
       <section className="onboarding__primary card">
-        <div className="card__icon" aria-hidden="true">
-          <Icon name="upload" size={24} />
-        </div>
         <div className="card__body">
-          <div className="card__title">Загрузить референс</div>
-          <div className="card__desc">Добавьте фото товара - мы подберем палитру и композицию.</div>
-          <FilePicker
-            label="Выбрать файл"
-            hint="или перетащите изображение сюда"
-            onFile={(dataUrl) => onChoose('reference', { imageDataUrl: dataUrl })}
+          <div className="card__title">Новый проект</div>
+          <div className="card__desc">
+            Один понятный путь: изображение, элементы, тексты, цветовая схема, форматы и просмотр материалов.
+          </div>
+          <div className="onboarding__actions">
+            <button className="btn btn-primary" type="button" onClick={onCreate}>
+              Создать проект
+            </button>
+            <button className="btn btn-ghost" type="button" onClick={() => fileRef.current?.click()}>
+              Импортировать .json
+            </button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) onImportJson(f)
+              e.target.value = ''
+            }}
           />
           <div className="onboarding-preview" aria-hidden="true">
             <div className="onboarding-preview__item onboarding-preview__item--square">
@@ -64,19 +81,6 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
         </div>
       </section>
 
-      <section className="onboarding__pair">
-        <button className="card card--action" onClick={() => onChoose('master')}>
-          <div className="card__title">Создать мастер-креатив</div>
-          <div className="card__desc">Начните с чистого макета и настройте все вручную.</div>
-          <span className="card__cta">Создать новый</span>
-        </button>
-        <button className="card card--action" onClick={() => onChoose('template')}>
-          <div className="card__title">Выбрать бренд-шаблон</div>
-          <div className="card__desc">Возьмите готовую визуальную систему как старт.</div>
-          <span className="card__cta">Открыть шаблоны</span>
-        </button>
-      </section>
-
       <section className="onboarding-download card" aria-labelledby="windows-download-title">
         <div className="onboarding-download__copy">
           <h2 id="windows-download-title" className="onboarding-download__title">
@@ -93,7 +97,7 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
           <button className="btn btn-ghost" type="button" disabled>
             Скачать EXE
           </button>
-          <button className="btn btn-primary" type="button" onClick={() => onChoose('master')}>
+          <button className="btn btn-primary" type="button" onClick={onCreate}>
             Продолжить в браузере
           </button>
           <span className="onboarding-download__release-note">
@@ -102,30 +106,33 @@ export function Onboarding({ onChoose, onImportJson }: Props) {
         </div>
       </section>
 
-      <ol className="onboarding__steps" aria-label="Этапы работы">
-        <li className="is-current" aria-current="step"><span>1</span> Выберите сценарий</li>
-        <li><span>2</span> Настройте форматы</li>
-        <li><span>3</span> Доведите макеты</li>
-        <li><span>4</span> Экспортируйте результат</li>
-      </ol>
+      {recent.length > 0 ? (
+        <section className="onboarding-recent card" aria-labelledby="recent-projects-title">
+          <h2 id="recent-projects-title">Открыть недавний проект</h2>
+          <div className="onboarding-recent__list">
+            {recent.map((item) => (
+              <button key={item.id} type="button" className="onboarding-recent__item" onClick={() => onOpenRecent(item.id)}>
+                <span>{item.name || 'Новый проект'}</span>
+                <small>{formatDate(item.updatedAt)}</small>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      <div className="onboarding__import">
-        Или{' '}
-        <button className="link" type="button" onClick={() => fileRef.current?.click()}>
-          импортируйте сохраненный .json-проект
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            if (f) onImportJson(f)
-            e.target.value = ''
-          }}
-        />
-      </div>
+      <ol className="onboarding__steps" aria-label="Этапы работы">
+        {STEPS.map((step, index) => (
+          <li key={step} className={index === 0 ? 'is-current' : undefined} aria-current={index === 0 ? 'step' : undefined}>
+            <span>{index + 1}</span> {step}
+          </li>
+        ))}
+      </ol>
     </div>
   )
+}
+
+function formatDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('ru', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(date)
 }

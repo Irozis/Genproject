@@ -7,7 +7,7 @@ describe('groupFormatsByResolution', () => {
     const groups = groupFormatsByResolution(['wb-card', 'wb-infographic', 'ozon-card'])
 
     expect(groups).toHaveLength(1)
-    expect(groups[0]!.previewKey).toBe('wb-card')
+    expect(groups[0]!.previewKey).toBe('wb-infographic')
     expect(groups[0]!.formatKeys).toEqual(['wb-card', 'wb-infographic', 'ozon-card'])
     expect(groups[0]!.width).toBe(900)
     expect(groups[0]!.height).toBe(1200)
@@ -70,14 +70,34 @@ describe('groupFormatsByResolution', () => {
     expect(groups[0]!.label).toContain('Custom Story Placement')
   })
 
-  it('keeps a separately edited placement out of its resolution group', () => {
+  it('uses the stricter safe zone as grouped preview source', () => {
+    const customFormats: FormatRuleSet[] = [
+      {
+        key: 'custom:strict-story',
+        label: 'Strict Story',
+        width: 1080,
+        height: 1920,
+        aspectRatio: 1080 / 1920,
+        safeZone: { top: 12, right: 12, bottom: 16, left: 12 },
+        gutter: 4,
+        minTitleSize: 5,
+        maxTitleLines: 3,
+        requiredElements: ['title'],
+      },
+    ]
+
+    const groups = groupFormatsByResolution(['vk-stories', 'custom:strict-story'], customFormats)
+
+    expect(groups[0]!.previewKey).toBe('custom:strict-story')
+  })
+
+  it('keeps identical resolutions merged even when one placement is edited', () => {
     const groups = groupFormatsByResolution(['wb-card', 'wb-infographic', 'ozon-card'], undefined, {
       separateKeys: ['wb-infographic'],
     })
 
-    expect(groups.map((group) => group.formatKeys)).toEqual([
-      ['wb-card', 'ozon-card'],
-      ['wb-infographic'],
-    ])
+    expect(groups).toHaveLength(1)
+    expect(groups[0]!.previewKey).toBe('wb-infographic')
+    expect(groups[0]!.formatKeys).toEqual(['wb-card', 'wb-infographic', 'ozon-card'])
   })
 })

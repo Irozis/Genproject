@@ -9,7 +9,7 @@ type Props = {
 
 const TABS: ReadonlyArray<{ id: Tab; label: string }> = [
   { id: 'project', label: 'Проект' },
-  { id: 'brand', label: 'Бренд' },
+  { id: 'brand', label: 'Цвета' },
   { id: 'content', label: 'Контент' },
   { id: 'formats', label: 'Форматы' },
   { id: 'editor', label: 'Редактор' },

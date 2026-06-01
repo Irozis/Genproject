@@ -1,11 +1,39 @@
 import { describe, expect, it } from 'vitest'
-import { enterFormatEditMode, exitFormatEditMode } from '../App'
+import { createGuidedProject, enterFormatEditMode, exitFormatEditMode } from '../App'
+import { buildScene } from '../lib/buildScene'
 import { newProject } from '../lib/defaults'
 import { ensureProjectFormatDocuments, selectDocumentObject } from '../lib/formatDocuments'
 import { getFormat } from '../lib/formats'
 import type { FormatKey } from '../lib/types'
 
 describe('format edit mode state', () => {
+  it('creates the guided project without an image by default', () => {
+    const project = createGuidedProject()
+
+    expect(project.imageSrc).toBeNull()
+    expect(project.enabled.image).toBe(false)
+    expect(project.enabled.title).toBe(true)
+    expect(project.enabled.subtitle).toBe(true)
+    expect(project.enabled.cta).toBe(true)
+    expect(project.enabled.logo).toBe(false)
+    expect(project.enabled.badge).toBe(false)
+    expect(project.master.title?.text).toBe('')
+    expect(project.master.subtitle?.text).toBe('')
+    expect(project.master.cta?.text).toBe('Подробнее')
+    expect(project.master.badge?.text).toBe('Новинка')
+    expect(project.blockOverrides).toBeUndefined()
+  })
+
+  it('generates a selected format for the guided no-image project', () => {
+    const project = createGuidedProject()
+    const scene = buildScene(project.master, 'vk-square', project.brandKit, project.enabled, {
+      blockOverrides: project.blockOverrides?.['vk-square'],
+    })
+
+    expect(scene.image).toBeUndefined()
+    expect(scene.cta?.text).toBe('Подробнее')
+  })
+
   it('sets activeFormatKey when entering edit mode', () => {
     const project = newProject('edit-entry')
     const next = enterFormatEditMode(project, 'vk-stories')

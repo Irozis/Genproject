@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Onboarding } from './components/Onboarding'
 import { EditorHeader, type ExportFormat } from './components/EditorHeader'
 import { Sidebar } from './components/Sidebar'
+import { CreationWizard } from './components/CreationWizard'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { TemplatePicker } from './components/TemplatePicker'
 import { FormatGrid, type FormatGridHandle } from './components/FormatGrid'
 import { LayoutEditor } from './components/LayoutEditor'
 import { PropagateDialog } from './components/PropagateDialog'
@@ -34,19 +34,16 @@ import { resolveImageFitDecisionForFormat } from './lib/imageFitDecision'
 import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
 import { clearFormatLayoutOverrides, normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
 import { addSceneObject, ensureProjectFormatDocuments, moveLayer, resetProjectFormatDocument, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene, type CreatableSceneObjectType } from './lib/formatDocuments'
-import { applySnapshot, deleteSnapshot, listSnapshots, saveSnapshot } from './lib/brandSnapshots'
-import type { Template } from './lib/templates'
 import type {
   BlockOverride,
   BlockKind,
   BrandKit,
-  BrandSnapshot,
   CompositionModel,
+  CreationStep,
   FormatKey,
   FormatRuleSet,
   ImageFitPreference,
   LayoutDensity,
-  OnboardingMode,
   Project,
   ProjectHistoryItem,
   Scene,
@@ -68,8 +65,8 @@ export default function App() {
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, BlockOverride>> | null>(null)
-  const [snapshots, setSnapshots] = useState<BrandSnapshot[]>(() => listSnapshots())
   const [projectHistoryItems, setProjectHistoryItems] = useState<ProjectHistoryItem[]>(() => listProjectHistory())
+  const [creationStep, setCreationStep] = useState<CreationStep | null>(null)
   // Полноэкранный редактор макета и диалог переноса на другие форматы.
   const [editingFormat, setEditingFormat] = useState<FormatKey | null>(null)
   const [propagateState, setPropagateState] = useState<
@@ -94,12 +91,6 @@ export default function App() {
       // Cap the visible stack at 3 entries — older toasts get evicted.
       return next.length > 3 ? next.slice(next.length - 3) : next
     })
-  }, [])
-
-  // hydrate view if a saved project exists
-  useEffect(() => {
-    const saved = loadProject()
-    if (saved) setView('editor')
   }, [])
 
   useEffect(() => {
@@ -170,7 +161,7 @@ export default function App() {
 
   // Theme propagation: apply data-theme to <html> and persist user choice.
   // The editor chrome uses [data-theme="dark"] overrides; rendered scenes
-  // are untouched (they keep template brand kits regardless of UI theme).
+  // are untouched (they keep project color settings regardless of UI theme).
   useEffect(() => {
     const root = document.documentElement
     const resolved = resolveTheme(theme)
@@ -195,6 +186,7 @@ export default function App() {
   // flips back false once the debounced write lands — this is what drives the
   // "Saving…" → "Saved 3s ago" transition in the header.
   useEffect(() => {
+    if (view !== 'editor') return
     setIsSaving(true)
     const t = window.setTimeout(() => {
       saveProject(project)
@@ -204,7 +196,7 @@ export default function App() {
       setIsSaving(false)
     }, 300)
     return () => window.clearTimeout(t)
-  }, [project])
+  }, [project, view])
 
   // auto-clear toasts after 4s. Each entry is removed independently so the
   // user can see a stack of recent messages.
@@ -451,26 +443,6 @@ export default function App() {
     }))
   }
 
-  function refreshSnapshots() {
-    setSnapshots(listSnapshots())
-  }
-
-  function handleSaveSnapshot(name: string) {
-    saveSnapshot(name, project.brandKit)
-    refreshSnapshots()
-  }
-
-  function handleApplySnapshot(id: string) {
-    const kit = applySnapshot(id)
-    if (!kit) return
-    setBrand(kit)
-  }
-
-  function handleDeleteSnapshot(id: string) {
-    deleteSnapshot(id)
-    refreshSnapshots()
-  }
-
   function refreshProjectHistory() {
     setProjectHistoryItems(listProjectHistory())
   }
@@ -490,6 +462,7 @@ export default function App() {
     setSelectedFormat(null)
     setEditingFormat(null)
     setPropagateState(null)
+    setCreationStep(null)
     setView('editor')
     refreshProjectHistory()
   }
@@ -1101,56 +1074,61 @@ export default function App() {
       } else {
         history.reset(imported)
       }
+      setCreationStep(null)
       setView('editor')
     } catch (e) {
       pushToast(e instanceof Error ? e.message : 'Не удалось импортировать проект.')
     }
   }
 
-  function handleOnboard(mode: OnboardingMode, payload?: { imageDataUrl?: string }) {
-    if (mode === 'template') {
-      setView('templates')
-      return
-    }
-    const fresh = newProject()
-    if (mode === 'reference' && payload?.imageDataUrl) {
-      fresh.imageSrc = payload.imageDataUrl
-      fresh.enabled = { ...fresh.enabled, image: true }
-      void analyzeImage(payload.imageDataUrl)
-        .then((hint) => setProject((p) => applyImageHint(p, hint)))
-        .catch(() => {})
-    }
+  function handleCreateProject() {
+    const fresh = createGuidedProject()
     history.reset(fresh)
+    setSelectedKind(null)
+    setSelectedFormat(null)
+    setEditingFormat(null)
+    setPropagateState(null)
+    setCreationStep('image')
     setView('editor')
   }
 
-  function handleTemplate(t: Template) {
-    const fresh = newProject(t.id)
-    fresh.brandKit = t.brandKit
-    fresh.master = t.master
-    fresh.enabled = { ...fresh.enabled, ...t.enabled }
-    fresh.imageSrc = t.master.image?.src ?? null
-    fresh.logoSrc = t.master.logo?.src ?? null
-    if (t.preferredModels) {
-      fresh.formatOverrides = { ...(fresh.formatOverrides ?? {}), ...t.preferredModels }
-    }
-    if (t.blockOverrides) fresh.blockOverrides = { ...t.blockOverrides }
-    if (t.formatDensities) fresh.formatDensities = { ...t.formatDensities }
-    history.reset(fresh)
-    setView('editor')
+  function clearImage() {
+    imageGenRef.current += 1
+    bgAutoStartedForRef.current = null
+    setProject((p) => ({
+      ...p,
+      imageSrc: null,
+      originalImageSrc: null,
+      extendedImageSrc: null,
+      useExtendedImage: false,
+      imageFitDecisionByFormat: {},
+      backgroundExtensionStatus: 'idle',
+      backgroundExtension: undefined,
+      extendedImageByFormat: {},
+      backgroundExtensionByFormat: {},
+      assetHint: null,
+      imageFocals: undefined,
+      enabled: { ...p.enabled, image: false },
+    }))
+  }
+
+  function setSelectedFormats(keys: FormatKey[]) {
+    setSelectedFormat((current) => current && keys.includes(current) ? current : null)
+    setProject((p) => ({ ...p, selectedFormats: [...new Set(keys)] }))
   }
 
   if (view === 'onboarding') {
     return (
       <>
-        <Onboarding onChoose={handleOnboard} onImportJson={handleImportJson} />
+        <Onboarding
+          onCreate={handleCreateProject}
+          onImportJson={handleImportJson}
+          recentProjects={projectHistoryItems}
+          onOpenRecent={handleOpenHistoryProject}
+        />
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </>
     )
-  }
-
-  if (view === 'templates') {
-    return <TemplatePicker onPick={handleTemplate} onBack={() => setView('onboarding')} />
   }
 
   return (
@@ -1158,7 +1136,10 @@ export default function App() {
       <EditorHeader
         projectName={project.name}
         onRename={(n) => setProject((p) => ({ ...p, name: n }))}
-        onBack={() => setView('onboarding')}
+        onBack={() => {
+          setCreationStep(null)
+          setView('onboarding')
+        }}
         onExport={handleExport}
         onImportJson={handleImportJson}
         exporting={exporting}
@@ -1184,37 +1165,56 @@ export default function App() {
           </aside>
         )}
         >
-          <Sidebar
-            project={sidebarProject}
-            selectedKind={selectedKind}
-            editingFormatKey={selectedFormatScene ? selectedFormat : null}
-            onPatchScene={patchEditableScene}
-            onResetFormatCustom={disableFormatCustom}
-            onResetFormatBlock={resetFormatBlock}
-            onSetLayoutDensity={setLayoutDensity}
-            onToggleEnabled={toggleEnabled}
-            onBrandChange={setBrand}
-            onSetImage={setImage}
-            onSetLogo={setLogo}
-            onSetImageFitPreference={setImageFitPreference}
-            onToggleFormat={toggleFormat}
-            onSetFormatFocal={setFormatFocal}
-            paletteAlternatives={paletteAlts}
-            onApplyPaletteAlt={applyPaletteAlt}
-            onTogglePaletteLock={setPaletteLocked}
-            snapshots={snapshots}
-            onSaveSnapshot={handleSaveSnapshot}
-            onApplySnapshot={handleApplySnapshot}
-            onDeleteSnapshot={handleDeleteSnapshot}
-            projectHistoryItems={projectHistoryItems}
-            currentProjectId={project.id}
-            onOpenHistoryProject={handleOpenHistoryProject}
-            onDuplicateHistoryProject={handleDuplicateHistoryProject}
-            onDeleteHistoryProject={handleDeleteHistoryProject}
-            onSetLocales={setAvailableLocales}
-            onAddCustomFormat={addCustomFormat}
-            onDeleteCustomFormat={deleteCustomFormat}
-          />
+          {creationStep ? (
+            <CreationWizard
+              project={sidebarProject}
+              step={creationStep}
+              onStepChange={setCreationStep}
+              onFinish={() => setCreationStep(null)}
+              onPatchScene={patchEditableScene}
+              onToggleEnabled={toggleEnabled}
+              onSetImage={setImage}
+              onClearImage={clearImage}
+              onSetLogo={setLogo}
+              onSetImageFitPreference={setImageFitPreference}
+              onBrandChange={setBrand}
+              paletteAlternatives={paletteAlts}
+              onApplyPaletteAlt={applyPaletteAlt}
+              onTogglePaletteLock={setPaletteLocked}
+              onToggleFormat={toggleFormat}
+              onSetFormats={setSelectedFormats}
+              onExport={handleExport}
+            />
+          ) : (
+            <Sidebar
+              project={sidebarProject}
+              selectedKind={selectedKind}
+              editingFormatKey={selectedFormatScene ? selectedFormat : null}
+              onPatchScene={patchEditableScene}
+              onResetFormatCustom={disableFormatCustom}
+              onResetFormatBlock={resetFormatBlock}
+              onSetLayoutDensity={setLayoutDensity}
+              onToggleEnabled={toggleEnabled}
+              onBrandChange={setBrand}
+              onSetImage={setImage}
+              onSetLogo={setLogo}
+              onSetImageFitPreference={setImageFitPreference}
+              onToggleFormat={toggleFormat}
+              onSetFormats={setSelectedFormats}
+              onSetFormatFocal={setFormatFocal}
+              paletteAlternatives={paletteAlts}
+              onApplyPaletteAlt={applyPaletteAlt}
+              onTogglePaletteLock={setPaletteLocked}
+              projectHistoryItems={projectHistoryItems}
+              currentProjectId={project.id}
+              onOpenHistoryProject={handleOpenHistoryProject}
+              onDuplicateHistoryProject={handleDuplicateHistoryProject}
+              onDeleteHistoryProject={handleDeleteHistoryProject}
+              onSetLocales={setAvailableLocales}
+              onAddCustomFormat={addCustomFormat}
+              onDeleteCustomFormat={deleteCustomFormat}
+            />
+          )}
         </ErrorBoundary>
         <main className="editor__main">
           <ErrorBoundary fallback={(err, reset) => (
@@ -1240,6 +1240,16 @@ export default function App() {
             </div>
           )}
           >
+            {creationStep ? (
+              <div className="creation-preview-note">
+                <strong>{creationStep === 'preview' ? 'Просмотр материалов' : 'Черновой предпросмотр'}</strong>
+                <span>
+                  {creationStep === 'preview'
+                    ? 'Карточки ниже уже используют выбранные элементы, цвета и форматы.'
+                    : 'Предпросмотр обновляется по мере заполнения шагов.'}
+                </span>
+              </div>
+            ) : null}
             <FormatGrid
               ref={gridRef}
               formats={project.selectedFormats}
@@ -1395,6 +1405,22 @@ function buildSceneForProject(project: Project, formatKey: FormatKey): Scene {
       density: project.formatDensities?.[formatKey] ?? project.layoutDensity,
     },
   )
+}
+
+export function createGuidedProject(): Project {
+  const fresh = newProject()
+  return {
+    ...fresh,
+    enabled: { ...fresh.enabled, image: false, logo: false, badge: false },
+    blockOverrides: undefined,
+    master: {
+      ...fresh.master,
+      title: fresh.master.title ? { ...fresh.master.title, text: '' } : fresh.master.title,
+      subtitle: fresh.master.subtitle ? { ...fresh.master.subtitle, text: '' } : fresh.master.subtitle,
+      cta: fresh.master.cta ? { ...fresh.master.cta, text: 'Подробнее' } : fresh.master.cta,
+      badge: fresh.master.badge ? { ...fresh.master.badge, text: 'Новинка' } : fresh.master.badge,
+    },
+  }
 }
 
 export function enterFormatEditMode(project: Project, formatKey: FormatKey, refreshGenerated = false): Project {

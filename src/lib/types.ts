@@ -41,9 +41,11 @@ export type GoalKey = 'promo-pack' | 'product-highlight' | 'announcement'
 
 export type VisualSystemKey = 'product-card' | 'minimal' | 'bold-editorial'
 
-export type OnboardingMode = 'reference' | 'master' | 'template'
+export type OnboardingMode = 'reference' | 'blank'
 
-export type View = 'onboarding' | 'templates' | 'editor'
+export type View = 'onboarding' | 'editor'
+
+export type CreationStep = 'image' | 'elements' | 'content' | 'colors' | 'formats' | 'preview'
 
 export type BlockKind = 'title' | 'subtitle' | 'cta' | 'badge' | 'logo' | 'image'
 

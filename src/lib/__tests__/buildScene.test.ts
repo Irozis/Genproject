@@ -170,6 +170,17 @@ describe('buildScene — block overrides', () => {
     expect(scene.title?.x).toBe(11)
     expect(scene.title?.y).toBe(22)
   })
+
+  it('does not overwrite manual CTA width overrides with auto sizing', () => {
+    const scene = buildScene(DEFAULT_MASTER, 'vk-square', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
+      blockOverrides: {
+        cta: { w: 18, h: 7 },
+      },
+    })
+
+    expect(scene.cta?.w).toBe(18)
+    expect(scene.cta?.h).toBe(7)
+  })
 })
 
 describe('buildScene — text fitting', () => {

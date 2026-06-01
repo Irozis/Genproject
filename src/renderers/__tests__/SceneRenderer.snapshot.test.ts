@@ -91,3 +91,33 @@ describe('SceneRenderer image fit modes', () => {
     expect(html).not.toContain('preserveAspectRatio="none"')
   })
 })
+
+describe('SceneRenderer CTA sizing', () => {
+  test('uses generated CTA size for long labels when there is room', () => {
+    const master = {
+      ...FIXTURE_MASTER,
+      cta: {
+        ...FIXTURE_MASTER.cta!,
+        text: 'Отправить запрос',
+        x: 10,
+        y: 70,
+        w: 18,
+        h: 8,
+        fontSize: 3,
+      },
+    }
+    const scene = buildScene(master, 'vk-square', FIXTURE_BRAND_KIT, FIXTURE_ENABLED, { override: 'text-dominant' })
+    const html = renderToStaticMarkup(
+      createElement(SceneRenderer, {
+        scene,
+        rules: getFormat('vk-square'),
+        displayFont: 'sans-serif',
+        textFont: 'sans-serif',
+      }),
+    )
+    const match = html.match(/<g data-role="cta"[^>]*><rect[^>]*width="([^"]+)"/)
+
+    expect(match).not.toBeNull()
+    expect(Number(match![1])).toBeGreaterThan(0.18 * getFormat('vk-square').width)
+  })
+})

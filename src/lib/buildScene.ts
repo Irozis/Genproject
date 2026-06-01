@@ -4,6 +4,7 @@
 
 import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkForLuma } from './color'
 import { LAYOUTS, chooseLayoutArchetype } from './composition'
+import { computeCtaButtonSize } from './ctaSizing'
 import { getFormat } from './formats'
 import { applyLayoutDensity } from './layoutDensity'
 import type {
@@ -148,17 +149,61 @@ export function buildScene(
   // 7. clamp anything outside safe zone (defensive — does not move blocks, only shrinks widths)
   const clamped = clampToFrame(localized, rules.safeZone)
 
-  // 8. apply explicit per-format geometry overrides copied from another format.
-  const overridden = applyBlockOverrides(clamped, options.blockOverrides)
+  // 8. Generated CTA geometry follows the label before user overrides apply.
+  const ctaSized = applyGeneratedCtaSizing(clamped, rules, options.density ?? 'balanced')
 
-  // 9. Clamp again because manual per-format overrides can move fixed-size
+  // 9. apply explicit per-format geometry overrides copied from another format.
+  const overridden = applyBlockOverrides(ctaSized, options.blockOverrides)
+
+  // 10. Clamp again because manual per-format overrides can move fixed-size
   // blocks (especially CTAs) past the safe-zone after the generated layout
   // was already clamped.
   const reclamped = clampToFrame(overridden, rules.safeZone)
 
-  // 10. final readability guard. This is intentionally small and deterministic:
+  // 11. final readability guard. This is intentionally small and deterministic:
   // layout stays untouched; only text fills and existing scrim opacity can move.
   return ensureReadableScene(reclamped, rules, options.assetHint ?? null)
+}
+
+function applyGeneratedCtaSizing(scene: Scene, rules: FormatRuleSet, density: LayoutDensity): Scene {
+  const cta = scene.cta
+  if (!cta || !cta.text.trim()) return scene
+  const fontSizePx = (cta.fontSize / 100) * rules.width
+  const minWidthPx = Math.max(88, (cta.w / 100) * rules.width)
+  const currentHeightPx = ((cta.h ?? 7) / 100) * rules.height
+  const safeRightPx = (100 - rules.safeZone.right) / 100 * rules.width
+  const xPx = (cta.x / 100) * rules.width
+  const maxWidthPx = Math.max(minWidthPx, safeRightPx - xPx)
+  const paddingX = Math.max(16, fontSizePx * (density === 'compact' ? 1.05 : 1.25))
+  const paddingY = Math.max(8, fontSizePx * (density === 'compact' ? 0.42 : 0.5))
+  const result = computeCtaButtonSize({
+    text: cta.text,
+    fontSize: fontSizePx,
+    fontFamily: cta.fontFamily,
+    fontWeight: cta.weight,
+    minWidth: minWidthPx,
+    maxWidth: maxWidthPx,
+    minHeight: Math.max(34, currentHeightPx),
+    maxHeight: Math.max(44, rules.height * 0.16),
+    paddingX,
+    paddingY,
+    lineHeight: cta.lineHeight ?? 1,
+    formatWidth: rules.width,
+    formatHeight: rules.height,
+    density,
+    letterSpacing: cta.letterSpacing,
+  })
+  const nextW = (result.width / rules.width) * 100
+  const nextH = (result.height / rules.height) * 100
+  return {
+    ...scene,
+    cta: {
+      ...cta,
+      w: nextW,
+      h: nextH,
+      fontSize: (result.fontSize / rules.width) * 100,
+    },
+  }
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {
