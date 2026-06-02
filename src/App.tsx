@@ -7,6 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { FormatGrid, type FormatGridHandle } from './components/FormatGrid'
 import { LayoutEditor } from './components/LayoutEditor'
 import { PropagateDialog } from './components/PropagateDialog'
+import { ResearchPanel } from './components/ResearchPanel'
 import { AD_FORMAT_CATALOG } from './data/adFormats'
 import { projectOverrides } from './lib/propagateLayout'
 import { newProject } from './lib/defaults'
@@ -26,7 +27,7 @@ import { analyzeImageDimensions, recommendFormatsForImage, selectedStrategyFromR
 import { paletteAlternatives, type DerivedBrandColors } from './lib/paletteFromImage'
 import { buildScene, resolveCompositionModel } from './lib/buildScene'
 import { COMPOSITION_MODEL_LABELS } from './lib/composition'
-import { fixLayout } from './lib/fixLayout'
+import { checkOverflow, fixLayout } from './lib/fixLayout'
 import { getFormat } from './lib/formats'
 import { applyLayoutDensity } from './lib/layoutDensity'
 import { useHistory } from './lib/useHistory'
@@ -37,6 +38,18 @@ import { getActiveImageFitMode, getActiveImageSrc } from './lib/projectImages'
 import { paletteVariantToBrandKit } from './lib/styleSettings'
 import { clearFormatLayoutOverrides, normalizeFormatOverrides, setFormatCompositionOverride } from './lib/projectComposition'
 import { addSceneObject, ensureProjectFormatDocuments, moveLayer, resetProjectFormatDocument, sceneFromFormatDocument, selectDocumentObject, updateObjectProperties, updateObjectsFromScene, type CreatableSceneObjectType } from './lib/formatDocuments'
+import {
+  RESEARCH_MODE_ENABLED,
+  addManualResearchResult,
+  exportResearchSession,
+  recordResearchEvent,
+  startResearchSession,
+  stopResearchSession,
+  type ManualResearchResult,
+  type ResearchEventType,
+  type ResearchMethod,
+  type ResearchSession,
+} from './lib/research'
 import type {
   BlockOverride,
   BlockKind,
@@ -77,6 +90,8 @@ export default function App() {
   const [layoutClipboard, setLayoutClipboard] = useState<Partial<Record<BlockKind, BlockOverride>> | null>(null)
   const [projectHistoryItems, setProjectHistoryItems] = useState<ProjectHistoryItem[]>(() => listProjectHistory())
   const [creationStep, setCreationStep] = useState<CreationStep | null>(null)
+  const [researchSession, setResearchSession] = useState<ResearchSession | null>(null)
+  const [manualResearchResults, setManualResearchResults] = useState<ManualResearchResult[]>([])
   // Полноэкранный редактор макета и диалог переноса на другие форматы.
   const [editingFormat, setEditingFormat] = useState<FormatKey | null>(null)
   const [propagateState, setPropagateState] = useState<
@@ -90,6 +105,7 @@ export default function App() {
   const bgAutoStartedForRef = useRef<string | null>(null)
   const toastIdRef = useRef(0)
   const screenKeyRef = useRef<string | null>(null)
+  const researchValidationKeyRef = useRef<string | null>(null)
 
   const dismissToast = useCallback((id: number) => {
     setToasts((list) => list.filter((t) => t.id !== id))
@@ -102,6 +118,45 @@ export default function App() {
       // Cap the visible stack at 3 entries — older toasts get evicted.
       return next.length > 3 ? next.slice(next.length - 3) : next
     })
+  }, [])
+
+  const researchEvent = useCallback((type: ResearchEventType, payload?: { step?: string; formatId?: string; payload?: Record<string, unknown> }) => {
+    if (!RESEARCH_MODE_ENABLED) return
+    setResearchSession((session) => recordResearchEvent(session, { type, ...payload }, true))
+  }, [])
+
+  const handleStartResearch = useCallback((params: { scenarioName: string; participantId?: string; method: ResearchMethod; notes?: string }) => {
+    if (!RESEARCH_MODE_ENABLED) return
+    setResearchSession(startResearchSession({
+      projectId: project.id,
+      scenarioName: params.scenarioName,
+      participantId: params.participantId,
+      method: params.method,
+      selectedFormats: project.selectedFormats,
+      customFormats: project.customFormats,
+      notes: params.notes,
+    }))
+  }, [project.customFormats, project.id, project.selectedFormats])
+
+  const handleStopResearch = useCallback(() => {
+    setResearchSession((session) => session && !session.finishedAt ? stopResearchSession(session) : session)
+  }, [])
+
+  const handleResetResearch = useCallback(() => {
+    setResearchSession(null)
+    setManualResearchResults([])
+  }, [])
+
+  const handleExportResearch = useCallback(() => {
+    if (!researchSession) return
+    const bundle = exportResearchSession(researchSession, manualResearchResults)
+    downloadTextFile('research-session.json', bundle.json, 'application/json')
+    downloadTextFile('research-session.csv', bundle.csv, 'text/csv')
+    downloadTextFile('research-summary.txt', bundle.txt, 'text/plain')
+  }, [manualResearchResults, researchSession])
+
+  const handleAddManualResearchResult = useCallback((result: ManualResearchResult) => {
+    setManualResearchResults((items) => addManualResearchResult(items, result))
   }, [])
 
   useEffect(() => {
@@ -210,10 +265,36 @@ export default function App() {
     return () => window.clearTimeout(t)
   }, [project, view])
 
+  useEffect(() => {
+    if (!RESEARCH_MODE_ENABLED || !researchSession || researchSession.finishedAt || view !== 'editor') return
+    const key = JSON.stringify({
+      formats: project.selectedFormats,
+      image: Boolean(project.imageSrc),
+      enabled: project.enabled,
+      overrides: project.formatOverrides,
+      blocks: project.blockOverrides,
+    })
+    if (researchValidationKeyRef.current === key) return
+    researchValidationKeyRef.current = key
+    let warnings = 0
+    for (const formatKey of project.selectedFormats) {
+      const format = getFormat(formatKey, project.customFormats)
+      const scene = buildSceneForProject(project, formatKey)
+      warnings += checkOverflow(scene, format).filter((issue) => issue.level === 'warn').length
+    }
+    setResearchSession((session) => {
+      let next = recordResearchEvent(session, { type: 'scene_generated', payload: { count: project.selectedFormats.length } }, true)
+      next = recordResearchEvent(next, { type: 'validation_started', payload: { count: project.selectedFormats.length } }, true)
+      for (let i = 0; i < warnings; i += 1) next = recordResearchEvent(next, { type: 'validation_warning' }, true)
+      return next
+    })
+  }, [project, researchSession, view])
+
   const setWizardStep = useCallback((step: CreationStep) => {
+    researchEvent('step_change', { step })
     setCreationStep(step)
     setProject((p) => setProjectCreationStep(p, step))
-  }, [setProject])
+  }, [researchEvent, setProject])
 
   const finishWizard = useCallback(() => {
     const step = creationStep ?? project.currentStep ?? 'preview'
@@ -396,6 +477,7 @@ export default function App() {
   // Inline-edit callback — invoked by FormatPreview on dbl-click + blur/Enter.
   // Writes the new text back onto master.<kind> so every format rerenders.
   const setBlockText = useCallback((formatKey: FormatKey, kind: 'title' | 'subtitle' | 'cta' | 'badge', text: string) => {
+    researchEvent('text_changed', { formatId: formatKey, payload: { block: kind } })
     if (project.blockOverrides?.[formatKey]) {
       const activeLocale = project.activeLocale
       setProject((p) => ({
@@ -459,7 +541,7 @@ export default function App() {
       }
       return { ...m, [kind]: { ...b, text } }
     })
-  }, [patchScene, project.activeLocale, project.blockOverrides, project.formatDocuments, setProject])
+  }, [patchScene, project.activeLocale, project.blockOverrides, project.formatDocuments, researchEvent, setProject])
 
   function toggleEnabled(kind: BlockKind, next: boolean) {
     setProject((p) => ({ ...p, enabled: { ...p.enabled, [kind]: next } }))
@@ -479,6 +561,7 @@ export default function App() {
   // Apply one of the derived palette variants. Same mutation shape as
   // applyImageHint — palette + gradient + master.background + master.accent.
   function applyPaletteAlt(alt: DerivedBrandColors) {
+    researchEvent('palette_selected')
     setProject((p) => ({
       ...p,
       brandKit: { ...p.brandKit, palette: alt.palette, gradient: alt.gradient },
@@ -503,6 +586,7 @@ export default function App() {
   }
 
   function applyPaletteVariant(variant: PaletteVariant) {
+    researchEvent('palette_selected', { payload: { paletteId: variant.id } })
     const nextBrand = paletteVariantToBrandKit(project.brandKit, variant)
     setProject((p) => ({
       ...p,
@@ -542,10 +626,12 @@ export default function App() {
   }
 
   function setTypographySettings(next: TypographySettings) {
+    researchEvent('typography_changed')
     setProject((p) => ({ ...p, typographySettings: next }))
   }
 
   function setCompositionSettings(next: CompositionSettings) {
+    researchEvent('composition_changed')
     setProject((p) => ({ ...p, compositionSettings: next }))
   }
 
@@ -612,6 +698,7 @@ export default function App() {
     void analyzeImage(dataUrl)
       .then((hint) => {
         if (gen !== imageGenRef.current) return // a newer image is in flight
+        researchEvent('image_uploaded', { payload: { width: hint.width, height: hint.height, aspectRatio: hint.aspectRatio } })
         setProject((p) => {
           const imageAnalysis = analyzeImageDimensions(hint.width, hint.height)
           const withHint = applyImageHint(p, hint)
@@ -736,6 +823,7 @@ export default function App() {
     setSelectedFormat((current) => current === key ? null : current)
     setProject((p) => {
       const has = p.selectedFormats.includes(key)
+      researchEvent(has ? 'format_unselected' : 'format_selected', { formatId: key })
       const next = has ? p.selectedFormats.filter((k) => k !== key) : [...p.selectedFormats, key]
       return {
         ...p,
@@ -782,6 +870,7 @@ export default function App() {
         selectedFormats: p.selectedFormats.includes(key) ? p.selectedFormats : [...p.selectedFormats, key],
       }
     })
+    researchEvent('format_selected')
   }
 
   function deleteCustomFormat(key: FormatKey) {
@@ -895,6 +984,7 @@ export default function App() {
   }, [setProject])
 
   const setFormatComposition = useCallback((formatKey: FormatKey, model: CompositionModel | null) => {
+    researchEvent('composition_changed', { formatId: formatKey, payload: { model: model ?? 'auto' } })
     setProject((p) => {
       return {
         ...p,
@@ -902,7 +992,7 @@ export default function App() {
         blockOverrides: clearFormatLayoutOverrides(p.blockOverrides, formatKey),
       }
     })
-  }, [setProject])
+  }, [researchEvent, setProject])
 
   const disableFormatCustom = useCallback((formatKey: FormatKey) => {
     setSelectedFormat((current) => current === formatKey ? null : current)
@@ -1016,8 +1106,11 @@ export default function App() {
   const updateObject = useCallback((objectId: string, patch: Partial<SceneObject>) => {
     const formatKey = editingFormat ?? selectedFormat
     if (!formatKey) return
+    researchEvent('manual_edit', { formatId: formatKey, payload: { objectId } })
+    if (patch.text !== undefined) researchEvent('text_changed', { formatId: formatKey, payload: { objectId } })
+    if (patch.fill !== undefined || patch.stroke !== undefined) researchEvent('color_changed', { formatId: formatKey, payload: { objectId } })
     setProject((p) => updateFormatDocumentObject(p, formatKey, objectId, patch))
-  }, [editingFormat, selectedFormat, setProject])
+  }, [editingFormat, researchEvent, selectedFormat, setProject])
 
   const resetEditingFormat = useCallback(() => {
     if (!editingFormat) return
@@ -1030,6 +1123,7 @@ export default function App() {
 
   const addObject = useCallback((type: CreatableSceneObjectType) => {
     if (!editingFormat) return
+    researchEvent('manual_edit', { formatId: editingFormat, payload: { action: 'add_object', objectType: type } })
     setProject((p) => {
       const ensured = ensureProjectFormatDocuments(p)
       const document = ensured.formatDocuments?.[editingFormat]
@@ -1044,7 +1138,7 @@ export default function App() {
         },
       }
     })
-  }, [editingFormat, setProject])
+  }, [editingFormat, researchEvent, setProject])
 
   // Open the full-screen layout editor for a format. If the format is in
   // "Auto" mode (no manual composition picked), resolve the auto-chosen
@@ -1054,6 +1148,7 @@ export default function App() {
   // would no longer match the layout they were authored against.
   const openLayoutEditor = useCallback(
     (formatKey: FormatKey) => {
+      researchEvent('manual_edit', { formatId: formatKey, payload: { action: 'open_editor' } })
       setSelectedFormat(formatKey)
       const resolved = project.formatOverrides?.[formatKey] ?? resolveCompositionModel(
         masterWithAssets,
@@ -1092,6 +1187,7 @@ export default function App() {
       project.formatDensities,
       project.layoutDensity,
       pushToast,
+      researchEvent,
       setProject,
     ],
   )
@@ -1160,6 +1256,8 @@ export default function App() {
     try {
       if (kind === 'json') {
         exportJson(project)
+        researchEvent('export', { payload: { kind, count: 1 } })
+        researchEvent('download', { payload: { kind, count: 1 } })
         pushToast('Материалы готовы.', 'info')
         return
       }
@@ -1175,6 +1273,8 @@ export default function App() {
       } else if (kind === 'pdf') {
         await exportPdf(svgs, project.selectedFormats, project.name || 'project', project.customFormats)
       }
+      researchEvent('export', { payload: { kind, count: project.selectedFormats.length } })
+      researchEvent('download', { payload: { kind, count: project.selectedFormats.length } })
       pushToast('Материалы готовы.', 'info')
     } catch (e) {
       pushToast(e instanceof Error ? e.message : 'Не удалось выполнить экспорт.')
@@ -1245,6 +1345,7 @@ export default function App() {
   }
 
   function setSelectedFormats(keys: FormatKey[]) {
+    researchEvent('recommended_formats_selected', { payload: { formatIds: keys } })
     setSelectedFormat((current) => current && keys.includes(current) ? current : null)
     setProject((p) => {
       const selectedFormats = [...new Set(keys)]
@@ -1300,6 +1401,17 @@ export default function App() {
         theme={theme}
         onSetTheme={setTheme}
       />
+      {RESEARCH_MODE_ENABLED && (
+        <ResearchPanel
+          session={researchSession}
+          manualResults={manualResearchResults}
+          onStart={handleStartResearch}
+          onStop={handleStopResearch}
+          onReset={handleResetResearch}
+          onExport={handleExportResearch}
+          onAddManualResult={handleAddManualResearchResult}
+        />
+      )}
       <div className="editor__body">
         <ErrorBoundary fallback={(_, reset) => (
           <aside className="sidebar" role="alert" aria-live="assertive">
@@ -1901,4 +2013,16 @@ function blockToOverride(block: NonNullable<Scene[BlockKind]>): BlockOverride {
     if (source[key] !== undefined) out[key] = source[key]
   }
   return out as BlockOverride
+}
+
+function downloadTextFile(filename: string, content: string, type: string): void {
+  const blob = new Blob([content], { type })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }

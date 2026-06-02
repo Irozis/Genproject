@@ -4,9 +4,9 @@
 
 import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkForLuma } from './color'
 import { LAYOUTS, chooseLayoutArchetype } from './composition'
-import { computeCtaButtonSize } from './ctaSizing'
 import { safeAreaToPercentEdges, visibleAreaToPercentRect } from './formatGeometry'
 import { getFormat } from './formats'
+import { normalizeGroupLayout } from './groupLayout'
 import { applyLayoutDensity } from './layoutDensity'
 import { applyStyleSettingsToScene } from './styleSettings'
 import type {
@@ -156,12 +156,23 @@ export function buildScene(
 
   // 6. apply locale-specific text if present.
   const localized = applyLocale(snapped, options.locale)
+  const localizedContent = applyLocale(branded, options.locale)
+  const groupSource: Scene = {
+    ...localized,
+    title: localized.title ?? localizedContent.title,
+    subtitle: localized.subtitle ?? localizedContent.subtitle,
+    cta: localized.cta ?? localizedContent.cta,
+    badge: localized.badge ?? localizedContent.badge,
+    logo: localized.logo ?? localizedContent.logo,
+    image: localized.image ?? (model === 'text-dominant' ? undefined : localizedContent.image),
+  }
 
   // 7. clamp anything outside safe zone (defensive — does not move blocks, only shrinks widths)
-  const clamped = clampToFrame(localized, effectiveSafeZone(rules))
+  const grouped = normalizeGroupLayout(groupSource, rules, enabled)
+  const clamped = clampToFrame(grouped, effectiveSafeZone(rules))
 
   // 8. Generated CTA geometry follows the label before user overrides apply.
-  const ctaSized = applyGeneratedCtaSizing(clamped, rules, options.density ?? 'balanced')
+  const ctaSized = clamped
 
   // 9. apply explicit per-format geometry overrides copied from another format.
   const overridden = applyBlockOverrides(ctaSized, options.blockOverrides)
@@ -173,7 +184,7 @@ export function buildScene(
 
   // 11. final readability guard. This is intentionally small and deterministic:
   // layout stays untouched; only text fills and existing scrim opacity can move.
-  return ensureReadableScene(enforceFormatMinFont(reclamped, rules), rules, options.assetHint ?? null)
+  return ensureReadableScene(reclamped, rules, options.assetHint ?? null)
 }
 
 function effectiveSafeZone(rules: FormatRuleSet): FormatRuleSet['safeZone'] {
@@ -193,60 +204,6 @@ function effectiveSafeZone(rules: FormatRuleSet): FormatRuleSet['safeZone'] {
     right: base.right + pad,
     bottom: base.bottom + pad,
     left: base.left + pad,
-  }
-}
-
-function enforceFormatMinFont(scene: Scene, rules: FormatRuleSet): Scene {
-  const min = rules.minFontSize
-  if (!min) return scene
-  const minPct = (min / rules.width) * 100
-  const out: Scene = { ...scene }
-  for (const k of ['title', 'subtitle', 'cta', 'badge'] as const) {
-    const block = out[k]
-    if (!block || block.fontSize >= minPct) continue
-    ;(out as Record<string, unknown>)[k] = { ...block, fontSize: minPct }
-  }
-  return out
-}
-
-function applyGeneratedCtaSizing(scene: Scene, rules: FormatRuleSet, density: LayoutDensity): Scene {
-  const cta = scene.cta
-  if (!cta || !cta.text.trim()) return scene
-  const fontSizePx = (cta.fontSize / 100) * rules.width
-  const minWidthPx = Math.max(88, (cta.w / 100) * rules.width)
-  const currentHeightPx = ((cta.h ?? 7) / 100) * rules.height
-  const safeRightPx = (100 - rules.safeZone.right) / 100 * rules.width
-  const xPx = (cta.x / 100) * rules.width
-  const maxWidthPx = Math.max(minWidthPx, safeRightPx - xPx)
-  const paddingX = Math.max(16, fontSizePx * (density === 'compact' ? 1.05 : 1.25))
-  const paddingY = Math.max(8, fontSizePx * (density === 'compact' ? 0.42 : 0.5))
-  const result = computeCtaButtonSize({
-    text: cta.text,
-    fontSize: fontSizePx,
-    fontFamily: cta.fontFamily,
-    fontWeight: cta.weight,
-    minWidth: minWidthPx,
-    maxWidth: maxWidthPx,
-    minHeight: Math.max(34, currentHeightPx),
-    maxHeight: Math.max(44, rules.height * 0.16),
-    paddingX,
-    paddingY,
-    lineHeight: cta.lineHeight ?? 1,
-    formatWidth: rules.width,
-    formatHeight: rules.height,
-    density,
-    letterSpacing: cta.letterSpacing,
-  })
-  const nextW = (result.width / rules.width) * 100
-  const nextH = (result.height / rules.height) * 100
-  return {
-    ...scene,
-    cta: {
-      ...cta,
-      w: nextW,
-      h: nextH,
-      fontSize: (result.fontSize / rules.width) * 100,
-    },
   }
 }
 

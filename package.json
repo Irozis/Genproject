@@ -22,6 +22,7 @@
     "test:unit": "vitest run src/lib src/components src/__tests__",
     "test:layout": "vitest run src/lib/__tests__/buildScene.test.ts src/lib/__tests__/layoutCriticalFormats.test.ts src/lib/__tests__/fixLayout.test.ts src/lib/__tests__/imageFormatRecommendations.test.ts",
     "test:export": "vitest run src/lib/__tests__/exportPipeline.test.ts",
+    "test:research": "vitest run src/lib/__tests__/research.test.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",

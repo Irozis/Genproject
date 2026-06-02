@@ -77,6 +77,62 @@ describe('layout generator for critical fixture formats', () => {
       if (format.aspectRatio < 0.8) expect(scene.image.h ?? 0).toBeLessThanOrEqual(72)
     }
   })
+
+  it('keeps text and CTA out of image region when logo is disabled', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    for (const format of minimalTestFormats.filter((item) => item.aspectRatio >= 2.2 || item.aspectRatio < 0.9)) {
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true, logo: false }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+
+      expect(scene.logo).toBeUndefined()
+      expect(scene.image).toBeDefined()
+      for (const block of [scene.title, scene.subtitle, scene.cta]) {
+        if (!block || !scene.image) continue
+        expect(rectsOverlap(blockRect(block, format), blockRect(scene.image, format))).toBe(false)
+      }
+    }
+  })
+
+  it('applies compact banner rules to the requested horizontal formats', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const formats = minimalTestFormats.filter((item) => item.aspectRatio >= 2.2 || item.height <= 120)
+    for (const format of formats) {
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+      const messages = checkOverflow(scene, format).map((issue) => issue.message)
+      expect(messages.some((message) => /overlaps/.test(message))).toBe(false)
+      if (format.height <= 70) expect(scene.subtitle).toBeUndefined()
+      if (scene.cta) {
+        const ctaHeightPx = ((scene.cta.h ?? 0) / 100) * format.height
+        const maxHeight = format.height <= 70 ? format.height * 0.45 : format.height <= 120 ? 34 : Math.max(48, format.height * 0.18)
+        expect(ctaHeightPx).toBeLessThanOrEqual(maxHeight + 0.5)
+      }
+    }
+  })
+
+  it('uses vertical space in portrait cards without tiny text or empty lower halves', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const formats = minimalTestFormats.filter((item) => item.aspectRatio < 0.9 && item.height >= 1000)
+    for (const format of formats) {
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+      expect(scene.title).toBeDefined()
+      expect(scene.cta).toBeDefined()
+      const titleFontPx = ((scene.title?.fontSize ?? 0) / 100) * format.width
+      expect(titleFontPx).toBeGreaterThanOrEqual(Math.max(14, format.width * 0.035))
+      const bottomMost = Math.max(...blocks(scene).map((block) => block.y + (block.h ?? 0)))
+      expect(100 - bottomMost).toBeLessThanOrEqual(30)
+      if (scene.image && scene.title) {
+        expect(rectsOverlap(blockRect(scene.image, format), blockRect(scene.title, format))).toBe(false)
+      }
+    }
+  })
 })
 
 function blocks(scene: Scene): Array<{ kind: BlockKind; x: number; y: number; w: number; h?: number }> {
@@ -84,4 +140,20 @@ function blocks(scene: Scene): Array<{ kind: BlockKind; x: number; y: number; w:
     const block = scene[kind]
     return block ? [{ kind, x: block.x, y: block.y, w: block.w, h: block.h }] : []
   })
+}
+
+function blockRect(block: { x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number }, format: { aspectRatio: number }) {
+  return {
+    x: block.x,
+    y: block.y,
+    w: block.w,
+    h: block.h ?? (block.fontSize ?? 3) * (block.maxLines ?? 1) * (block.lineHeight ?? 1.2) * format.aspectRatio,
+  }
+}
+
+function rectsOverlap(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): boolean {
+  return a.x + a.w > b.x + 0.3 && b.x + b.w > a.x + 0.3 && a.y + a.h > b.y + 0.3 && b.y + b.h > a.y + 0.3
 }

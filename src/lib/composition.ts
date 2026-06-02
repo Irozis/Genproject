@@ -30,6 +30,8 @@ export type ContentProfile = {
 export type FormatProfile = {
   key: FormatKey
   family: 'wide' | 'square' | 'portrait' | 'tall'
+  width: number
+  height: number
   aspectRatio: number
   safeAreaPct: number
   isNarrow: boolean
@@ -120,6 +122,8 @@ export function profileFormat(rules: FormatRuleSet): FormatProfile {
         : 'tall'
   return {
     key: rules.key,
+    width: rules.width,
+    height: rules.height,
     family,
     aspectRatio: rules.aspectRatio,
     safeAreaPct,
@@ -221,7 +225,8 @@ function chooseLayoutArchetypeFromProfiles(
       penalties: candidatePenalties(model, content, format, cropRisk, ctaFitRisk),
     }))
     .sort((a, b) => b.score - a.score || archetypeTieRank(a.archetype) - archetypeTieRank(b.archetype))
-  const chosen = candidates[0]?.archetype ?? 'text-dominant'
+  const forced = forcedLayoutArchetype(content, format)
+  const chosen = forced ?? candidates[0]?.archetype ?? 'text-dominant'
   const imageFitMode = chosen === 'product-card-safe' ? 'contain' : 'cover'
 
   return {
@@ -254,6 +259,17 @@ function estimateSmallTextRisk(content: ContentProfile, format: FormatProfile): 
   if (content.textDensity === 'high' || content.totalEnabledBlocks >= 5) return 'high'
   if (content.textDensity === 'medium' || content.hasSubtitle) return 'medium'
   return 'low'
+}
+
+function forcedLayoutArchetype(content: ContentProfile, format: FormatProfile): CompositionModel | undefined {
+  if (!content.hasImage) return undefined
+  if (format.height <= 70) return 'split-right-image'
+  if (format.aspectRatio >= 5) return 'split-right-image'
+  if (format.height <= 120 && format.aspectRatio >= 3) return 'split-right-image'
+  if (format.aspectRatio >= 2.2) return 'split-right-image'
+  if (format.aspectRatio <= 0.45) return 'image-top-stack'
+  if (format.family === 'portrait' || format.family === 'tall') return 'image-top-stack'
+  return undefined
 }
 
 function estimateCtaFitRisk(content: ContentProfile, format: FormatProfile): 'low' | 'medium' | 'high' {
