@@ -10,6 +10,14 @@ import {
   stopResearchSession,
   type ManualResearchResult,
 } from '../research'
+import {
+  buildResearchReport,
+  buildResearchValidationRecord,
+  classifyRecord,
+  researchRecordsToCsv,
+  researchReportToMarkdown,
+} from '../researchReport'
+import type { FormatRuleSet, Project, Scene } from '../types'
 
 describe('research mode session metrics', () => {
   it('starts a session', () => {
@@ -121,5 +129,124 @@ describe('research mode session metrics', () => {
     })
 
     expect(payload).toEqual({ width: 1600, height: 900, aspectRatio: 16 / 9 })
+  })
+})
+
+describe('research validation report', () => {
+  const format: FormatRuleSet = {
+    key: 'test-format',
+    label: 'Test Format',
+    width: 1000,
+    height: 1000,
+    aspectRatio: 1,
+    safeZone: { top: 5, right: 5, bottom: 5, left: 5 },
+    gutter: 4,
+    minTitleSize: 4,
+    maxTitleLines: 2,
+    requiredElements: ['title', 'cta'],
+  }
+
+  const scene: Scene = {
+    background: { kind: 'solid', color: '#ffffff' },
+    accent: '#111111',
+    title: {
+      text: 'Offer',
+      x: 10,
+      y: 10,
+      w: 50,
+      h: 10,
+      fontSize: 5,
+      charsPerLine: 20,
+      maxLines: 1,
+      weight: 900,
+      fill: '#111111',
+    },
+    cta: {
+      text: 'Buy',
+      x: 10,
+      y: 80,
+      w: 20,
+      h: 8,
+      fontSize: 3,
+      charsPerLine: 10,
+      maxLines: 1,
+      weight: 700,
+      fill: '#ffffff',
+      bg: '#111111',
+      rx: 12,
+    },
+  }
+
+  const project: Project = {
+    id: 'p',
+    name: 'Project',
+    master: scene,
+    enabled: { title: true, subtitle: true, cta: true, badge: false, logo: false, image: false },
+    brandKit: {
+      brandName: 'Brand',
+      displayFont: 'Inter',
+      textFont: 'Inter',
+      palette: { ink: '#111111', inkMuted: '#444444', surface: '#ffffff', accent: '#111111', accentSoft: '#eeeeee' },
+      gradient: ['#ffffff', '#eeeeee', '#dddddd'],
+      toneOfVoice: 'neutral',
+      ctaStyle: 'pill',
+    },
+    goal: 'promo-pack',
+    visualSystem: 'product-card',
+    assetHint: null,
+    imageSrc: null,
+    logoSrc: null,
+    selectedFormats: ['test-format'],
+  }
+
+  it('classifies missing export or required elements as critical', () => {
+    expect(classifyRecord({
+      exportOk: false,
+      requiredElementsPresent: true,
+      criticalTechnicalViolations: [],
+      layoutWarnings: [],
+      manualReviewReasons: [],
+      safeAreaViolationCount: 0,
+      outOfBoundsCount: 0,
+      overlapCount: 0,
+      textOverflow: false,
+    })).toBe('critical')
+
+    const record = buildResearchValidationRecord({
+      project,
+      format,
+      scene: { ...scene, cta: undefined },
+      exportOk: true,
+    })
+
+    expect(record.requiredElementsPresent).toBe(false)
+    expect(record.criticalTechnicalViolations).toContain('required element missing: cta')
+    expect(record.classification).toBe('critical')
+  })
+
+  it('classifies local layout warnings as needsFix', () => {
+    const record = buildResearchValidationRecord({
+      project,
+      format,
+      scene: { ...scene, layoutPolicy: { formatKind: 'square', source: { type: 'heuristic', name: 'test' }, appliedRules: [], needsManualReview: true } },
+      exportOk: true,
+    })
+
+    expect(record.classification).toBe('needsFix')
+    expect(record.manualReviewReasons).toContain('layout policy requires manual review')
+  })
+
+  it('writes report-shaped JSON, CSV and Markdown summaries', () => {
+    const ready = buildResearchValidationRecord({ project, format, scene, exportOk: true })
+    const critical = buildResearchValidationRecord({ project, format, scene: null, exportOk: false, exportError: 'render failed' })
+    const report = buildResearchReport([ready, critical], new Date('2026-06-02T00:00:00.000Z'))
+    const csv = researchRecordsToCsv(report.records)
+    const markdown = researchReportToMarkdown(report)
+
+    expect(report.totalResults).toBe(2)
+    expect(csv).toContain('scenarioId,method,formatId,formatName,width,height,aspectRatio,layoutMode,exportOk')
+    expect(markdown).toContain('| Total formats | 1 |')
+    expect(markdown).toContain('| Critical | 1 (50.0%) |')
+    expect(markdown).toContain('| adaptiveLayout | 2 |')
   })
 })

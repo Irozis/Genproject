@@ -15,6 +15,7 @@
     "desktop:dist": "npm run build:desktop && electron-builder --win nsis",
     "desktop:pack": "npm run build:desktop && electron-builder --dir",
     "experiment": "tsx scripts/runExperiment.ts",
+    "research:report": "tsx scripts/generateResearchReport.ts",
     "experiment:png": "tsx scripts/validatePngExports.ts",
     "experiment:bg-extension": "tsx scripts/testBackgroundExtension.ts",
     "typecheck": "tsc --noEmit",
