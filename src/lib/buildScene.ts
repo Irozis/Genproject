@@ -22,6 +22,7 @@ import type {
   FormatRuleSet,
   LayoutDensity,
   TextAlign,
+  TextBlock,
   TypographySettings,
   CompositionSettings,
 } from './types'
@@ -180,7 +181,7 @@ export function buildScene(
   }
 
   // 7. clamp anything outside safe zone (defensive — does not move blocks, only shrinks widths)
-  const clamped = clampToFrame(enforceTextGaps(groupSource, rules), effectiveSafeZone(rules))
+  const clamped = clampToFrame(enforceTextStack(groupSource, rules), effectiveSafeZone(rules))
 
   // 8. Generated CTA geometry follows the label before user overrides apply.
   const ctaSized = clamped
@@ -191,7 +192,7 @@ export function buildScene(
   // 10. Clamp again because manual per-format overrides can move fixed-size
   // blocks (especially CTAs) past the safe-zone after the generated layout
   // was already clamped.
-  const reclamped = clampToFrame(overridden, effectiveSafeZone(rules))
+  const reclamped = clampToFrame(enforceTextStack(overridden, rules), effectiveSafeZone(rules))
 
   // 11. final readability guard. This is intentionally small and deterministic:
   // layout stays untouched; only text fills and existing scrim opacity can move.
@@ -216,6 +217,130 @@ function effectiveSafeZone(rules: FormatRuleSet): FormatRuleSet['safeZone'] {
     bottom: base.bottom + pad,
     left: base.left + pad,
   }
+}
+
+function enforceTextStack(scene: Scene, rules: FormatRuleSet): Scene {
+  const out = enforceTextGaps(scene, rules)
+  if (!out.title && !out.subtitle && !out.cta) return out
+
+  const safe = effectiveSafeZone(rules)
+  const maxBottom = 100 - safe.bottom
+  const innerH = Math.max(1, maxBottom - safe.top)
+  const regularGap = Math.max(rules.gutter, 0.65)
+  const compactGap = Math.max(rules.gutter * 0.25, 0.35)
+  const notes: string[] = []
+
+  let gap = regularGap
+  let title = out.title ? { ...out.title, h: out.title.h ?? textHeight(out.title, rules) } : undefined
+  let subtitle = out.subtitle ? { ...out.subtitle, h: out.subtitle.h ?? textHeight(out.subtitle, rules) } : undefined
+  let cta = out.cta ? { ...out.cta, h: out.cta.h ?? textHeight(out.cta, rules) } : undefined
+
+  if (title && isTinyFormat(rules)) title = compactTinyTitle(title, rules)
+  if (title) {
+    title = normalizeTextCapacity(title, rules, rules.maxTitleLines)
+    title = expandTitleLines(title, rules)
+  }
+  if (subtitle) subtitle = normalizeTextCapacity(subtitle, rules, subtitle.maxLines)
+  if (cta) cta = normalizeTextCapacity(cta, rules, 1, true)
+
+  const existingBlocks = [title, subtitle, cta].filter(Boolean) as Array<{ y: number; h?: number }>
+  const existingTop = existingBlocks.length > 0 ? Math.min(...existingBlocks.map((block) => block.y)) : safe.top
+  const existingBottom = existingBlocks.length > 0 ? Math.max(...existingBlocks.map((block) => block.y + (block.h ?? 0))) : safe.top
+  const normalized: Scene = { ...out, title, subtitle, cta }
+  if (!subtitle && out.subtitle) delete normalized.subtitle
+  if (
+    !textStackHasCollision(normalized, rules) &&
+    !textLikelyTruncated(title) &&
+    existingTop >= safe.top - 0.5 &&
+    existingBottom <= maxBottom + 0.5
+  ) {
+    return normalized
+  }
+
+  if (stackHeight(title, subtitle, cta, gap) > innerH && subtitle) {
+    subtitle = undefined
+    gap = compactGap
+    notes.push('subtitleHiddenDueToSpace')
+  }
+
+  if (title && stackHeight(title, subtitle, cta, gap) > innerH) {
+    const reserved = stackHeight(undefined, subtitle, cta, gap)
+    const budget = Math.max(innerH - reserved - (reserved > 0 ? gap : 0), innerH * 0.28)
+    const minTitlePct = Math.max(rules.minTitleSize, (minReadableTitlePx(rules) / rules.width) * 100)
+    const nextFont = Math.max(
+      minTitlePct,
+      Math.min(title.fontSize, budget / ((title.lineHeight ?? 1.08) * Math.max(1, title.maxLines) * rules.aspectRatio)),
+    )
+    if (nextFont < title.fontSize) {
+      title = {
+        ...title,
+        fontSize: nextFont,
+        h: nextFont * (title.lineHeight ?? 1.08) * Math.max(1, title.maxLines) * rules.aspectRatio,
+      }
+      title = normalizeTextCapacity(title, rules, title.maxLines)
+      notes.push('titleFontReduced')
+    }
+  }
+
+  if (cta && stackHeight(title, subtitle, cta, gap) > innerH) {
+    const compactH = Math.max((compactCtaMinHeightPx(rules) / rules.height) * 100, Math.min(cta.h ?? 0, (34 / rules.height) * 100, innerH * 0.22))
+    const compactFont = Math.max((compactCtaMinFontPx(rules) / rules.width) * 100, Math.min(cta.fontSize, compactH / Math.max(1, rules.aspectRatio)))
+    if (compactH < (cta.h ?? compactH) || compactFont < cta.fontSize) {
+      cta = {
+        ...cta,
+        h: compactH,
+        fontSize: compactFont,
+        maxLines: 1,
+        w: Math.min(cta.w, Math.max(18, (title?.w ?? cta.w) * 0.72)),
+      }
+      gap = compactGap
+      notes.push('ctaCompactApplied')
+    }
+  }
+
+  if (title && textLikelyTruncated(title)) {
+    const minTitlePct = Math.max(rules.minTitleSize, (minReadableTitlePx(rules) / rules.width) * 100)
+    let nextFont = title.fontSize
+    while (nextFont > minTitlePct + 0.0001 && textLikelyTruncated(normalizeTextCapacity({ ...title, fontSize: nextFont }, rules, title.maxLines))) {
+      nextFont = Math.max(minTitlePct, nextFont - 0.15)
+    }
+    const fitted = normalizeTextCapacity({ ...title, fontSize: nextFont }, rules, title.maxLines)
+    if (fitted.fontSize < title.fontSize) notes.push('titleFontReduced')
+    title = { ...fitted, h: textHeight(fitted, rules) }
+  }
+
+  if (stackHeight(title, subtitle, cta, gap) > innerH) gap = compactGap
+
+  const blocks = [title, subtitle, cta].filter(Boolean) as Array<{ y: number }>
+  const currentTop = blocks.length > 0 ? Math.min(...blocks.map((block) => block.y)) : safe.top
+  const totalH = stackHeight(title, subtitle, cta, gap)
+  let cursor = clamp(currentTop, safe.top, Math.max(safe.top, maxBottom - totalH))
+  const stackX = title?.x ?? subtitle?.x ?? cta?.x
+
+  if (title) {
+    title = { ...title, y: cursor }
+    cursor += title.h ?? textHeight(title, rules)
+  }
+  if (subtitle) {
+    cursor += gap
+    subtitle = { ...subtitle, x: stackX ?? subtitle.x, y: cursor, w: title?.w ?? subtitle.w }
+    cursor += subtitle.h ?? textHeight(subtitle, rules)
+  }
+  if (cta) {
+    cursor += title || subtitle ? gap : 0
+    cta = { ...cta, x: stackX ?? cta.x, y: cursor }
+  }
+
+  const next: Scene = { ...out, title, subtitle, cta }
+  if (!subtitle && out.subtitle) delete next.subtitle
+
+  if (textStackHasCollision(next, rules) || textLikelyTruncated(title) || stackHeight(title, subtitle, cta, gap) > innerH + 0.5) {
+    notes.push('textStackRequiresManualReview')
+  } else if (notes.length > 0 && !notes.includes('textStackCollisionResolved')) {
+    notes.push('textStackCollisionResolved')
+  }
+
+  return notes.length > 0 ? addLayoutDebugWarnings(next, notes) : next
 }
 
 function enforceTextGaps(scene: Scene, rules: FormatRuleSet): Scene {
@@ -265,11 +390,143 @@ function rangesOverlap(aX: number, aW: number, bX: number, bW: number): boolean 
   return aX + aW > bX && bX + bW > aX
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
+
+function stackHeight(
+  title: { h?: number } | undefined,
+  subtitle: { h?: number } | undefined,
+  cta: { h?: number } | undefined,
+  gap: number,
+): number {
+  const heights = [title, subtitle, cta].filter(Boolean).map((block) => block?.h ?? 0)
+  return heights.reduce((sum, height) => sum + height, 0) + Math.max(0, heights.length - 1) * gap
+}
+
+function normalizeTextCapacity<T extends TextBlock>(block: T, rules: FormatRuleSet, maxLines: number, preserveHeight = false): T {
+  const charsPerLine = estimatedCharsPerLine(block, rules)
+  const nextMaxLines = Math.max(1, Math.min(maxLines, block.maxLines))
+  return {
+    ...block,
+    charsPerLine,
+    maxLines: nextMaxLines,
+    h: preserveHeight && block.h !== undefined
+      ? block.h
+      : block.fontSize * (block.lineHeight ?? 1.2) * nextMaxLines * rules.aspectRatio,
+  }
+}
+
+function expandTitleLines<T extends TextBlock>(block: T, rules: FormatRuleSet): T {
+  const maxLines = block.maxLines <= 1
+    ? Math.max(1, Math.min(rules.maxTitleLines, 3))
+    : Math.max(1, Math.min(rules.maxTitleLines, block.maxLines))
+  let next: T = normalizeTextCapacity({ ...block, maxLines: Math.min(block.maxLines, maxLines) }, rules, maxLines)
+  while (textLikelyTruncated(next) && next.maxLines < maxLines) {
+    next = normalizeTextCapacity({ ...next, maxLines: next.maxLines + 1 }, rules, maxLines)
+  }
+  return next
+}
+
+function estimatedCharsPerLine(block: TextBlock, rules: FormatRuleSet): number {
+  if (block.w <= 0 || block.fontSize <= 0) return Math.max(1, block.charsPerLine)
+  const fontPx = (block.fontSize / 100) * rules.width
+  const widthPx = (block.w / 100) * rules.width
+  const avgCharPx = Math.max(1, fontPx * 0.54)
+  return Math.max(1, Math.floor(widthPx / avgCharPx))
+}
+
+function textLikelyTruncated(block: TextBlock | undefined): boolean {
+  if (!block?.text.trim()) return false
+  return stripTextMarkup(block.text).length > Math.max(1, block.charsPerLine * block.maxLines) * 1.25
+}
+
+function stripTextMarkup(text: string): string {
+  return text.replace(/\*\*/g, '').trim()
+}
+
+function isTinyFormat(rules: FormatRuleSet): boolean {
+  return rules.width <= 340 || rules.height <= 120 || rules.width * rules.height <= 50000
+}
+
+function compactTinyTitle<T extends TextBlock>(block: T, rules: FormatRuleSet): T {
+  const maxChars = rules.width <= 160 || rules.height <= 120 ? 22 : 26
+  const clean = block.text.replace(/\s+/g, ' ').trim()
+  if (clean.length <= maxChars) return { ...block, text: clean }
+  const suffix = '...'
+  const budget = Math.max(1, maxChars - suffix.length)
+  const words = clean.split(/\s+/)
+  let out = ''
+  for (const word of words) {
+    const next = out ? `${out} ${word}` : word
+    if (next.length > budget) break
+    out = next
+  }
+  return { ...block, text: `${(out || clean.slice(0, budget)).trim()}${suffix}` }
+}
+
+function minReadableTitlePx(rules: FormatRuleSet): number {
+  if (rules.height <= 70) return 8
+  if (rules.height <= 120) return 10
+  if (rules.width <= 320 || rules.height <= 300) return 11
+  return rules.minFontSize ?? 12
+}
+
+function compactCtaMinHeightPx(rules: FormatRuleSet): number {
+  if (rules.height <= 70) return 16
+  if (rules.height <= 120) return 18
+  if (rules.width <= 320 || rules.height <= 300) return 22
+  return 24
+}
+
+function compactCtaMinFontPx(rules: FormatRuleSet): number {
+  if (rules.height <= 70) return 8
+  if (rules.height <= 120) return 9
+  return rules.width <= 320 ? 10 : 11
+}
+
+function textStackHasCollision(scene: Scene, rules: FormatRuleSet): boolean {
+  const pairs = [
+    [scene.title, scene.subtitle],
+    [scene.title, scene.cta],
+    [scene.subtitle, scene.cta],
+  ] as const
+  return pairs.some(([a, b]) => {
+    if (!a || !b) return false
+    return intersects(a.x, a.y, a.w, a.h ?? textHeight(a, rules), b.x, b.y, b.w, b.h ?? textHeight(b, rules))
+  })
+}
+
+function addLayoutDebugWarnings(scene: Scene, warnings: string[]): Scene {
+  const existing = scene.layoutPolicy
+  const debugWarnings = [...new Set([...(existing?.debugWarnings ?? []), ...warnings])]
+  return {
+    ...scene,
+    layoutPolicy: {
+      ...(existing ?? {
+        formatKind: 'unknown',
+        source: { type: 'heuristic', name: 'Text stack guard' },
+        appliedRules: [],
+      }),
+      appliedRules: [...new Set([...(existing?.appliedRules ?? []), ...warnings])],
+      debugWarnings,
+      needsManualReview: existing?.needsManualReview || warnings.includes('textStackRequiresManualReview') || undefined,
+    },
+  }
+}
+
 function textBottom(
   block: { y: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number },
   rules: FormatRuleSet,
 ): number {
   return block.y + (block.h ?? ((block.fontSize ?? 3) * (block.lineHeight ?? 1.2) * Math.max(1, block.maxLines ?? 1) * rules.aspectRatio))
+}
+
+function textHeight(
+  block: { h?: number; fontSize?: number; maxLines?: number; lineHeight?: number },
+  rules: FormatRuleSet,
+): number {
+  return block.h ?? ((block.fontSize ?? 3) * (block.lineHeight ?? 1.2) * Math.max(1, block.maxLines ?? 1) * rules.aspectRatio)
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {

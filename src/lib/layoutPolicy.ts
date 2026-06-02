@@ -172,6 +172,7 @@ function applyReducedContentPolicy(scene: Scene, rules: FormatRuleSet, policy: L
       const minReadablePct = Math.min(9, (11 / rules.width) * 100)
       out.title = {
         ...out.title,
+        text: compactHeadlineText(out.title.text, tinyTitleCharLimit(rules)),
         maxLines: 1,
         fontSize: Math.max(out.title.fontSize, minReadablePct),
         w: Math.min(out.title.w, rules.aspectRatio >= 1.6 ? 48 : 72),
@@ -324,6 +325,27 @@ function splitImageSlotWidth(innerW: number, rules: FormatRuleSet): number {
 
 function isHorizontalKind(kind: LayoutPolicyFormatKind): boolean {
   return kind === 'horizontal' || kind === 'ultraWideHorizontal'
+}
+
+function tinyTitleCharLimit(rules: FormatRuleSet): number {
+  if (rules.width <= 160 || rules.height <= 90) return 22
+  if (rules.height <= 120) return 22
+  return 26
+}
+
+function compactHeadlineText(text: string, maxChars: number): string {
+  const clean = text.replace(/\s+/g, ' ').trim()
+  if (clean.length <= maxChars) return clean
+  const suffix = '...'
+  const budget = Math.max(1, maxChars - suffix.length)
+  const words = clean.split(/\s+/)
+  let out = ''
+  for (const word of words) {
+    const next = out ? `${out} ${word}` : word
+    if (next.length > budget) break
+    out = next
+  }
+  return `${(out || clean.slice(0, budget)).trim()}${suffix}`
 }
 
 function horizontalCtaWidth(textZoneW: number, rules: FormatRuleSet): number {

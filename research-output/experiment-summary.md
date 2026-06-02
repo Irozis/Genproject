@@ -4,37 +4,46 @@
 | --- | ---: |
 | Total formats | 126 |
 | Total results | 1890 |
-| Ready | 0 (0.0%) |
-| NeedsFix | 1257 (66.5%) |
-| Critical | 633 (33.5%) |
+| Ready | 81 (4.3%) |
+| NeedsFix | 1591 (84.2%) |
+| Critical | 218 (11.5%) |
 
 ## Results By Method
 
 | Method | Total | Ready | NeedsFix | Critical |
 | --- | ---: | ---: | ---: | ---: |
 | simpleScale | 630 | 0 (0.0%) | 445 (70.6%) | 185 (29.4%) |
-| fixedTemplate | 630 | 0 (0.0%) | 395 (62.7%) | 235 (37.3%) |
-| adaptiveLayout | 630 | 0 (0.0%) | 417 (66.2%) | 213 (33.8%) |
+| fixedTemplate | 630 | 40 (6.3%) | 560 (88.9%) | 30 (4.8%) |
+| adaptiveLayout | 630 | 41 (6.5%) | 586 (93.0%) | 3 (0.5%) |
 
 ## Top 5 NeedsFix Reasons
 
-- subtitle: 1264
-- ctaDetachedFromText: 1238
-- textTooSmall: 1167
-- needsManualReview: 1166
-- unknownRuleSource: 1084
+- textTooSmall: 1442
+- ctaDetachedFromText: 1348
+- subtitle: 918
+- title: 904
+- bodyOverflow: 634
 
 ## Top 5 Critical Reasons
 
-- title: 490
 - cta: 105
 - title critically overlaps cta (100.0% of smaller block): 80
 - title critically overlaps subtitle (100.0% of smaller block): 80
+- title: 75
 - subtitle critically overlaps cta (100.0% of smaller block): 70
+
+## Methodology Warning Counts
+
+- derivedRuleApplied: 1890
+- heuristicRuleApplied: 1890
+- layoutNotOfficiallySpecified: 1890
+- percentageRegionsAreInternalModel: 1890
+- needsManualReview: 1734
+- unknownRuleSource: 1545
 
 ## Diploma Conclusion
 
-The audit produced reproducible technical validation records for the generated advertising materials. Ready results satisfy export, required element, boundary, text readability, and overlap checks. NeedsFix results are technically generated but require local review or correction. Critical results contain blocking technical violations and should not be treated as production-ready without correction.
+The audit produced reproducible technical validation records for the generated advertising materials. Ready results satisfy export, required element, boundary, text readability, and overlap checks. NeedsFix results are technically generated but require layout correction. Critical results contain blocking technical violations and should not be treated as production-ready without correction. Methodology warnings describe rule provenance and review confidence; by themselves they do not change the technical classification.
 
 ## Audit Matrix
 
@@ -51,6 +60,16 @@ The audit produced reproducible technical validation records for the generated a
 - simpleScale: 630
 - fixedTemplate: 630
 - adaptiveLayout: 630
+
+## Critical Comparison
+
+| Method | Critical cases |
+| --- | ---: |
+| simpleScale | 185 |
+| fixedTemplate | 30 |
+| adaptiveLayout | 3 |
+
+AdaptiveLayout critical is below simpleScale critical.
 
 ## Adaptive PNG / ZIP Export
 

@@ -414,6 +414,16 @@ function renderAuditMarkdown(report: ReturnType<typeof buildResearchReport> & {
 
 ${report.audit.methods.map((method) => `- ${method}: ${report.summary.byMethod[method].total}`).join('\n')}
 
+## Critical Comparison
+
+| Method | Critical cases |
+| --- | ---: |
+| simpleScale | ${report.summary.byMethod.simpleScale.critical.count} |
+| fixedTemplate | ${report.summary.byMethod.fixedTemplate.critical.count} |
+| adaptiveLayout | ${report.summary.byMethod.adaptiveLayout.critical.count} |
+
+AdaptiveLayout critical is ${report.summary.byMethod.adaptiveLayout.critical.count < report.summary.byMethod.simpleScale.critical.count ? 'below' : 'not below'} simpleScale critical.
+
 ## Adaptive PNG / ZIP Export
 
 | Metric | Value |

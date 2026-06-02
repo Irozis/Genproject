@@ -249,6 +249,7 @@ export type Scene = {
     appliedRules: string[]
     needsManualReview?: boolean
     requiresManualCorrection?: boolean
+    debugWarnings?: string[]
   }
 }
 

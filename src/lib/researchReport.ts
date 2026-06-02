@@ -23,7 +23,8 @@ export type ResearchValidationRecord = {
   safeAreaViolationCount: number
   criticalTechnicalViolations: string[]
   layoutWarnings: string[]
-  manualReviewReasons: string[]
+  methodologyWarnings: string[]
+  manualReviewNotes: string[]
   classification: ResearchClassification
 }
 
@@ -42,6 +43,7 @@ export type ResearchReportSummary = {
   byMethod: Record<ResearchAuditMethod, ResearchMethodSummary>
   topNeedsFixReasons: Array<{ reason: string; count: number }>
   topCriticalReasons: Array<{ reason: string; count: number }>
+  methodologyWarningCounts: Array<{ reason: string; count: number }>
 }
 
 export type ResearchClassSummary = {
@@ -94,9 +96,19 @@ export const RESEARCH_REPORT_CSV_HEADERS: Array<keyof ResearchValidationRecord> 
   'safeAreaViolationCount',
   'criticalTechnicalViolations',
   'layoutWarnings',
-  'manualReviewReasons',
+  'methodologyWarnings',
+  'manualReviewNotes',
   'classification',
 ]
+
+const METHODOLOGY_WARNING_CODES = new Set([
+  'unknownRuleSource',
+  'needsManualReview',
+  'heuristicRuleApplied',
+  'derivedRuleApplied',
+  'percentageRegionsAreInternalModel',
+  'layoutNotOfficiallySpecified',
+])
 
 export function buildResearchValidationRecord(input: BuildRecordInput): ResearchValidationRecord {
   const { project, format, scene, exportOk, exportError } = input
@@ -112,11 +124,15 @@ export function buildResearchValidationRecord(input: BuildRecordInput): Research
   const layoutWarnings = dedupeStrings([
     ...overflowIssues.filter((issue) => issue.level === 'info' || !isCriticalOverflowIssue(scene, format, issue)).map(formatLayoutIssue),
     ...(compliance?.layoutWarnings ?? []).map(formatFinding),
+    ...((scene?.layoutPolicy?.debugWarnings ?? []).filter((warning) => warning === 'textStackRequiresManualReview').map((warning) => `${warning}: Text stack still requires manual review after automatic spacing guard.`)),
   ])
-  const manualReviewReasons = dedupeStrings([
-    ...(compliance?.heuristicWarnings ?? []).filter(isManualReviewFinding).map(formatFinding),
+  const methodologyWarnings = dedupeStrings([
+    ...(compliance?.heuristicWarnings ?? []).filter(isMethodologyFinding).map(formatFinding),
+  ])
+  const manualReviewNotes = dedupeStrings([
     ...(scene?.layoutPolicy?.needsManualReview ? ['layout policy requires manual review'] : []),
     ...(scene?.layoutPolicy?.requiresManualCorrection ? ['layout policy requires manual correction'] : []),
+    ...((scene?.layoutPolicy?.debugWarnings ?? []).filter((warning) => warning !== 'textStackRequiresManualReview').map(formatDebugWarning)),
   ])
   const criticalTechnicalViolations = dedupeStrings([
     ...(!exportOk ? [`file not created${exportError ? `: ${exportError}` : ''}`] : []),
@@ -145,13 +161,15 @@ export function buildResearchValidationRecord(input: BuildRecordInput): Research
     safeAreaViolationCount: safeAreaIssues.length,
     criticalTechnicalViolations,
     layoutWarnings,
-    manualReviewReasons,
+    methodologyWarnings,
+    manualReviewNotes,
     classification: classifyRecord({
       exportOk,
       requiredElementsPresent,
       criticalTechnicalViolations,
       layoutWarnings,
-      manualReviewReasons,
+      methodologyWarnings,
+      manualReviewNotes,
       safeAreaViolationCount: safeAreaIssues.length,
       outOfBoundsCount: outOfBoundsIssues.length,
       overlapCount: overlapIssues.length,
@@ -166,7 +184,8 @@ export function classifyRecord(input: Pick<
   | 'requiredElementsPresent'
   | 'criticalTechnicalViolations'
   | 'layoutWarnings'
-  | 'manualReviewReasons'
+  | 'methodologyWarnings'
+  | 'manualReviewNotes'
   | 'safeAreaViolationCount'
   | 'outOfBoundsCount'
   | 'overlapCount'
@@ -177,7 +196,6 @@ export function classifyRecord(input: Pick<
   if (input.criticalTechnicalViolations.length > 0) return 'critical'
   if (
     input.layoutWarnings.length > 0 ||
-    input.manualReviewReasons.length > 0 ||
     input.safeAreaViolationCount > 0 ||
     input.outOfBoundsCount > 0 ||
     input.overlapCount > 0 ||
@@ -211,6 +229,7 @@ export function summarizeResearchRecords(records: ResearchValidationRecord[]): R
     },
     topNeedsFixReasons: topReasons(records.filter((record) => record.classification === 'needsFix'), false),
     topCriticalReasons: topReasons(records.filter((record) => record.classification === 'critical'), true),
+    methodologyWarningCounts: countReasons(records.flatMap((record) => record.methodologyWarnings)),
   }
 }
 
@@ -251,9 +270,13 @@ ${formatReasonList(summary.topNeedsFixReasons, 'No needsFix reasons recorded')}
 
 ${formatReasonList(summary.topCriticalReasons, 'No critical reasons recorded')}
 
+## Methodology Warning Counts
+
+${formatReasonList(summary.methodologyWarningCounts, 'No methodology warnings recorded')}
+
 ## Diploma Conclusion
 
-The audit produced reproducible technical validation records for the generated advertising materials. Ready results satisfy export, required element, boundary, text readability, and overlap checks. NeedsFix results are technically generated but require local review or correction. Critical results contain blocking technical violations and should not be treated as production-ready without correction.
+The audit produced reproducible technical validation records for the generated advertising materials. Ready results satisfy export, required element, boundary, text readability, and overlap checks. NeedsFix results are technically generated but require layout correction. Critical results contain blocking technical violations and should not be treated as production-ready without correction. Methodology warnings describe rule provenance and review confidence; by themselves they do not change the technical classification.
 `
 }
 
@@ -401,8 +424,16 @@ function formatFinding(finding: ValidationFinding): string {
   return `${finding.code}: ${finding.message}${finding.detail ? ` (${finding.detail})` : ''}`
 }
 
-function isManualReviewFinding(finding: ValidationFinding): boolean {
-  return finding.code === 'needsManualReview' || finding.code === 'unknownRuleSource'
+function formatDebugWarning(warning: string): string {
+  if (warning === 'textStackCollisionResolved') return 'textStackCollisionResolved: Automatic text stack spacing resolved a local collision.'
+  if (warning === 'subtitleHiddenDueToSpace') return 'subtitleHiddenDueToSpace: Subtitle was hidden to preserve title and CTA readability.'
+  if (warning === 'ctaCompactApplied') return 'ctaCompactApplied: CTA compact sizing was applied to preserve the text stack.'
+  if (warning === 'titleFontReduced') return 'titleFontReduced: Title font size was reduced to fit the text stack.'
+  return `${warning}: Layout debug note.`
+}
+
+function isMethodologyFinding(finding: ValidationFinding): boolean {
+  return METHODOLOGY_WARNING_CODES.has(finding.code)
 }
 
 function classSummary(records: ResearchValidationRecord[], total: number, classification: ResearchClassification): ResearchClassSummary {
@@ -426,15 +457,24 @@ function topReasons(records: ResearchValidationRecord[], critical: boolean): Arr
   for (const record of records) {
     const reasons = critical
       ? record.criticalTechnicalViolations
-      : [...record.layoutWarnings, ...record.manualReviewReasons, ...(record.textOverflow ? ['text overflow'] : [])]
+      : [...record.layoutWarnings, ...(record.textOverflow ? ['text overflow'] : [])]
     for (const reason of reasons) {
       increment(counts, normalizeReason(reason))
     }
   }
+  return sortedReasonCounts(counts).slice(0, 5)
+}
+
+function countReasons(reasons: string[]): Array<{ reason: string; count: number }> {
+  const counts = new Map<string, number>()
+  for (const reason of reasons) increment(counts, normalizeReason(reason))
+  return sortedReasonCounts(counts)
+}
+
+function sortedReasonCounts(counts: Map<string, number>): Array<{ reason: string; count: number }> {
   return [...counts.entries()]
     .map(([reason, count]) => ({ reason, count }))
     .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason))
-    .slice(0, 5)
 }
 
 function normalizeReason(reason: string): string {

@@ -497,7 +497,7 @@ describe('chooseLayoutArchetype', () => {
     expect(result.selected).toBe('split-left-image')
   })
 
-  it('yandex-rsy-728x90 keeps subtitle and readable title/CTA', () => {
+  it('yandex-rsy-728x90 keeps readable title/CTA and may hide subtitle', () => {
     const decision = select(masterWithImage, 'yandex-rsy-728x90', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-rsy-728x90', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
@@ -508,14 +508,14 @@ describe('chooseLayoutArchetype', () => {
     expect(decision.selectionDebug.subtitleHiddenForCompactFormat).toBe(false)
     expect(decision.selectionDebug.minFontGuardApplied).toBe(true)
     expect(decision.selectionDebug.smallTextRisk).not.toBe('low')
-    expect(scene.subtitle).toBeDefined()
-    expect(scene.image?.x).toBeLessThan(10)
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.image).toBeDefined()
     expect(scene.cta).toBeDefined()
     expect(fontPx(scene.title!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(13)
     expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-728x90')).toBeGreaterThanOrEqual(11)
   })
 
-  it('yandex-rsy-240x400 uses compact vertical policy', () => {
+  it('yandex-rsy-240x400 uses compact vertical policy with optional subtitle', () => {
     const decision = select(masterWithImage, 'yandex-rsy-240x400', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-rsy-240x400', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
@@ -523,11 +523,11 @@ describe('chooseLayoutArchetype', () => {
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
     expect(decision.selectionDebug.smallTextRiskPenalty).toBeGreaterThan(0)
-    expect(scene.subtitle).toBeDefined()
-    expect(scene.image?.y).toBeLessThan(10)
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.image?.y).toBeGreaterThanOrEqual(0)
     expect(scene.image?.fit).toBe('contain')
     expect(scene.cta!.y).toBeGreaterThan(scene.title!.y)
-    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(14)
+    expect(fontPx(scene.title!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(13)
     expect(fontPx(scene.cta!.fontSize, 'yandex-rsy-240x400')).toBeGreaterThanOrEqual(11)
   })
 
@@ -544,14 +544,14 @@ describe('chooseLayoutArchetype', () => {
     expect(fontPx(scene.cta!.fontSize, 'avito-skyscraper')).toBeGreaterThanOrEqual(11)
   })
 
-  it('yandex-market-stretch keeps subtitle while prioritizing title/CTA', () => {
+  it('yandex-market-stretch prioritizes title/CTA before subtitle', () => {
     const decision = select(masterWithImage, 'yandex-market-stretch', { ...hintWithGrid([[0.5]]), aspectRatio: 1 })
     const scene = buildScene(masterWithImage, 'yandex-market-stretch', DEFAULT_BRAND_KIT, DEFAULT_ENABLED, {
       assetHint: { ...hintWithGrid([[0.5]]), aspectRatio: 1 },
     })
 
     expect(decision.selectionDebug.compactTextPolicyApplied).toBe(true)
-    expect(scene.subtitle).toBeDefined()
+    expect(scene.subtitle).toBeUndefined()
     expect(scene.title?.maxLines).toBe(1)
     expect(scene.cta).toBeDefined()
     expect(fontPx(scene.title!.fontSize, 'yandex-market-stretch')).toBeGreaterThanOrEqual(18)

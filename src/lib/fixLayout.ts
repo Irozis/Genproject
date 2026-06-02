@@ -21,6 +21,7 @@ export function fixLayout(scene: Scene, rules: FormatRuleSet): Scene {
   const out: Scene = { background: scene.background, accent: scene.accent }
   if (scene.scrim) out.scrim = scene.scrim
   if (scene.decor) out.decor = scene.decor
+  if (scene.layoutPolicy) out.layoutPolicy = scene.layoutPolicy
 
   // Same 0.5% tolerance as checkOverflow so the two never disagree on edge
   // cases (a freshly clamped block must not flag a "crosses safe area" warning).
@@ -90,7 +91,12 @@ function maybeShrinkTextToBounds(
     fits: doesFit,
   })
   const fittedPct = (fittedPx / rules.width) * 100
-  return fittedPct < t.fontSize ? { ...t, fontSize: Math.max((minPx / rules.width) * 100, fittedPct) } : t
+  const fontSize = fittedPct < t.fontSize ? Math.max((minPx / rules.width) * 100, fittedPct) : t.fontSize
+  return {
+    ...t,
+    fontSize,
+    charsPerLine: estimateCharsPerLine({ ...t, fontSize }, rules),
+  }
 }
 
 function isTextNode(kind: BlockKind, block: Scene[BlockKind]): boolean {
@@ -364,6 +370,14 @@ function isIntentionalImageBleed(scene: Scene, rules: FormatRuleSet): boolean {
 
 function stripMarkup(text: string): string {
   return text.replace(/\*\*/g, '').trim()
+}
+
+function estimateCharsPerLine(t: TextBlock, rules: FormatRuleSet): number {
+  if (t.w <= 0 || t.fontSize <= 0) return Math.max(1, t.charsPerLine)
+  const widthPx = (t.w / 100) * rules.width
+  const fontPx = (t.fontSize / 100) * rules.width
+  const avgCharPx = Math.max(1, fontPx * 0.54)
+  return Math.max(1, Math.floor(widthPx / avgCharPx))
 }
 
 function estimateTextHeight(t: TextBlock, rules: FormatRuleSet): number {

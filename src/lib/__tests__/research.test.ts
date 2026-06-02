@@ -205,7 +205,8 @@ describe('research validation report', () => {
       requiredElementsPresent: true,
       criticalTechnicalViolations: [],
       layoutWarnings: [],
-      manualReviewReasons: [],
+      methodologyWarnings: [],
+      manualReviewNotes: [],
       safeAreaViolationCount: 0,
       outOfBoundsCount: 0,
       overlapCount: 0,
@@ -224,16 +225,21 @@ describe('research validation report', () => {
     expect(record.classification).toBe('critical')
   })
 
-  it('classifies local layout warnings as needsFix', () => {
+  it('keeps methodology/manual review notes from changing technical classification', () => {
     const record = buildResearchValidationRecord({
       project,
       format,
-      scene: { ...scene, layoutPolicy: { formatKind: 'square', source: { type: 'heuristic', name: 'test' }, appliedRules: [], needsManualReview: true } },
+      scene: {
+        ...scene,
+        cta: scene.cta ? { ...scene.cta, y: 24, fontSize: 4 } : undefined,
+        layoutPolicy: { formatKind: 'square', source: { type: 'heuristic', name: 'test' }, appliedRules: [], needsManualReview: true },
+      },
       exportOk: true,
     })
 
-    expect(record.classification).toBe('needsFix')
-    expect(record.manualReviewReasons).toContain('layout policy requires manual review')
+    expect(record.classification).toBe('ready')
+    expect(record.methodologyWarnings.some((item) => item.startsWith('heuristicRuleApplied:'))).toBe(true)
+    expect(record.manualReviewNotes).toContain('layout policy requires manual review')
   })
 
   it('writes report-shaped JSON, CSV and Markdown summaries', () => {
