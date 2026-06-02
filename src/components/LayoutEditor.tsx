@@ -46,6 +46,8 @@ import type {
   Scene,
   SceneObject,
   TextAlign,
+  TypographySettings,
+  CompositionSettings,
 } from '../lib/types'
 import type { CreatableSceneObjectType } from '../lib/formatDocuments'
 
@@ -63,6 +65,8 @@ type Props = {
   assetHint?: AssetHint | null
   blockOverride?: EditableBlocks
   locale?: string
+  typographySettings?: TypographySettings
+  compositionSettings?: CompositionSettings
   /** Сохранить — записать новый набор overrides в проект. */
   onSave: (overrides: EditableBlocks) => void
   /** Закрыть без сохранения. */
@@ -126,6 +130,8 @@ export function LayoutEditor({
   assetHint,
   blockOverride,
   locale,
+  typographySettings,
+  compositionSettings,
   onSave,
   onCancel,
   onPropagate,
@@ -162,8 +168,10 @@ export function LayoutEditor({
         locale,
         customFormats,
         density,
+        typographySettings,
+        compositionSettings,
       }),
-    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, locale, customFormats, density],
+    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, locale, customFormats, density, typographySettings, compositionSettings],
   )
 
   // Initial draft = whatever was already overridden + the geometry of any
@@ -198,8 +206,10 @@ export function LayoutEditor({
         locale,
         customFormats,
         density,
+        typographySettings,
+        compositionSettings,
       }),
-    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, draft, locale, customFormats, density],
+    [effectiveMaster, formatKey, brandKit, enabled, override, assetHint, draft, locale, customFormats, density, typographySettings, compositionSettings],
   )
   const documentScene = useMemo(
     () => formatDocument ? sceneFromFormatDocument(formatDocument) : null,

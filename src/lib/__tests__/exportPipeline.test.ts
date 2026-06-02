@@ -86,8 +86,28 @@ describe('export pipeline', () => {
     expect(zip.file('Project_One__vk-square.png')).toBeTruthy()
     expect(zip.file('Project_One__instagram-story.png')).toBeTruthy()
     expect(zip.file('ad-format-manifest.json')).toBeTruthy()
+    expect(zip.file('export-report.json')).toBeTruthy()
+    expect(zip.file('export-report.txt')).toBeTruthy()
     const manifest = JSON.parse(await zip.file('ad-format-manifest.json')!.async('string')) as Array<{ key: FormatKey }>
     expect(manifest.map((item) => item.key)).toEqual(['vk-square', 'instagram-story'])
+    const report = JSON.parse(await zip.file('export-report.json')!.async('string')) as {
+      formatRuleSources: Array<{
+        formatId: FormatKey
+        officialRequirementsUsed: string[]
+        derivedRulesUsed: string[]
+        heuristicRulesUsed: string[]
+        needsManualReview: boolean
+        status: string
+      }>
+    }
+    expect(report.formatRuleSources.map((item) => item.formatId)).toEqual(['vk-square', 'instagram-story'])
+    const firstReportEntry = report.formatRuleSources[0]
+    expect(firstReportEntry).toBeDefined()
+    expect(firstReportEntry!.heuristicRulesUsed).toContain('image/text/CTA percentage regions')
+    expect(firstReportEntry!.status).not.toBe('official_match')
+    const txt = await zip.file('export-report.txt')!.async('string')
+    expect(txt).toContain('Часть правил компоновки является эвристической')
+    expect(txt).toContain('процентное расположение изображения, текста и CTA')
   })
 })
 

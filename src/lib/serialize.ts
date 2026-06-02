@@ -130,6 +130,19 @@ const decorSchema = z.discriminatedUnion('kind', [
   }),
 ])
 
+const sceneLayoutPolicySchema = z.object({
+  formatKind: z.string(),
+  source: z.object({
+    type: z.enum(['official', 'industry_reference', 'manual', 'derived', 'heuristic', 'unknown']),
+    name: z.string(),
+    note: z.string().optional(),
+    verifiedAt: z.string().optional(),
+  }),
+  appliedRules: z.array(z.string()),
+  needsManualReview: z.boolean().optional(),
+  requiresManualCorrection: z.boolean().optional(),
+})
+
 const sceneSchema = z.object({
   background: backgroundSchema,
   accent: z.string(),
@@ -141,6 +154,7 @@ const sceneSchema = z.object({
   badge: textBlockSchema.optional(),
   logo: logoBlockSchema.optional(),
   image: imageBlockSchema.optional(),
+  layoutPolicy: sceneLayoutPolicySchema.optional(),
 })
 
 const sceneObjectSchema = z.object({
@@ -382,6 +396,23 @@ const formatKeySchema = z.enum([
   'avito-square',
 ])
 const anyFormatKeySchema = z.union([formatKeySchema, z.string().startsWith('custom:')])
+const ruleSourceSchema = z.object({
+  type: z.enum(['official', 'industry_reference', 'manual', 'derived', 'heuristic', 'unknown']),
+  name: z.string(),
+  note: z.string().optional(),
+  verifiedAt: z.string().optional(),
+})
+const ruleConfidenceSchema = z.enum(['high', 'medium', 'low'])
+const formatRuleSourceMetadataSchema = z.object({
+  size: ruleSourceSchema,
+  fileConstraints: ruleSourceSchema,
+  safeArea: ruleSourceSchema,
+  overlayZones: ruleSourceSchema,
+  layoutDefaults: ruleSourceSchema,
+  typographyLimits: ruleSourceSchema,
+  ctaLimits: ruleSourceSchema,
+  moderationRules: ruleSourceSchema,
+})
 
 const formatRuleSetSchema = z.object({
   key: anyFormatKeySchema,
@@ -395,6 +426,8 @@ const formatRuleSetSchema = z.object({
   maxTitleLines: z.number(),
   typescaleBoost: z.number().optional(),
   requiredElements: z.array(blockKindEnum),
+  ruleSources: formatRuleSourceMetadataSchema.optional(),
+  ruleConfidence: ruleConfidenceSchema.optional(),
 })
 
 const projectFormatDocumentSchema = z.object({

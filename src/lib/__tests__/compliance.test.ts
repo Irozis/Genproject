@@ -150,6 +150,139 @@ describe('runCompliance', () => {
     expect(result.checks.find((item) => item.rule === 'estimated export size')?.status).toBe('warn')
   })
 
+  it('keeps internal safe zone failures out of official errors without official source', () => {
+    const scene: Scene = {
+      background: { kind: 'solid', color: '#FFFFFF' },
+      accent: '#FF0000',
+      title: {
+        text: 'Unsafe',
+        x: 0, y: 0, w: 24, h: 8,
+        fontSize: 5, charsPerLine: 12, maxLines: 1,
+        weight: 800, fill: '#111111',
+      },
+      cta: {
+        text: 'Buy',
+        x: 84, y: 1, w: 14, h: 8,
+        fontSize: 4, charsPerLine: 12, maxLines: 1,
+        weight: 700, fill: '#111111',
+        bg: '#FF0000', rx: 12,
+      },
+    }
+
+    const result = runCompliance(scene, format, DEFAULT_BRAND_KIT)
+
+    expect(result.checks.find((item) => item.rule === 'safe zone')?.status).toBe('fail')
+    expect(result.officialErrors.some((item) => item.code === 'officialSafeZoneViolation')).toBe(false)
+  })
+
+  it('promotes safe zone failures to official errors only when the rule source is official', () => {
+    const scene: Scene = {
+      background: { kind: 'solid', color: '#FFFFFF' },
+      accent: '#FF0000',
+      title: {
+        text: 'Unsafe',
+        x: 0, y: 0, w: 24, h: 8,
+        fontSize: 5, charsPerLine: 12, maxLines: 1,
+        weight: 800, fill: '#111111',
+      },
+      cta: {
+        text: 'Buy',
+        x: 84, y: 1, w: 14, h: 8,
+        fontSize: 4, charsPerLine: 12, maxLines: 1,
+        weight: 700, fill: '#111111',
+        bg: '#FF0000', rx: 12,
+      },
+    }
+    const officialFormat: FormatRuleSet = {
+      ...format,
+      ruleSources: format.ruleSources
+        ? {
+            ...format.ruleSources,
+            safeArea: { type: 'official', name: 'Test official safe area' },
+          }
+        : undefined,
+    }
+
+    const result = runCompliance(scene, officialFormat, DEFAULT_BRAND_KIT)
+
+    expect(result.officialErrors.some((item) => item.code === 'officialSafeZoneViolation')).toBe(true)
+  })
+
+  it('separates layout warnings from heuristic source warnings', () => {
+    const scene: Scene = {
+      background: { kind: 'gradient', stops: ['#FFFFFF', '#F4F4F4', '#FFFFFF'] },
+      accent: '#FF0000',
+      image: {
+        src: null,
+        x: 82, y: 10, w: 8, h: 20,
+        rx: 8, fit: 'cover',
+      },
+      title: {
+        text: 'Wide text',
+        x: 8, y: 12, w: 72, h: 12,
+        fontSize: 2.6, charsPerLine: 18, maxLines: 1,
+        weight: 800, fill: '#111111',
+      },
+      cta: {
+        text: 'Buy',
+        x: 8, y: 72, w: 18, h: 9,
+        fontSize: 4, charsPerLine: 12, maxLines: 1,
+        weight: 700, fill: '#111111',
+        bg: '#FF0000', rx: 12,
+      },
+      layoutPolicy: {
+        formatKind: 'horizontal',
+        source: { type: 'heuristic', name: 'Test layout policy' },
+        appliedRules: ['demo-safe-layout-policy', 'manual-review-fallback'],
+        needsManualReview: true,
+      },
+    }
+
+    const result = runCompliance(scene, getFormat('yandex-rsy-728x90'), DEFAULT_BRAND_KIT)
+
+    expect(result.layoutWarnings.map((item) => item.code)).toEqual(
+      expect.arrayContaining(['imageTooSmall', 'splitImageTooSmall', 'splitCollapsedToTextOnly', 'largeEmptyAreaDetected', 'textTooSmall', 'layoutFallbackApplied', 'horizontalModeNeedsCompactFallback']),
+    )
+    expect(result.heuristicWarnings.map((item) => item.code)).toEqual(
+      expect.arrayContaining(['heuristicRuleApplied', 'derivedRuleApplied', 'needsManualReview', 'layoutNotOfficiallySpecified', 'percentageRegionsAreInternalModel', 'gradientRuleIsHeuristic']),
+    )
+    expect(result.officialErrors).toEqual([])
+  })
+
+  it('warns when vertical CTA is detached from the text block', () => {
+    const scene: Scene = {
+      background: { kind: 'solid', color: '#FFFFFF' },
+      accent: '#FF0000',
+      image: {
+        src: null,
+        x: 0, y: 0, w: 100, h: 48,
+        rx: 0, fit: 'cover',
+      },
+      title: {
+        text: 'Story',
+        x: 8, y: 54, w: 84, h: 12,
+        fontSize: 6, charsPerLine: 18, maxLines: 2,
+        weight: 800, fill: '#111111',
+      },
+      cta: {
+        text: 'Buy',
+        x: 8, y: 92, w: 28, h: 8,
+        fontSize: 4, charsPerLine: 12, maxLines: 1,
+        weight: 700, fill: '#111111',
+        bg: '#FF0000', rx: 12,
+      },
+      layoutPolicy: {
+        formatKind: 'vertical',
+        source: { type: 'heuristic', name: 'Test layout policy' },
+        appliedRules: ['demo-safe-layout-policy'],
+      },
+    }
+
+    const result = runCompliance(scene, getFormat('instagram-story'), DEFAULT_BRAND_KIT)
+
+    expect(result.layoutWarnings.some((item) => item.code === 'ctaDetachedFromText')).toBe(true)
+  })
+
   it('maps check statuses to ready, warning, and error buckets', () => {
     expect(toValidatorStatus('pass')).toBe('ready')
     expect(toValidatorStatus('warn')).toBe('warning')

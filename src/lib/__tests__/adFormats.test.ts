@@ -4,6 +4,8 @@ import { buildScene } from '../buildScene'
 import { checkOverflow } from '../fixLayout'
 import { DEFAULT_BRAND_KIT, DEFAULT_ENABLED, DEFAULT_MASTER } from '../defaults'
 import { overlayZoneToPercentRect } from '../formatGeometry'
+import { FORMAT_LAYOUT_RULES, getFormatLayoutRule } from '../groupLayout'
+import { COMPOSITION_RULE_METADATA } from '../composition'
 import type { Scene } from '../types'
 
 describe('ad format catalog', () => {
@@ -90,6 +92,49 @@ describe('ad format catalog', () => {
       const scene = buildScene(DEFAULT_MASTER, format.key, DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
       expect(scene.background).toBeDefined()
     }
+  })
+
+  it('carries source metadata and rule confidence for every built-in format', () => {
+    for (const format of AD_FORMAT_CATALOG) {
+      expect(format.ruleConfidence).toMatch(/^(high|medium|low)$/)
+      expect(format.ruleSources?.size.type).toBeTruthy()
+      expect(format.ruleSources?.fileConstraints.type).toBeTruthy()
+      expect(format.ruleSources?.layoutDefaults.type).toBe('heuristic')
+    }
+  })
+
+  it('does not mark internal layout regions or composition modes as official', () => {
+    for (const format of AD_FORMAT_CATALOG) {
+      const rule = getFormatLayoutRule(format)
+      expect(rule.imageRegion.type).not.toBe('official')
+      expect(rule.textRegion.type).not.toBe('official')
+      expect(rule.ctaRegion.type).not.toBe('official')
+      expect(rule.defaultLayoutMode.source.type).toBe('heuristic')
+    }
+
+    for (const rule of Object.values(COMPOSITION_RULE_METADATA)) {
+      expect(rule.source.type).toBe('heuristic')
+      expect(rule.allowGradient.source.type).toBe('heuristic')
+      expect(rule.allowTextOverlayImage.source.type).toBe('heuristic')
+    }
+  })
+
+  it('covers the known format layout rule classes', () => {
+    expect(Object.keys(FORMAT_LAYOUT_RULES).sort()).toEqual([
+      'compactHorizontal',
+      'iconTeaser',
+      'landscapeCard',
+      'marketplaceCard',
+      'microBanner',
+      'portraitCard',
+      'squarePost',
+      'story',
+      'tallVertical',
+      'tinyTeaser',
+      'ultraWideHorizontal',
+      'verticalCard',
+      'wideHorizontal',
+    ].sort())
   })
 })
 

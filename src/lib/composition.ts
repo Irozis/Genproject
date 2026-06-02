@@ -8,7 +8,10 @@ import type {
   EnabledMap,
   FormatKey,
   FormatRuleSet,
+  RuleConfidence,
+  RuleSource,
   Scene,
+  SourcedValue,
   TextBlock,
 } from './types'
 import { fitFontSize as fitFontSizePx, wrapText } from './textMeasure'
@@ -76,6 +79,58 @@ export type LayoutArchetypeInput = {
   scene: Scene
   enabled: EnabledMap
   assetHint?: AssetHint | null
+}
+
+export type CompositionRuleMetadata = {
+  layoutMode: CompositionModel
+  source: RuleSource
+  allowGradient: SourcedValue<boolean>
+  allowTextOverlayImage: SourcedValue<boolean>
+  bodyVisibilityRule: SourcedValue<'visible' | 'limited' | 'hidden'>
+  ruleConfidence: RuleConfidence
+}
+
+const COMPOSITION_HEURISTIC_SOURCE: RuleSource = {
+  type: 'heuristic',
+  name: 'Application composition heuristic',
+  note: 'Composition modes are internal layout choices and are not official platform requirements.',
+}
+
+const READABILITY_HEURISTIC_SOURCE: RuleSource = {
+  type: 'heuristic',
+  name: 'Application readability heuristic',
+  note: 'Gradient and text-over-image behavior is used to keep generated text readable.',
+}
+
+export const COMPOSITION_RULE_METADATA: Record<CompositionModel, CompositionRuleMetadata> = {
+  'text-dominant': compositionRule('text-dominant', false, false, 'visible'),
+  'split-right-image': compositionRule('split-right-image', false, false, 'limited'),
+  'split-left-image': compositionRule('split-left-image', false, false, 'limited'),
+  'hero-overlay': compositionRule('hero-overlay', true, true, 'limited'),
+  'image-top-stack': compositionRule('image-top-stack', false, false, 'limited'),
+  'product-card-safe': compositionRule('product-card-safe', false, false, 'visible'),
+  'centered-card': compositionRule('centered-card', false, false, 'visible'),
+  'image-top-text-bottom': compositionRule('image-top-text-bottom', false, false, 'limited'),
+}
+
+function compositionRule(
+  layoutMode: CompositionModel,
+  allowGradient: boolean,
+  allowTextOverlayImage: boolean,
+  bodyVisibility: 'visible' | 'limited' | 'hidden',
+): CompositionRuleMetadata {
+  return {
+    layoutMode,
+    source: COMPOSITION_HEURISTIC_SOURCE,
+    allowGradient: sourced(allowGradient, READABILITY_HEURISTIC_SOURCE, 'medium'),
+    allowTextOverlayImage: sourced(allowTextOverlayImage, READABILITY_HEURISTIC_SOURCE, 'medium'),
+    bodyVisibilityRule: sourced(bodyVisibility, COMPOSITION_HEURISTIC_SOURCE, 'medium'),
+    ruleConfidence: 'medium',
+  }
+}
+
+function sourced<T>(value: T, source: RuleSource, confidence: RuleConfidence): SourcedValue<T> {
+  return { value, source, confidence }
 }
 
 export function profile(scene: Scene, rules: FormatRuleSet, enabled: EnabledMap): ContentProfile {
@@ -1073,14 +1128,15 @@ const layoutUltraWideBanner: Layout = (scene, rules, enabled) => {
   const actualTitleFont = Math.max(capFontSize(scene.title, titleFont), compactTitleMinFont(rules))
   const titleLines = scene.title ? measuredLines(scene.title.text, actualTitleFont, titleW, 1, rules, TITLE_TOKENS.weight) : 0
   const titleH = titleLines ? textBlockHeight(actualTitleFont, titleLines, 1.02, rules) : 0
-  const hasSubtitle = enabled.subtitle && !!scene.subtitle
+  const hasSubtitle = rules.height > 70 && enabled.subtitle && !!scene.subtitle
   const subFont = hasSubtitle && scene.subtitle ? readableSubtitleFont(scene.subtitle, 1.08, rules) : 0
   const subLines = hasSubtitle && scene.subtitle ? measuredLines(scene.subtitle.text, subFont, titleW, 1, rules, SUBTITLE_TOKENS.weight) : 0
   const subH = subLines ? textBlockHeight(subFont, subLines, 1.35, rules) : 0
   const copyGap = hasSubtitle ? Math.max(pxToHeightPct(4, rules), rules.gutter * 0.45) : 0
   const copyH = titleH + copyGap + subH
   const copyY = clamp((100 - copyH) / 2, sz.top, 100 - sz.bottom - copyH)
-  const ctaH = readableCtaHeight(46, rules)
+  const ctaMaxPx = rules.height <= 70 ? rules.height * 0.45 : rules.height <= 120 ? 34 : Math.max(48, rules.height * 0.18)
+  const ctaH = Math.min(readableCtaHeight(rules.height <= 70 ? 34 : 46, rules), pxToHeightPct(ctaMaxPx, rules))
   const ctaY = clamp((100 - ctaH) / 2, sz.top, 100 - sz.bottom - ctaH)
 
   if (enabled.title && scene.title) {
@@ -1880,7 +1936,7 @@ const layoutImageTopTextBottom: Layout = (scene, rules, enabled) => {
   // and Reels covers actually look).
   // Product-highlight-ish (4:5) → larger image because text has less room below.
   const isStoryish = rules.aspectRatio < 0.7
-  const imageH = isStoryish ? 62 : 58
+  const imageH = rules.height <= 220 ? 42 : isStoryish ? 62 : 58
   const textAreaTop = imageH
   const textAreaBottom = 100 - sz.bottom
 

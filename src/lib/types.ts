@@ -243,6 +243,13 @@ export type Scene = {
   badge?: TextBlock
   logo?: LogoBlock
   image?: ImageBlock
+  layoutPolicy?: {
+    formatKind: string
+    source: RuleSource
+    appliedRules: string[]
+    needsManualReview?: boolean
+    requiresManualCorrection?: boolean
+  }
 }
 
 export type SceneObjectType =
@@ -533,6 +540,8 @@ export type FormatRuleSet = {
    *  a boost above 1.0 compensates. Absent or 1.0 = no change. */
   typescaleBoost?: number
   requiredElements: BlockKind[]
+  ruleSources?: FormatRuleSourceMetadata
+  ruleConfidence?: RuleConfidence
 }
 
 export type Format = FormatRuleSet
@@ -542,6 +551,33 @@ export type AdFormatGoal = 'reach' | 'performance' | 'marketplace' | 'social-pos
 export type AdSourceType = 'official' | 'industry_reference' | 'manual'
 export type AdConfidence = 'high' | 'medium' | 'low'
 export type AdFileType = 'jpg' | 'jpeg' | 'png' | 'gif' | 'svg' | 'zip' | 'html' | 'psd' | 'pdf'
+
+export type RuleSourceType = 'official' | 'industry_reference' | 'manual' | 'derived' | 'heuristic' | 'unknown'
+export type RuleConfidence = 'high' | 'medium' | 'low'
+
+export type RuleSource = {
+  type: RuleSourceType
+  name: string
+  note?: string
+  verifiedAt?: string
+}
+
+export type SourcedValue<T> = {
+  value: T
+  source: RuleSource
+  confidence: RuleConfidence
+}
+
+export type FormatRuleSourceMetadata = {
+  size: RuleSource
+  fileConstraints: RuleSource
+  safeArea: RuleSource
+  overlayZones: RuleSource
+  layoutDefaults: RuleSource
+  typographyLimits: RuleSource
+  ctaLimits: RuleSource
+  moderationRules: RuleSource
+}
 
 export type AdSafeArea = {
   top: number

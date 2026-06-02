@@ -13,6 +13,7 @@ import { checkOverflow } from './fixLayout'
 import type {
   AssetHint,
   BrandKit,
+  CompositionModel,
   CompositionSettings,
   FormatRuleSet,
   LayoutStyleType,
@@ -228,7 +229,13 @@ function makeVariant(id: string, name: string, description: string, input: Omit<
   return { ...input, id, name, description, background, surface, primaryText, secondaryText, ctaText, contrastScore }
 }
 
-export function applyStyleSettingsToScene(scene: Scene, rules: FormatRuleSet, typography?: TypographySettings, composition?: CompositionSettings): Scene {
+export function applyStyleSettingsToScene(
+  scene: Scene,
+  rules: FormatRuleSet,
+  typography?: TypographySettings,
+  composition?: Partial<CompositionSettings>,
+  compositionModel?: CompositionModel,
+): Scene {
   const typo = normalizeTypographySettings(typography)
   const comp = normalizeCompositionSettings(composition)
   let out: Scene = { ...scene }
@@ -290,7 +297,7 @@ export function applyStyleSettingsToScene(scene: Scene, rules: FormatRuleSet, ty
     out.image = { ...out.image, w: nextW, h: nextH, rx: out.image.rx * comp.cornerRadiusScale }
   }
   if (out.decor) out = applyDecorIntensity(out, comp.decorativeIntensity * comp.objectGap)
-  out = applyCompositionFlow(out, rules, comp)
+  out = applyCompositionFlow(out, rules, comp, compositionModel)
   return out
 }
 
@@ -321,47 +328,181 @@ export function validateStyleScene(scene: Scene, format: FormatRuleSet, brand: B
   return dedupeWarnings(warnings)
 }
 
-function applyCompositionFlow(scene: Scene, rules: FormatRuleSet, comp: CompositionSettings): Scene {
+function applyCompositionFlow(scene: Scene, rules: FormatRuleSet, comp: CompositionSettings, model?: CompositionModel): Scene {
   const out: Scene = { ...scene }
-  const pad = rules.safeZone.left * comp.canvasPaddingScale
-  const rightLimit = 100 - rules.safeZone.right * comp.canvasPaddingScale
-  const stack = [out.logo, out.title, out.subtitle, out.cta].filter(Boolean) as Array<{ x: number; y: number; w: number; h?: number }>
-  if (stack.length > 0) {
-    const minY = Math.min(...stack.map((b) => b.y))
-    const maxY = Math.max(...stack.map((b) => b.y + (b.h ?? 6)))
-    const height = maxY - minY
-    const targetY = comp.verticalPosition === 'center' ? (100 - height) / 2 : comp.verticalPosition === 'bottom' ? 100 - rules.safeZone.bottom - height : rules.safeZone.top * comp.canvasPaddingScale
-    const dy = (targetY - minY) * 0.45
-    const alignX = comp.mainAxisAlign === 'center' ? 50 : comp.mainAxisAlign === 'right' ? rightLimit : pad
-    for (const k of ['logo', 'title', 'subtitle', 'cta'] as const) {
-      const block = out[k]
-      if (!block) continue
-      const w = block.w
-      const x = comp.mainAxisAlign === 'center' ? alignX - w / 2 : comp.mainAxisAlign === 'right' ? alignX - w : alignX
-      ;(out as Record<string, unknown>)[k] = { ...block, x: Math.max(pad, Math.min(rightLimit - w, x)), y: Math.max(rules.safeZone.top, Math.min(100 - rules.safeZone.bottom - (block.h ?? 4), block.y + dy)) }
-    }
-  }
   const gapScale = comp.groupGapScale * (comp.density === 'compact' ? 0.8 : comp.density === 'airy' ? 1.2 : 1)
-  if (out.logo && out.title) out.title = { ...out.title, y: Math.max(out.title.y, out.logo.y + (out.logo.h ?? 5) + 1.2 * comp.logoTitleGap * gapScale) }
-  if (out.title && out.subtitle) out.subtitle = { ...out.subtitle, y: Math.max(out.subtitle.y, out.title.y + textHeight(out.title, rules) + 1.6 * comp.titleBodyGap * gapScale) }
-  if (out.subtitle && out.cta) out.cta = { ...out.cta, y: Math.max(out.cta.y, out.subtitle.y + textHeight(out.subtitle, rules) + 2.2 * comp.bodyCtaGap * gapScale) }
+
+  if (comp.canvasPaddingScale !== DEFAULT_COMPOSITION_SETTINGS.canvasPaddingScale) {
+    applyCanvasPadding(out, rules, comp.canvasPaddingScale, model)
+  }
+
+  if (comp.logoTitleGap !== DEFAULT_COMPOSITION_SETTINGS.logoTitleGap && out.logo && out.title) {
+    out.title = { ...out.title, y: clampY(out.logo.y + (out.logo.h ?? 5) + 1.2 * comp.logoTitleGap * gapScale, out.title, rules) }
+  }
+
+  if (
+    comp.titleBodyGap !== DEFAULT_COMPOSITION_SETTINGS.titleBodyGap ||
+    comp.bodyCtaGap !== DEFAULT_COMPOSITION_SETTINGS.bodyCtaGap ||
+    comp.groupGapScale !== DEFAULT_COMPOSITION_SETTINGS.groupGapScale ||
+    comp.density !== DEFAULT_COMPOSITION_SETTINGS.density
+  ) {
+    restackTextFlow(out, rules, comp, gapScale)
+  }
+
+  if (comp.imageTextGap !== DEFAULT_COMPOSITION_SETTINGS.imageTextGap || comp.groupGapScale !== DEFAULT_COMPOSITION_SETTINGS.groupGapScale || comp.density !== DEFAULT_COMPOSITION_SETTINGS.density) {
+    applyImageTextGap(out, rules, Math.max(rules.gutter, 2) * comp.imageTextGap * gapScale, model)
+  }
+
+  if (
+    comp.mainAxisAlign !== DEFAULT_COMPOSITION_SETTINGS.mainAxisAlign ||
+    comp.verticalPosition !== DEFAULT_COMPOSITION_SETTINGS.verticalPosition
+  ) {
+    alignTextGroup(out, rules, comp, model)
+  }
+
   if (out.cta && comp.borderWidth > 0) {
     const growX = (comp.borderWidth / rules.width) * 200
     const growY = (comp.borderWidth / rules.height) * 200
     out.cta = { ...out.cta, w: Math.min(100 - out.cta.x, out.cta.w + growX), h: (out.cta.h ?? 6) + growY }
   }
-  if (out.image && out.title) {
-    const textRight = Math.max(out.title.x + out.title.w, out.subtitle ? out.subtitle.x + out.subtitle.w : 0, out.cta ? out.cta.x + out.cta.w : 0)
-    if (out.image.x < textRight && out.image.x > out.title.x) {
-      const nextX = Math.min(100 - out.image.w, textRight + comp.imageTextGap * gapScale)
-      out.image = { ...out.image, x: nextX }
-    }
-  }
   for (const k of ['title', 'subtitle'] as const) {
     const block = out[k]
-    if (block) out[k] = { ...block, align: comp.crossAxisAlign }
+    if (block && comp.crossAxisAlign !== DEFAULT_COMPOSITION_SETTINGS.crossAxisAlign) out[k] = { ...block, align: comp.crossAxisAlign }
   }
   return out
+}
+
+function restackTextFlow(scene: Scene, rules: FormatRuleSet, comp: CompositionSettings, gapScale: number): void {
+  const title = scene.title
+  if (!title) return
+  let cursor = title.y + textHeight(title, rules)
+  if (scene.subtitle) {
+    const gap = 1.6 * comp.titleBodyGap * gapScale
+    scene.subtitle = { ...scene.subtitle, y: clampY(cursor + gap, scene.subtitle, rules) }
+    cursor = scene.subtitle.y + textHeight(scene.subtitle, rules)
+  }
+  if (scene.cta) {
+    const gap = 2.2 * comp.bodyCtaGap * gapScale
+    scene.cta = { ...scene.cta, y: clampY(cursor + gap, scene.cta, rules) }
+  }
+}
+
+function applyImageTextGap(scene: Scene, rules: FormatRuleSet, gap: number, model?: CompositionModel): void {
+  if (!scene.image) return
+  const textBlocks = getTextGroup(scene)
+  if (textBlocks.length === 0) return
+
+  const image = scene.image
+  const textBox = groupBounds(textBlocks)
+  if (!textBox) return
+
+  if (model === 'split-left-image') {
+    const targetTextX = image.x + image.w + gap
+    const textX = clampX(targetTextX, Math.min(textBox.w, 100 - rules.safeZone.right - targetTextX), rules)
+    resizeTextGroupWidth(scene, Math.max(18, 100 - rules.safeZone.right - textX))
+    moveTextGroup(scene, textX - textBox.x, 0)
+    return
+  }
+
+  if (model === 'split-right-image') {
+    const rightLimit = 100 - rules.safeZone.right
+    const textW = Math.max(18, rightLimit - image.w - gap - textBox.x)
+    resizeTextGroupWidth(scene, textW)
+    scene.image = { ...image, x: clampX(textBox.x + textW + gap, image.w, rules) }
+    return
+  }
+
+  if (model === 'image-top-stack' || model === 'image-top-text-bottom' || model === 'product-card-safe') {
+    const targetTextY = image.y + (image.h ?? 50) + gap
+    moveTextGroup(scene, 0, clampYValue(targetTextY, textBox.h, rules) - textBox.y)
+  }
+}
+
+function applyCanvasPadding(scene: Scene, rules: FormatRuleSet, scale: number, model?: CompositionModel): void {
+  const left = rules.safeZone.left * scale
+  const right = 100 - rules.safeZone.right * scale
+  const top = rules.safeZone.top * scale
+  const bottom = 100 - rules.safeZone.bottom * scale
+  for (const k of ['logo', 'title', 'subtitle', 'cta', 'badge'] as const) {
+    const block = scene[k]
+    if (!block) continue
+    const x = Math.max(left, Math.min(right - block.w, block.x))
+    const y = Math.max(top, Math.min(bottom - (block.h ?? 4), block.y))
+    ;(scene as Record<string, unknown>)[k] = { ...block, x, y }
+  }
+  if (scene.image && model !== 'hero-overlay') {
+    const image = scene.image
+    scene.image = {
+      ...image,
+      x: Math.max(0, Math.min(100 - image.w, image.x)),
+      y: Math.max(0, Math.min(100 - (image.h ?? 50), image.y)),
+    }
+  }
+}
+
+function alignTextGroup(scene: Scene, rules: FormatRuleSet, comp: CompositionSettings, model?: CompositionModel): void {
+  const blocks = getTextGroup(scene)
+  const box = groupBounds(blocks)
+  if (!box) return
+
+  const leftLimit = rules.safeZone.left * comp.canvasPaddingScale
+  const rightLimit = 100 - rules.safeZone.right * comp.canvasPaddingScale
+  let targetX = box.x
+  if (comp.mainAxisAlign === 'left') targetX = leftLimit
+  if (comp.mainAxisAlign === 'center') targetX = (100 - box.w) / 2
+  if (comp.mainAxisAlign === 'right') targetX = rightLimit - box.w
+
+  let targetY = box.y
+  if (comp.verticalPosition === 'top') {
+    targetY = model === 'image-top-stack' || model === 'image-top-text-bottom' || model === 'product-card-safe'
+      ? box.y
+      : rules.safeZone.top * comp.canvasPaddingScale
+  }
+  if (comp.verticalPosition === 'center') targetY = (100 - box.h) / 2
+  if (comp.verticalPosition === 'bottom') targetY = 100 - rules.safeZone.bottom * comp.canvasPaddingScale - box.h
+
+  moveTextGroup(scene, clampX(targetX, box.w, rules) - box.x, clampYValue(targetY, box.h, rules) - box.y)
+}
+
+function getTextGroup(scene: Scene): Array<{ x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number }> {
+  return [scene.badge, scene.title, scene.subtitle, scene.cta].filter(Boolean) as Array<{ x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number }>
+}
+
+function groupBounds(blocks: Array<{ x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number }>): { x: number; y: number; w: number; h: number } | null {
+  if (blocks.length === 0) return null
+  const x1 = Math.min(...blocks.map((b) => b.x))
+  const y1 = Math.min(...blocks.map((b) => b.y))
+  const x2 = Math.max(...blocks.map((b) => b.x + b.w))
+  const y2 = Math.max(...blocks.map((b) => b.y + (b.h ?? Math.max(4, (b.fontSize ?? 3) * (b.lineHeight ?? 1.15) * Math.max(1, b.maxLines ?? 1)))))
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 }
+}
+
+function moveTextGroup(scene: Scene, dx: number, dy: number): void {
+  for (const k of ['badge', 'title', 'subtitle', 'cta'] as const) {
+    const block = scene[k]
+    if (!block) continue
+    ;(scene as Record<string, unknown>)[k] = { ...block, x: block.x + dx, y: block.y + dy }
+  }
+}
+
+function resizeTextGroupWidth(scene: Scene, width: number): void {
+  for (const k of ['title', 'subtitle', 'cta'] as const) {
+    const block = scene[k]
+    if (!block) continue
+    ;(scene as Record<string, unknown>)[k] = { ...block, w: Math.min(block.w, width) }
+  }
+}
+
+function clampY(y: number, block: { h?: number }, rules: FormatRuleSet): number {
+  return clampYValue(y, block.h ?? 4, rules)
+}
+
+function clampX(x: number, width: number, rules: FormatRuleSet): number {
+  return Math.max(rules.safeZone.left, Math.min(100 - rules.safeZone.right - width, x))
+}
+
+function clampYValue(y: number, height: number, rules: FormatRuleSet): number {
+  return Math.max(rules.safeZone.top, Math.min(100 - rules.safeZone.bottom - height, y))
 }
 
 function textHeight(block: { fontSize: number; maxLines: number; lineHeight?: number }, rules: FormatRuleSet): number {

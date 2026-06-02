@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { buildScene } from '../buildScene'
+import { runCompliance } from '../compliance'
 import { checkOverflow } from '../fixLayout'
 import { DEFAULT_ENABLED } from '../defaults'
-import type { BlockKind, Scene } from '../types'
+import { getFormat } from '../formats'
+import type { BlockKind, CompositionModel, FormatRuleSet, Scene } from '../types'
 import {
   assetHintFromAnalysis,
   minimalTestFormats,
@@ -114,6 +116,93 @@ describe('layout generator for critical fixture formats', () => {
     }
   })
 
+  it('fills split image slots in representative horizontal formats', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const requestedSizes = new Set(['728x90', '960x150', '1000x120', '1200x628', '1920x640', '2880x300'])
+    const formats = minimalTestFormats.filter((item) => requestedSizes.has(`${item.width}x${item.height}`))
+
+    for (const format of formats) {
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+      expect(scene.image).toBeDefined()
+      const slotW = expectedSplitImageSlotWidth(format)
+      const slotH = 100 - format.safeZone.top - format.safeZone.bottom
+      expect(scene.image!.w).toBeGreaterThanOrEqual(slotW * 0.70)
+      expect(scene.image!.h ?? 0).toBeGreaterThanOrEqual(slotH * 0.70)
+      if (format.aspectRatio < 4) {
+        expect((scene.image!.w * (scene.image!.h ?? 0)) / 10000).toBeGreaterThanOrEqual(0.30)
+      }
+      const warningCodes = runCompliance(scene, format, testBrandLight).layoutWarnings.map((warning) => warning.code)
+      expect(warningCodes).not.toContain('splitImageTooSmall')
+      expect(warningCodes).not.toContain('splitImageNotFillingSlot')
+    }
+  })
+
+  it('keeps representative horizontal modes compact and non-overlapping', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const requestedSizes = new Set(['728x90', '960x150', '1000x120', '1920x640', '2184x270', '2880x300', '2880x400', '2934x456', '3000x360'])
+    const formats: FormatRuleSet[] = [
+      ...minimalTestFormats.filter((item) => requestedSizes.has(`${item.width}x${item.height}`)),
+      getFormat('ok-horizontal-1200x628'),
+    ]
+    const modes: Array<{ mode: CompositionModel; master: Scene; expectsImage: boolean }> = [
+      { mode: 'text-dominant', master: testContentLong, expectsImage: false },
+      { mode: 'split-right-image', master: testContentWithImageHorizontal, expectsImage: true },
+      { mode: 'product-card-safe', master: testContentWithImageHorizontal, expectsImage: true },
+      { mode: 'centered-card', master: testContentWithImageHorizontal, expectsImage: false },
+    ]
+
+    for (const format of formats) {
+      for (const { mode, master, expectsImage } of modes) {
+        const scene = buildScene(master, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+          assetHint: imageHint,
+          customFormats: minimalTestFormats,
+          override: mode,
+        })
+        const messages = checkOverflow(scene, format).map((issue) => issue.message)
+        expect(messages.some((message) => /overlaps|Text area may exceed/.test(message))).toBe(false)
+        if (expectsImage) {
+          expect(scene.image).toBeDefined()
+          expect(scene.title).toBeDefined()
+          expect(scene.image!.w).toBeGreaterThanOrEqual(expectedSplitImageSlotWidth(format) * 0.70)
+          expect(rectsOverlap(blockRect(scene.image!, format), blockRect(scene.title!, format))).toBe(false)
+        }
+        if (scene.cta) {
+          expect(scene.cta.y + (scene.cta.h ?? 0)).toBeLessThanOrEqual(100 - format.safeZone.bottom + 0.5)
+        }
+      }
+    }
+  })
+
+  it('does not add hero overlay scrims unless explicit or needed for contrast', () => {
+    const sceneWithoutHint = buildScene(testContentWithImageHorizontal, 'custom:test-1080x1920', testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+      customFormats: minimalTestFormats,
+      override: 'hero-overlay',
+    })
+    expect(sceneWithoutHint.scrim).toBeUndefined()
+
+    const brightHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const sceneNeedingContrast = buildScene(testContentWithImageHorizontal, 'custom:test-1080x1920', testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+      assetHint: brightHint,
+      customFormats: minimalTestFormats,
+      override: 'hero-overlay',
+    })
+    expect(sceneNeedingContrast.scrim).toBeDefined()
+  })
+
+  it('removes decorative backgrounds by default', () => {
+    const masterWithDecor: Scene = {
+      ...testContentWithImageHorizontal,
+      decor: { kind: 'diagonal-stripe', color: '#FF0000', opacity: 0.4 },
+    }
+    const defaultScene = buildScene(masterWithDecor, 'custom:test-1920x640', testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+      customFormats: minimalTestFormats,
+    })
+    expect(defaultScene.decor).toBeUndefined()
+  })
+
   it('uses vertical space in portrait cards without tiny text or empty lower halves', () => {
     const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
     const formats = minimalTestFormats.filter((item) => item.aspectRatio < 0.9 && item.height >= 1000)
@@ -156,4 +245,12 @@ function rectsOverlap(
   b: { x: number; y: number; w: number; h: number },
 ): boolean {
   return a.x + a.w > b.x + 0.3 && b.x + b.w > a.x + 0.3 && a.y + a.h > b.y + 0.3 && b.y + b.h > a.y + 0.3
+}
+
+function expectedSplitImageSlotWidth(format: { aspectRatio: number; safeZone: { left: number; right: number } }): number {
+  const innerW = 100 - format.safeZone.left - format.safeZone.right
+  const ratio = format.aspectRatio >= 6 ? 0.28 : format.aspectRatio >= 4 ? 0.34 : 0.45
+  const minW = format.aspectRatio >= 6 ? 24 : format.aspectRatio >= 4 ? 30 : 40
+  const maxW = format.aspectRatio >= 6 ? 36 : 55
+  return Math.min(maxW, Math.max(minW, innerW * ratio))
 }

@@ -12,6 +12,8 @@ import type {
   BlockKind,
   CompositionModel,
   FormatRuleSet,
+  RuleConfidence,
+  RuleSource,
 } from '../lib/types'
 
 export type AdFormatCatalogEntry = FormatRuleSet & {
@@ -182,6 +184,10 @@ function entry(input: EntryInput): AdFormatCatalogEntry {
   const supportsSvg = input.supportsSvg ?? allowedFileTypes.includes('svg')
   const isTall = input.width / input.height < 0.75
   const isWide = input.width / input.height > 2.4
+  const sourceName = input.sourceName ?? 'Каталог форматов приложения'
+  const sourceType = input.sourceType ?? 'manual'
+  const confidence = input.confidence ?? 'medium'
+  const ruleConfidence = confidenceForRuleSource(sourceType, confidence)
   return {
     ...input,
     key: input.id,
@@ -208,17 +214,82 @@ function entry(input: EntryInput): AdFormatCatalogEntry {
     logoRules: input.logoRules ?? {},
     moderationRules: input.moderationRules ?? [],
     notes: input.notes ?? '',
-    sourceName: input.sourceName ?? 'Каталог форматов приложения',
-    sourceType: input.sourceType ?? 'manual',
+    sourceName,
+    sourceType,
     verifiedAt: VERIFIED_AT,
-    confidence: input.confidence ?? 'medium',
+    confidence,
     gutter: input.gutter ?? (isWide ? 2 : isTall ? 3 : 4),
     minTitleSize: input.minTitleSize ?? (isWide ? 2 : 5),
     minFontSize: input.minFontSize,
     maxTitleLines: input.maxTitleLines ?? (isWide ? 1 : isTall ? 4 : 3),
     requiredElements: input.requiredElements ?? ['title', 'image'],
     typescaleBoost: input.typescaleBoost ?? (isTall ? 1.15 : undefined),
+    ruleSources: ruleSourcesForEntry({
+      sourceName,
+      sourceType,
+      safeAreaProvided: Boolean(input.safeArea),
+      overlayZonesProvided: Boolean(input.overlayZones?.length),
+      textLimitsProvided: Boolean(input.textLimits && Object.keys(input.textLimits).length > 0),
+      moderationRulesProvided: Boolean(input.moderationRules?.length),
+    }),
+    ruleConfidence,
   }
+}
+
+function ruleSourcesForEntry(input: {
+  sourceName: string
+  sourceType: AdSourceType
+  safeAreaProvided: boolean
+  overlayZonesProvided: boolean
+  textLimitsProvided: boolean
+  moderationRulesProvided: boolean
+}): NonNullable<FormatRuleSet['ruleSources']> {
+  const catalogSource = catalogRuleSource(input.sourceType, input.sourceName)
+  const normalizedSource = catalogRuleSource(
+    input.sourceType === 'official' ? 'industry_reference' : input.sourceType,
+    input.sourceName,
+    'Catalog metadata is normalized by the application; review unless a field is explicitly sourced as official.',
+  )
+  return {
+    size: catalogSource,
+    fileConstraints: catalogSource,
+    safeArea: input.safeAreaProvided
+      ? derivedRuleSource('Safe area is an application guard derived from placement geometry and readable margins.')
+      : normalizedSource,
+    overlayZones: input.overlayZonesProvided
+      ? derivedRuleSource('Overlay zones are internal preview/validation guards and are not treated as official composition rules.')
+      : unknownRuleSource('No explicit overlay-zone source is stored for this format.'),
+    layoutDefaults: heuristicRuleSource('Default composition and layout mode are application heuristics, not platform requirements.'),
+    typographyLimits: input.textLimitsProvided && input.sourceType === 'official'
+      ? catalogSource
+      : derivedRuleSource('Typography limits are derived from canvas size, readability, and stored text-limit hints.'),
+    ctaLimits: heuristicRuleSource('CTA visibility and sizing are internal stability/readability rules.'),
+    moderationRules: input.moderationRulesProvided
+      ? normalizedSource
+      : unknownRuleSource('No moderation-rule source is stored for this format.'),
+  }
+}
+
+function catalogRuleSource(type: AdSourceType, name: string, note?: string): RuleSource {
+  return { type, name, verifiedAt: VERIFIED_AT, note }
+}
+
+function derivedRuleSource(note: string): RuleSource {
+  return { type: 'derived', name: 'Application layout geometry', note, verifiedAt: VERIFIED_AT }
+}
+
+function heuristicRuleSource(note: string): RuleSource {
+  return { type: 'heuristic', name: 'Application layout heuristic', note, verifiedAt: VERIFIED_AT }
+}
+
+function unknownRuleSource(note: string): RuleSource {
+  return { type: 'unknown', name: 'No explicit project source', note, verifiedAt: VERIFIED_AT }
+}
+
+function confidenceForRuleSource(sourceType: AdSourceType, confidence: RuleConfidence): RuleConfidence {
+  if (sourceType === 'official' && confidence === 'high') return 'high'
+  if (sourceType === 'industry_reference' && confidence !== 'low') return 'medium'
+  return 'low'
 }
 
 const yandexBannerRules = [

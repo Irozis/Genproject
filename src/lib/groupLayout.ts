@@ -1,11 +1,11 @@
 import { computeCtaButtonSize } from './ctaSizing'
 import { safeAreaToPercentEdges, visibleAreaToPercentRect } from './formatGeometry'
 import { fitFontSize, wrapText } from './textMeasure'
-import type { CtaBlock, EnabledMap, FormatRuleSet, Scene, TextBlock } from './types'
+import type { CtaBlock, EnabledMap, FormatRuleSet, RuleConfidence, RuleSource, Scene, SourcedValue, TextBlock } from './types'
 
 type RectPct = { x: number; y: number; w: number; h: number }
 
-type LayoutMode =
+export type LayoutMode =
   | 'micro-banner'
   | 'horizontal-strip-compact'
   | 'ultra-wide-strip'
@@ -14,6 +14,233 @@ type LayoutMode =
   | 'image-top-card'
   | 'balanced-card'
   | 'text-only'
+
+export type FormatLayoutRuleClass =
+  | 'tinyTeaser'
+  | 'iconTeaser'
+  | 'microBanner'
+  | 'compactHorizontal'
+  | 'wideHorizontal'
+  | 'ultraWideHorizontal'
+  | 'squarePost'
+  | 'landscapeCard'
+  | 'portraitCard'
+  | 'verticalCard'
+  | 'story'
+  | 'tallVertical'
+  | 'marketplaceCard'
+
+export type FormatLayoutRule = {
+  class: FormatLayoutRuleClass
+  allowedLayoutModes: SourcedValue<LayoutMode[]>
+  defaultLayoutMode: SourcedValue<LayoutMode>
+  imageRegion: RuleSource
+  textRegion: RuleSource
+  ctaRegion: RuleSource
+  typographyLimits: RuleSource
+  ctaLimits: RuleSource
+  ctaVisibilityRule: RuleSource
+  allowGradient: SourcedValue<boolean>
+  allowTextOverlayImage: SourcedValue<boolean>
+  bodyVisibilityRule: SourcedValue<'visible' | 'limited' | 'hidden'>
+  ruleConfidence: RuleConfidence
+}
+
+const DERIVED_GEOMETRY_SOURCE: RuleSource = {
+  type: 'derived',
+  name: 'Application layout geometry',
+  note: 'Percentage regions are derived from canvas geometry, safe area, and readability needs; they are not official platform requirements.',
+}
+
+const HEURISTIC_STABILITY_SOURCE: RuleSource = {
+  type: 'heuristic',
+  name: 'Application layout heuristic',
+  note: 'Internal visual-stability rule used to avoid broken generated layouts.',
+}
+
+const DERIVED_SMALL_COPY_SOURCE: RuleSource = {
+  type: 'derived',
+  name: 'Small-format geometry',
+  note: 'Small-format copy visibility is derived from available pixels and readability, not from an official body/CTA ban.',
+}
+
+export const FORMAT_LAYOUT_RULES: Record<FormatLayoutRuleClass, FormatLayoutRule> = {
+  tinyTeaser: layoutRule({
+    class: 'tinyTeaser',
+    allowedLayoutModes: ['horizontal-strip-compact', 'balanced-card'],
+    defaultLayoutMode: 'horizontal-strip-compact',
+    bodyVisibility: 'hidden',
+    ctaVisible: false,
+    ctaSource: DERIVED_SMALL_COPY_SOURCE,
+    typographySource: DERIVED_SMALL_COPY_SOURCE,
+    confidence: 'low',
+    note: '145x85: image is the primary element; short headline or brand label can remain. This is a derived/heuristic guard, not an official image-only rule.',
+  }),
+  iconTeaser: layoutRule({
+    class: 'iconTeaser',
+    allowedLayoutModes: ['balanced-card', 'text-only'],
+    defaultLayoutMode: 'balanced-card',
+    bodyVisibility: 'hidden',
+    ctaVisible: false,
+    ctaSource: DERIVED_SMALL_COPY_SOURCE,
+    typographySource: DERIVED_SMALL_COPY_SOURCE,
+    confidence: 'low',
+    note: '145x145 and 200x200: image/logo plus optional short headline; CTA may be disabled by default without claiming an official CTA ban.',
+  }),
+  microBanner: layoutRule({
+    class: 'microBanner',
+    allowedLayoutModes: ['micro-banner', 'horizontal-strip-compact'],
+    defaultLayoutMode: 'micro-banner',
+    bodyVisibility: 'hidden',
+    ctaVisible: true,
+    ctaSource: DERIVED_SMALL_COPY_SOURCE,
+    typographySource: DERIVED_SMALL_COPY_SOURCE,
+    confidence: 'medium',
+    note: '320x50-like banners: one-line headline, body hidden, optional thumbnail and compact CTA are derived from geometry.',
+  }),
+  compactHorizontal: layoutRule({
+    class: 'compactHorizontal',
+    allowedLayoutModes: ['horizontal-strip-compact', 'micro-banner'],
+    defaultLayoutMode: 'horizontal-strip-compact',
+    bodyVisibility: 'hidden',
+    ctaVisible: true,
+    ctaSource: DERIVED_SMALL_COPY_SOURCE,
+    typographySource: DERIVED_SMALL_COPY_SOURCE,
+    confidence: 'medium',
+    note: '728x90-like compact split: image/text/CTA distribution is derived/heuristic even when the pixel size itself is known.',
+  }),
+  wideHorizontal: layoutRule({
+    class: 'wideHorizontal',
+    allowedLayoutModes: ['horizontal-split', 'horizontal-strip-compact'],
+    defaultLayoutMode: 'horizontal-split',
+    bodyVisibility: 'limited',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  ultraWideHorizontal: layoutRule({
+    class: 'ultraWideHorizontal',
+    allowedLayoutModes: ['ultra-wide-strip', 'horizontal-strip-compact'],
+    defaultLayoutMode: 'ultra-wide-strip',
+    bodyVisibility: 'hidden',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  squarePost: layoutRule({
+    class: 'squarePost',
+    allowedLayoutModes: ['balanced-card', 'horizontal-split', 'text-only'],
+    defaultLayoutMode: 'balanced-card',
+    bodyVisibility: 'visible',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  landscapeCard: layoutRule({
+    class: 'landscapeCard',
+    allowedLayoutModes: ['horizontal-split', 'balanced-card'],
+    defaultLayoutMode: 'horizontal-split',
+    bodyVisibility: 'limited',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  portraitCard: layoutRule({
+    class: 'portraitCard',
+    allowedLayoutModes: ['image-top-card', 'balanced-card'],
+    defaultLayoutMode: 'image-top-card',
+    bodyVisibility: 'visible',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  verticalCard: layoutRule({
+    class: 'verticalCard',
+    allowedLayoutModes: ['image-top-card', 'vertical-story-compact'],
+    defaultLayoutMode: 'image-top-card',
+    bodyVisibility: 'visible',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  story: layoutRule({
+    class: 'story',
+    allowedLayoutModes: ['vertical-story-compact', 'image-top-card'],
+    defaultLayoutMode: 'vertical-story-compact',
+    bodyVisibility: 'limited',
+    ctaVisible: true,
+    confidence: 'medium',
+    note: '1080x1920/story regions are derived from vertical geometry and readability; percentage zones are not official platform requirements.',
+  }),
+  tallVertical: layoutRule({
+    class: 'tallVertical',
+    allowedLayoutModes: ['vertical-story-compact', 'image-top-card'],
+    defaultLayoutMode: 'vertical-story-compact',
+    bodyVisibility: 'limited',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+  marketplaceCard: layoutRule({
+    class: 'marketplaceCard',
+    allowedLayoutModes: ['balanced-card', 'image-top-card'],
+    defaultLayoutMode: 'balanced-card',
+    bodyVisibility: 'visible',
+    ctaVisible: true,
+    confidence: 'medium',
+  }),
+}
+
+function layoutRule(input: {
+  class: FormatLayoutRuleClass
+  allowedLayoutModes: LayoutMode[]
+  defaultLayoutMode: LayoutMode
+  bodyVisibility: 'visible' | 'limited' | 'hidden'
+  ctaVisible: boolean
+  ctaSource?: RuleSource
+  typographySource?: RuleSource
+  confidence: RuleConfidence
+  note?: string
+}): FormatLayoutRule {
+  const layoutSource = input.note
+    ? { ...HEURISTIC_STABILITY_SOURCE, note: input.note }
+    : HEURISTIC_STABILITY_SOURCE
+  const ctaSource = input.ctaSource ?? HEURISTIC_STABILITY_SOURCE
+  const typographySource = input.typographySource ?? DERIVED_GEOMETRY_SOURCE
+  return {
+    class: input.class,
+    allowedLayoutModes: sourced(input.allowedLayoutModes, layoutSource, input.confidence),
+    defaultLayoutMode: sourced(input.defaultLayoutMode, layoutSource, input.confidence),
+    imageRegion: DERIVED_GEOMETRY_SOURCE,
+    textRegion: DERIVED_GEOMETRY_SOURCE,
+    ctaRegion: DERIVED_GEOMETRY_SOURCE,
+    typographyLimits: typographySource,
+    ctaLimits: ctaSource,
+    ctaVisibilityRule: input.ctaVisible ? ctaSource : { ...ctaSource, note: `${ctaSource.note ?? ''} CTA can be hidden by default for stability; this is not an official CTA prohibition.`.trim() },
+    allowGradient: sourced(false, HEURISTIC_STABILITY_SOURCE, input.confidence),
+    allowTextOverlayImage: sourced(false, HEURISTIC_STABILITY_SOURCE, input.confidence),
+    bodyVisibilityRule: sourced(input.bodyVisibility, input.bodyVisibility === 'hidden' ? DERIVED_SMALL_COPY_SOURCE : DERIVED_GEOMETRY_SOURCE, input.confidence),
+    ruleConfidence: input.confidence,
+  }
+}
+
+function sourced<T>(value: T, source: RuleSource, confidence: RuleConfidence): SourcedValue<T> {
+  return { value, source, confidence }
+}
+
+export function formatLayoutRuleClass(rules: Pick<FormatRuleSet, 'width' | 'height' | 'aspectRatio' | 'device' | 'goal' | 'key'>): FormatLayoutRuleClass {
+  if (rules.width === 145 && rules.height === 85) return 'tinyTeaser'
+  if ((rules.width === 145 && rules.height === 145) || (rules.width === 200 && rules.height === 200)) return 'iconTeaser'
+  if (rules.width === 320 && rules.height === 50) return 'microBanner'
+  if (rules.height <= 70) return 'microBanner'
+  if (rules.aspectRatio >= 5) return 'ultraWideHorizontal'
+  if (rules.height <= 120 && rules.aspectRatio >= 3) return 'compactHorizontal'
+  if (rules.device === 'marketplace' || rules.goal === 'marketplace') return 'marketplaceCard'
+  if (rules.key.includes('story') || (rules.width === 1080 && rules.height === 1920)) return 'story'
+  if (rules.aspectRatio <= 0.45) return 'tallVertical'
+  if (rules.aspectRatio < 0.68) return 'verticalCard'
+  if (rules.aspectRatio < 0.9) return 'portraitCard'
+  if (rules.aspectRatio >= 2.2) return 'wideHorizontal'
+  if (rules.aspectRatio > 1.15) return 'landscapeCard'
+  return 'squarePost'
+}
+
+export function getFormatLayoutRule(rules: FormatRuleSet): FormatLayoutRule {
+  return FORMAT_LAYOUT_RULES[formatLayoutRuleClass(rules)]
+}
 
 type LayoutRegions = {
   mode: LayoutMode

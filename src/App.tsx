@@ -1560,6 +1560,8 @@ export default function App() {
           assetHint={project.assetHint}
           blockOverride={project.blockOverrides?.[editingFormat]}
           locale={project.activeLocale}
+          typographySettings={project.typographySettings}
+          compositionSettings={project.compositionSettings}
           onSave={(overrides) => {
             saveEditedLayout(editingFormat, overrides)
             setEditingFormat(null)

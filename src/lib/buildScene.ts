@@ -6,8 +6,8 @@ import { contrastRatio, contrastRatioFromLuminance, luminance, pickReadableInkFo
 import { LAYOUTS, chooseLayoutArchetype } from './composition'
 import { safeAreaToPercentEdges, visibleAreaToPercentRect } from './formatGeometry'
 import { getFormat } from './formats'
-import { normalizeGroupLayout } from './groupLayout'
 import { applyLayoutDensity } from './layoutDensity'
+import { applyLayoutPolicy, applyPolicyToComposition, getLayoutPolicy } from './layoutPolicy'
 import { applyStyleSettingsToScene } from './styleSettings'
 import type {
   AssetHint,
@@ -37,9 +37,10 @@ export type BuildOptions = {
   blockOverrides?: Partial<Record<BlockKind, BlockOverride>>
   density?: LayoutDensity
   typographySettings?: TypographySettings
-  compositionSettings?: CompositionSettings
+  compositionSettings?: Partial<CompositionSettings>
   locale?: string
   customFormats?: FormatRuleSet[]
+  gradientEnabled?: boolean
 }
 
 const TONE_DEFAULTS: Record<BrandKit['toneOfVoice'], { titleWeight: number; letterSpacing: number; maxLines: number; align: TextAlign }> = {
@@ -106,7 +107,9 @@ export function resolveCompositionModel(
 ): CompositionModel {
   const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
   const branded = applyBrandKit(master, brandKit)
-  return pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
+  const policy = getLayoutPolicy(rules, Boolean(enabled.image && branded.image?.src))
+  const selected = pickCompositionModel(branded, rules, enabled, options.override, options.assetHint)
+  return applyPolicyToComposition(selected, policy, Boolean(normalizeCompositionOverride(options.override)))
 }
 
 export function resolveCompositionSelection(
@@ -118,7 +121,10 @@ export function resolveCompositionSelection(
 ): CompositionSelectionDebug {
   const rules = applyLayoutDensity(getFormat(formatKey, options.customFormats), options.density)
   const branded = applyBrandKit(master, brandKit)
-  return pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
+  const selection = pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
+  const policy = getLayoutPolicy(rules, Boolean(enabled.image && branded.image?.src))
+  const selectedArchetype = applyPolicyToComposition(selection.selectedArchetype, policy, Boolean(selection.manualOverride))
+  return { ...selection, selectedArchetype }
 }
 
 export function buildScene(
@@ -135,7 +141,8 @@ export function buildScene(
 
   // 2. profile content + choose layout (or honour override)
   const selection = pickCompositionSelection(branded, rules, enabled, options.override, options.assetHint)
-  const model = selection.selectedArchetype
+  const policy = getLayoutPolicy(rules, Boolean(enabled.image && branded.image?.src))
+  const model = applyPolicyToComposition(selection.selectedArchetype, policy, Boolean(selection.manualOverride))
 
   // 3. compute positioned scene
   const generated = LAYOUTS[model](branded, rules, enabled, options.assetHint ?? null)
@@ -143,7 +150,13 @@ export function buildScene(
   // 3b. apply global style controls from the wizard. These are intentionally
   // downstream of the layout archetype so the user can tune the visual system
   // without pinning every format to hand-authored geometry.
-  const positioned = applyStyleSettingsToScene(generated, rules, options.typographySettings, options.compositionSettings)
+  const styled = applyStyleSettingsToScene(generated, rules, options.typographySettings, options.compositionSettings, model)
+  const positioned = applyLayoutPolicy(styled, rules, policy, {
+    compositionModel: model,
+    gradientEnabled: options.gradientEnabled ?? false,
+    manualOverride: Boolean(selection.manualOverride),
+    assetHint: options.assetHint ?? null,
+  }).scene
 
   // 4. focal-aware background: when an image with non-default focal is placed,
   //    retarget a gradient background to radiate from the subject. Linear
@@ -156,20 +169,18 @@ export function buildScene(
 
   // 6. apply locale-specific text if present.
   const localized = applyLocale(snapped, options.locale)
-  const localizedContent = applyLocale(branded, options.locale)
   const groupSource: Scene = {
     ...localized,
-    title: localized.title ?? localizedContent.title,
-    subtitle: localized.subtitle ?? localizedContent.subtitle,
-    cta: localized.cta ?? localizedContent.cta,
-    badge: localized.badge ?? localizedContent.badge,
-    logo: localized.logo ?? localizedContent.logo,
-    image: localized.image ?? (model === 'text-dominant' ? undefined : localizedContent.image),
+    title: enabled.title ? localized.title : undefined,
+    subtitle: enabled.subtitle ? localized.subtitle : undefined,
+    cta: enabled.cta ? localized.cta : undefined,
+    badge: enabled.badge ? localized.badge : undefined,
+    logo: enabled.logo ? localized.logo : undefined,
+    image: enabled.image ? localized.image : undefined,
   }
 
   // 7. clamp anything outside safe zone (defensive — does not move blocks, only shrinks widths)
-  const grouped = normalizeGroupLayout(groupSource, rules, enabled)
-  const clamped = clampToFrame(grouped, effectiveSafeZone(rules))
+  const clamped = clampToFrame(enforceTextGaps(groupSource, rules), effectiveSafeZone(rules))
 
   // 8. Generated CTA geometry follows the label before user overrides apply.
   const ctaSized = clamped
@@ -205,6 +216,60 @@ function effectiveSafeZone(rules: FormatRuleSet): FormatRuleSet['safeZone'] {
     bottom: base.bottom + pad,
     left: base.left + pad,
   }
+}
+
+function enforceTextGaps(scene: Scene, rules: FormatRuleSet): Scene {
+  const out: Scene = { ...scene }
+  const gap = Math.max(rules.gutter * 0.5, 0.65)
+  if (out.title && out.subtitle) {
+    out.subtitle = { ...out.subtitle, y: Math.max(out.subtitle.y, textBottom(out.title, rules) + gap) }
+  }
+  if (out.subtitle && out.cta) {
+    out.cta = { ...out.cta, y: Math.max(out.cta.y, textBottom(out.subtitle, rules) + gap) }
+  } else if (out.title && out.cta) {
+    out.cta = { ...out.cta, y: Math.max(out.cta.y, textBottom(out.title, rules) + gap) }
+  }
+
+  const blocks = [out.badge, out.title, out.subtitle, out.cta].filter(Boolean) as Array<{
+    y: number
+    h?: number
+    fontSize?: number
+    maxLines?: number
+    lineHeight?: number
+  }>
+  if (blocks.length === 0) return out
+  const safe = effectiveSafeZone(rules)
+  const bottom = Math.max(...blocks.map((block) => textBottom(block, rules)))
+  const maxBottom = 100 - safe.bottom
+  if (bottom > maxBottom) {
+    const dy = bottom - maxBottom
+    for (const k of ['badge', 'title', 'subtitle', 'cta'] as const) {
+      const block = out[k]
+      if (!block) continue
+      ;(out as Record<string, unknown>)[k] = { ...block, y: Math.max(safe.top, block.y - dy) }
+    }
+  }
+  if (out.image && out.title && out.image.y < out.title.y && rangesOverlap(out.image.x, out.image.w, out.title.x, out.title.w)) {
+    const imageBottom = out.image.y + (out.image.h ?? 50)
+    if (imageBottom > out.title.y - gap) {
+      out.image = {
+        ...out.image,
+        h: Math.max(12, out.title.y - gap - out.image.y),
+      }
+    }
+  }
+  return out
+}
+
+function rangesOverlap(aX: number, aW: number, bX: number, bW: number): boolean {
+  return aX + aW > bX && bX + bW > aX
+}
+
+function textBottom(
+  block: { y: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number },
+  rules: FormatRuleSet,
+): number {
+  return block.y + (block.h ?? ((block.fontSize ?? 3) * (block.lineHeight ?? 1.2) * Math.max(1, block.maxLines ?? 1) * rules.aspectRatio))
 }
 
 function applyLocale(scene: Scene, locale: string | undefined): Scene {
@@ -489,6 +554,7 @@ function clampToFrame(scene: Scene, sz: { top: number; right: number; bottom: nu
   const out: Scene = { background: scene.background, accent: scene.accent }
   if (scene.scrim) out.scrim = scene.scrim
   if (scene.decor) out.decor = scene.decor
+  if (scene.layoutPolicy) out.layoutPolicy = scene.layoutPolicy
   const maxX = 100 - sz.right
   const maxY = 100 - sz.bottom
   const minX = sz.left
