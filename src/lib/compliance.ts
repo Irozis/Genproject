@@ -273,7 +273,7 @@ function collectLayoutWarnings(
     warnings.push(finding('textBlockTooWide', 'layout', 'warning', 'Текстовый блок слишком широкий для стабильной читаемости.'))
   }
 
-  if (cta && title && blockDistance(cta, title) > (family === 'vertical' || family === 'tallVertical' ? 22 : 28)) {
+  if (cta && title && textStackGap(cta, [subtitle, title], format) > maxAttachedGap(family)) {
     warnings.push(finding('ctaDetachedFromText', 'layout', 'warning', 'CTA расположен слишком далеко от текстового блока.'))
   }
 
@@ -294,7 +294,10 @@ function collectLayoutWarnings(
     warnings.push(finding('ctaNotVisible', 'layout', 'warning', 'CTA не виден в макете и требует проверки.'))
   }
 
-  if ([scene.title, scene.subtitle, scene.cta, scene.badge].some((block) => block && block.fontSize < Math.max(3.2, format.minFontSize ?? 0))) {
+  if ((['title', 'subtitle', 'cta', 'badge'] as const).some((kind) => {
+    const block = scene[kind]
+    return block && textFontPx(block, format) < minReadableFontPx(kind, format)
+  })) {
     warnings.push(finding('textTooSmall', 'layout', 'warning', 'Текст может быть слишком мелким для чтения.'))
   }
 
@@ -393,10 +396,14 @@ function firstSourceByType(sources: RuleSource[], types: RuleSource['type'][]): 
 }
 
 function layoutFamily(scene: Scene, format: FormatRuleSet): string {
-  if (scene.layoutPolicy?.formatKind) return scene.layoutPolicy.formatKind
+  if (scene.layoutPolicy?.formatKind && scene.layoutPolicy.formatKind !== 'fixed-template' && scene.layoutPolicy.formatKind !== 'simple-scale') return scene.layoutPolicy.formatKind
+  if (format.requiredElements.includes('logo') || String(format.key).toLowerCase().includes('logo')) return 'logoOnly'
   if (format.aspectRatio < 0.55) return 'tallVertical'
-  if (format.width < 400 || format.height < 180 || format.width * format.height < 90000) return 'tinySmall'
-  if (format.aspectRatio >= 1.6) return 'horizontal'
+  if (format.width <= 200 && format.height <= 200 && format.aspectRatio < 2.2) return 'tinySmall'
+  if (format.aspectRatio >= 4) return 'ultraWideHorizontal'
+  if (format.height <= 300 || format.aspectRatio >= 2.2) return 'lowHorizontal'
+  if (format.width <= 340 || format.height <= 120 || format.width * format.height <= 50000) return 'tinySmall'
+  if (format.aspectRatio >= 1.45) return 'horizontal'
   if (format.aspectRatio <= 0.75) return 'vertical'
   if (format.aspectRatio >= 0.85 && format.aspectRatio <= 1.2) return 'square'
   return 'landscape'
@@ -412,14 +419,14 @@ function blockHeight(block: { h?: number; fontSize?: number; maxLines?: number; 
 }
 
 function isHorizontalFamily(family: string): boolean {
-  return family === 'horizontal' || family === 'ultraWideHorizontal' || family === 'landscape'
+  return family === 'horizontal' || family === 'lowHorizontal' || family === 'ultraWideHorizontal' || family === 'landscape'
 }
 
 function expectedSplitImageSlotWidth(format: FormatRuleSet): number {
   const innerW = 100 - format.safeZone.left - format.safeZone.right
-  const ratio = format.aspectRatio >= 6 ? 0.28 : format.aspectRatio >= 4 ? 0.34 : 0.45
-  const minW = format.aspectRatio >= 6 ? 24 : format.aspectRatio >= 4 ? 30 : 40
-  const maxW = format.aspectRatio >= 6 ? 36 : 55
+  const ratio = format.aspectRatio >= 6 ? 0.28 : format.aspectRatio >= 4 ? 0.32 : format.aspectRatio >= 2.2 ? 0.34 : 0.5
+  const minW = format.aspectRatio >= 6 ? 24 : format.aspectRatio >= 4 ? 28 : format.aspectRatio >= 2.2 ? 33 : 45
+  const maxW = format.aspectRatio >= 6 ? 35 : format.aspectRatio >= 4 ? 38 : format.aspectRatio >= 2.2 ? 42 : 55
   return Math.min(maxW, Math.max(minW, innerW * ratio))
 }
 
@@ -435,15 +442,49 @@ function importantBlocksCoverage(scene: SceneWithBlocks): number {
   return ((right - left) * (bottom - top)) / 10000
 }
 
-function blockDistance(
+function textStackGap(
+  cta: { x: number; y: number; w: number; h?: number },
+  textBlocks: Array<{ x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number } | undefined>,
+  format: FormatRuleSet,
+): number {
+  const candidates = textBlocks.filter(Boolean) as Array<{ x: number; y: number; w: number; h?: number; fontSize?: number; maxLines?: number; lineHeight?: number }>
+  if (candidates.length === 0) return Number.POSITIVE_INFINITY
+  return Math.min(...candidates.map((block) => rectGap(cta, { ...block, h: blockHeight(block, format) })))
+}
+
+function rectGap(
   a: { x: number; y: number; w: number; h?: number },
   b: { x: number; y: number; w: number; h?: number },
 ): number {
-  const ax = a.x + a.w / 2
-  const ay = a.y + (a.h ?? 0) / 2
-  const bx = b.x + b.w / 2
-  const by = b.y + (b.h ?? 0) / 2
-  return Math.hypot(ax - bx, ay - by)
+  const ax1 = a.x
+  const ax2 = a.x + a.w
+  const ay1 = a.y
+  const ay2 = a.y + (a.h ?? 0)
+  const bx1 = b.x
+  const bx2 = b.x + b.w
+  const by1 = b.y
+  const by2 = b.y + (b.h ?? 0)
+  const dx = Math.max(0, Math.max(bx1 - ax2, ax1 - bx2))
+  const dy = Math.max(0, Math.max(by1 - ay2, ay1 - by2))
+  return Math.hypot(dx, dy)
+}
+
+function maxAttachedGap(family: string): number {
+  if (family === 'ultraWideHorizontal' || family === 'lowHorizontal') return 5
+  if (family === 'horizontal' || family === 'landscape') return 7
+  return 9
+}
+
+function textFontPx(block: { fontSize: number }, format: FormatRuleSet): number {
+  return (block.fontSize / 100) * format.width
+}
+
+function minReadableFontPx(kind: 'title' | 'subtitle' | 'cta' | 'badge', format: FormatRuleSet): number {
+  if (format.height <= 70) return kind === 'title' ? 8 : 7
+  if (format.height <= 120 || format.width <= 200) return kind === 'title' ? 10 : 8
+  if (kind === 'title') return Math.max(11, format.minFontSize ?? 0)
+  if (kind === 'cta') return Math.max(format.width <= 320 ? 9 : 10, (format.minFontSize ?? 0) - 1)
+  return Math.max(9, (format.minFontSize ?? 0) - 2)
 }
 
 function blocksAreSideBySide(

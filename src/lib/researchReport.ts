@@ -1,6 +1,7 @@
 import { runCompliance, type ValidationFinding } from './compliance'
 import { checkOverflow, type LayoutIssue } from './fixLayout'
 import { getFormatLayoutRule } from './groupLayout'
+import { classifyPolicyFormat } from './layoutPolicy'
 import type { BlockKind, FormatRuleSet, Project, Scene, TextBlock } from './types'
 
 export type ResearchClassification = 'ready' | 'needsFix' | 'critical'
@@ -22,6 +23,9 @@ export type ResearchValidationRecord = {
   textOverflow: boolean
   safeAreaViolationCount: number
   criticalTechnicalViolations: string[]
+  seriousLayoutWarnings: string[]
+  minorLayoutWarnings: string[]
+  adaptiveDecisions: string[]
   layoutWarnings: string[]
   methodologyWarnings: string[]
   manualReviewNotes: string[]
@@ -95,6 +99,9 @@ export const RESEARCH_REPORT_CSV_HEADERS: Array<keyof ResearchValidationRecord> 
   'textOverflow',
   'safeAreaViolationCount',
   'criticalTechnicalViolations',
+  'seriousLayoutWarnings',
+  'minorLayoutWarnings',
+  'adaptiveDecisions',
   'layoutWarnings',
   'methodologyWarnings',
   'manualReviewNotes',
@@ -110,6 +117,15 @@ const METHODOLOGY_WARNING_CODES = new Set([
   'layoutNotOfficiallySpecified',
 ])
 
+const MINOR_LAYOUT_WARNING_CODES = new Set([
+  'subtitleHiddenDueToSpace',
+  'bodyHiddenDueToSpace',
+  'textStackCollisionResolved',
+  'ctaCompactApplied',
+  'titleFontReduced',
+  'layoutFallbackApplied',
+])
+
 export function buildResearchValidationRecord(input: BuildRecordInput): ResearchValidationRecord {
   const { project, format, scene, exportOk, exportError } = input
   const layoutMode = scene?.layoutPolicy?.formatKind ?? getFormatLayoutRule(format).defaultLayoutMode.value
@@ -121,11 +137,15 @@ export function buildResearchValidationRecord(input: BuildRecordInput): Research
   const outOfBoundsIssues = scene ? collectOutOfBoundsIssues(scene, format) : []
   const overlapIssues = scene ? collectOverlapIssues(scene, format) : []
   const compliance = scene ? runCompliance(scene, format, project.brandKit) : null
-  const layoutWarnings = dedupeStrings([
+  const rawLayoutWarnings = dedupeStrings([
     ...overflowIssues.filter((issue) => issue.level === 'info' || !isCriticalOverflowIssue(scene, format, issue)).map(formatLayoutIssue),
     ...(compliance?.layoutWarnings ?? []).map(formatFinding),
     ...((scene?.layoutPolicy?.debugWarnings ?? []).filter((warning) => warning === 'textStackRequiresManualReview').map((warning) => `${warning}: Text stack still requires manual review after automatic spacing guard.`)),
   ])
+  const seriousLayoutWarnings = rawLayoutWarnings.filter((warning) => !isMinorLayoutWarning(warning))
+  const minorLayoutWarnings = rawLayoutWarnings.filter(isMinorLayoutWarning)
+  const adaptiveDecisions = input.method === 'adaptiveLayout' ? minorLayoutWarnings : []
+  const layoutWarnings = [...seriousLayoutWarnings, ...minorLayoutWarnings]
   const methodologyWarnings = dedupeStrings([
     ...(compliance?.heuristicWarnings ?? []).filter(isMethodologyFinding).map(formatFinding),
   ])
@@ -160,6 +180,9 @@ export function buildResearchValidationRecord(input: BuildRecordInput): Research
     textOverflow: textOverflowIssues.length > 0,
     safeAreaViolationCount: safeAreaIssues.length,
     criticalTechnicalViolations,
+    seriousLayoutWarnings,
+    minorLayoutWarnings,
+    adaptiveDecisions,
     layoutWarnings,
     methodologyWarnings,
     manualReviewNotes,
@@ -167,6 +190,8 @@ export function buildResearchValidationRecord(input: BuildRecordInput): Research
       exportOk,
       requiredElementsPresent,
       criticalTechnicalViolations,
+      seriousLayoutWarnings,
+      minorLayoutWarnings,
       layoutWarnings,
       methodologyWarnings,
       manualReviewNotes,
@@ -183,6 +208,8 @@ export function classifyRecord(input: Pick<
   | 'exportOk'
   | 'requiredElementsPresent'
   | 'criticalTechnicalViolations'
+  | 'seriousLayoutWarnings'
+  | 'minorLayoutWarnings'
   | 'layoutWarnings'
   | 'methodologyWarnings'
   | 'manualReviewNotes'
@@ -195,7 +222,7 @@ export function classifyRecord(input: Pick<
   if (!input.requiredElementsPresent) return 'critical'
   if (input.criticalTechnicalViolations.length > 0) return 'critical'
   if (
-    input.layoutWarnings.length > 0 ||
+    input.seriousLayoutWarnings.length > 0 ||
     input.safeAreaViolationCount > 0 ||
     input.outOfBoundsCount > 0 ||
     input.overlapCount > 0 ||
@@ -281,7 +308,7 @@ The audit produced reproducible technical validation records for the generated a
 }
 
 function missingRequiredElements(scene: Scene, format: FormatRuleSet, project: Project): BlockKind[] {
-  return format.requiredElements.filter((kind) => {
+  return effectiveRequiredElements(scene, format).filter((kind) => {
     if (project.enabled[kind] === false) return true
     const block = scene[kind]
     if (!block) return true
@@ -290,6 +317,16 @@ function missingRequiredElements(scene: Scene, format: FormatRuleSet, project: P
     }
     if (kind === 'image') return !scene.image?.src
     return false
+  })
+}
+
+function effectiveRequiredElements(scene: Scene, format: FormatRuleSet): BlockKind[] {
+  const formatKind = scene.layoutPolicy?.formatKind ?? classifyPolicyFormat(format)
+  if (formatKind === 'logoOnly') return format.requiredElements.includes('logo') ? ['logo'] : []
+  return format.requiredElements.filter((kind) => {
+    if (kind === 'subtitle' || kind === 'badge') return false
+    if (kind === 'cta' && formatKind === 'tinySmall') return false
+    return true
   })
 }
 
@@ -436,6 +473,10 @@ function isMethodologyFinding(finding: ValidationFinding): boolean {
   return METHODOLOGY_WARNING_CODES.has(finding.code)
 }
 
+function isMinorLayoutWarning(warning: string): boolean {
+  return MINOR_LAYOUT_WARNING_CODES.has(normalizeReason(warning))
+}
+
 function classSummary(records: ResearchValidationRecord[], total: number, classification: ResearchClassification): ResearchClassSummary {
   const count = records.filter((record) => record.classification === classification).length
   return { count, percent: total > 0 ? round((count / total) * 100, 1) : 0 }
@@ -457,7 +498,7 @@ function topReasons(records: ResearchValidationRecord[], critical: boolean): Arr
   for (const record of records) {
     const reasons = critical
       ? record.criticalTechnicalViolations
-      : [...record.layoutWarnings, ...(record.textOverflow ? ['text overflow'] : [])]
+      : [...record.seriousLayoutWarnings, ...(record.textOverflow ? ['text overflow'] : [])]
     for (const reason of reasons) {
       increment(counts, normalizeReason(reason))
     }

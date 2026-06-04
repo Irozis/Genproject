@@ -5,7 +5,6 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import JSZip from 'jszip'
 import { AD_FORMAT_CATALOG } from '../src/data/adFormats'
 import { buildScene } from '../src/lib/buildScene'
-import { DEFAULT_COMPOSITION_BY_FORMAT } from '../src/lib/formats'
 import { fixLayout } from '../src/lib/fixLayout'
 import { getActiveImageSrc } from '../src/lib/projectImages'
 import {
@@ -208,23 +207,135 @@ function simpleScaleScene(inputScene: Scene): Scene {
 }
 
 function fixedTemplateScene(project: Project, inputScene: Scene, format: FormatRuleSet): Scene {
-  const built = buildScene(inputScene, format.key, project.brandKit, project.enabled, {
-    override: DEFAULT_COMPOSITION_BY_FORMAT[String(format.key)] ?? undefined,
-    assetHint: project.assetHint,
-    locale: project.activeLocale,
-    customFormats: project.customFormats,
-  })
-  return {
-    ...built,
+  return fixedTemplateBaseline(project, inputScene, format)
+}
+
+function fixedTemplateBaseline(project: Project, inputScene: Scene, format: FormatRuleSet): Scene {
+  const palette = project.brandKit.palette
+  const safe = format.safeZone
+  const innerW = 100 - safe.left - safe.right
+  const innerH = 100 - safe.top - safe.bottom
+  const horizontal = format.aspectRatio >= 1.45
+  const vertical = format.aspectRatio <= 0.75
+  const scene: Scene = {
+    background: { kind: 'solid', color: palette.surface },
+    accent: palette.accent,
     layoutPolicy: {
-      ...(built.layoutPolicy ?? {
-        formatKind: 'fixed-template',
-        source: { type: 'manual', name: 'Research audit fixed template' },
-        appliedRules: [],
-      }),
-      appliedRules: [...(built.layoutPolicy?.appliedRules ?? []), 'fixed template baseline'],
+      formatKind: 'fixed-template',
+      source: { type: 'manual', name: 'Research audit fixed template' },
+      appliedRules: ['fixed template baseline', horizontal ? 'fixed horizontal bucket' : vertical ? 'fixed vertical bucket' : 'fixed card bucket'],
     },
   }
+
+  const titleSource = inputScene.title
+  const subtitleSource = inputScene.subtitle
+  const ctaSource = inputScene.cta
+  const badgeSource = inputScene.badge
+
+  if (project.enabled.image !== false && inputScene.image) {
+    scene.image = {
+      ...inputScene.image,
+      ...(horizontal
+        ? { x: safe.left + innerW * 0.64, y: safe.top, w: innerW * 0.36, h: innerH }
+        : vertical
+          ? { x: safe.left, y: safe.top, w: innerW, h: innerH * 0.44 }
+          : { x: safe.left + innerW * 0.50, y: safe.top + innerH * 0.12, w: innerW * 0.42, h: innerH * 0.48 }),
+      fit: 'cover',
+      rx: inputScene.image.rx ?? 16,
+    }
+  }
+
+  if (project.enabled.logo !== false && inputScene.logo) {
+    const logoW = horizontal ? Math.min(9, innerW * 0.12) : Math.min(14, innerW * 0.18)
+    const logoH = horizontal ? Math.min(10, innerH * 0.28) : Math.min(10, innerH * 0.12)
+    scene.logo = {
+      ...inputScene.logo,
+      x: 100 - safe.right - logoW,
+      y: safe.top,
+      w: logoW,
+      h: logoH,
+      bgOpacity: inputScene.logo.bgOpacity ?? 0.92,
+    }
+  }
+
+  const textX = safe.left
+  const textW = horizontal ? innerW * 0.60 : vertical ? innerW : innerW * 0.44
+  const titleY = horizontal ? safe.top + innerH * 0.20 : vertical ? safe.top + innerH * 0.50 : safe.top + innerH * 0.18
+  const titleLines = horizontal ? 2 : vertical ? 3 : 2
+  const titleFont = percentFont(horizontal ? 20 : vertical ? 28 : 26, format)
+  const subtitleFont = percentFont(horizontal ? 12 : vertical ? 16 : 14, format)
+  const ctaFont = percentFont(horizontal ? 12 : vertical ? 14 : 13, format)
+  const titleH = textHeightPct(titleFont, titleLines, titleSource?.lineHeight ?? 1.12, format)
+  const subtitleLines = horizontal ? 1 : 2
+  const subtitleH = textHeightPct(subtitleFont, subtitleLines, subtitleSource?.lineHeight ?? 1.18, format)
+  const stackGap = horizontal ? 4 : 3
+
+  if (project.enabled.title !== false && titleSource) {
+    scene.title = {
+      ...titleSource,
+      x: textX,
+      y: titleY,
+      w: textW,
+      h: titleH,
+      fontSize: titleFont,
+      lineHeight: titleSource.lineHeight ?? 1.12,
+      charsPerLine: charsPerLine(textW, titleFont),
+      maxLines: titleLines,
+      fill: palette.ink,
+    }
+  }
+
+  if (project.enabled.subtitle !== false && subtitleSource) {
+    const y = titleY + titleH + stackGap
+    scene.subtitle = {
+      ...subtitleSource,
+      x: textX,
+      y,
+      w: textW,
+      h: subtitleH,
+      fontSize: subtitleFont,
+      lineHeight: subtitleSource.lineHeight ?? 1.18,
+      charsPerLine: charsPerLine(textW, subtitleFont),
+      maxLines: subtitleLines,
+      fill: palette.inkMuted,
+    }
+  }
+
+  if (project.enabled.cta !== false && ctaSource) {
+    const ctaW = horizontal ? Math.min(28, textW * 0.46) : vertical ? Math.min(44, textW * 0.64) : Math.min(34, textW * 0.66)
+    const ctaH = horizontal ? Math.min(14, Math.max(8, innerH * 0.18)) : vertical ? Math.min(10, innerH * 0.10) : Math.min(10, innerH * 0.12)
+    const subtitleEnabled = project.enabled.subtitle !== false && Boolean(subtitleSource)
+    const preferredCtaY = titleY + titleH + (subtitleEnabled ? stackGap + subtitleH : 0) + stackGap
+    scene.cta = {
+      ...ctaSource,
+      x: textX,
+      y: clampPct(preferredCtaY, safe.top, 100 - safe.bottom - ctaH),
+      w: ctaW,
+      h: ctaH,
+      fontSize: ctaFont,
+      charsPerLine: charsPerLine(ctaW, ctaFont),
+      maxLines: 1,
+      fill: ctaSource.fill,
+      bg: palette.accent,
+      rx: ctaSource.rx,
+    }
+  }
+
+  if (project.enabled.badge !== false && badgeSource) {
+    scene.badge = {
+      ...badgeSource,
+      x: textX,
+      y: safe.top,
+      w: Math.min(textW, 28),
+      h: textHeightPct(percentFont(12, format), 1, badgeSource.lineHeight ?? 1.1, format),
+      fontSize: percentFont(12, format),
+      charsPerLine: charsPerLine(Math.min(textW, 28), percentFont(12, format)),
+      maxLines: 1,
+      fill: palette.accent,
+    }
+  }
+
+  return scene
 }
 
 function adaptiveLayoutScene(project: Project, inputScene: Scene, format: FormatRuleSet): Scene {
@@ -237,6 +348,23 @@ function adaptiveLayoutScene(project: Project, inputScene: Scene, format: Format
     density: project.formatDensities?.[format.key] ?? project.layoutDensity,
   })
   return fixLayout(built, format)
+}
+
+function percentFont(px: number, format: FormatRuleSet): number {
+  return (px / format.width) * 100
+}
+
+function textHeightPct(fontSizePct: number, lines: number, lineHeight: number, format: FormatRuleSet): number {
+  return fontSizePct * lineHeight * Math.max(1, lines) * format.aspectRatio
+}
+
+function charsPerLine(widthPct: number, fontSizePct: number): number {
+  const avgCharPct = Math.max(0.1, fontSizePct * 0.54)
+  return Math.max(1, Math.floor(widthPct / avgCharPct))
+}
+
+function clampPct(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
 }
 
 function createInputScene(project: Project, formatKey: FormatKey): Scene {
@@ -423,6 +551,7 @@ ${report.audit.methods.map((method) => `- ${method}: ${report.summary.byMethod[m
 | adaptiveLayout | ${report.summary.byMethod.adaptiveLayout.critical.count} |
 
 AdaptiveLayout critical is ${report.summary.byMethod.adaptiveLayout.critical.count < report.summary.byMethod.simpleScale.critical.count ? 'below' : 'not below'} simpleScale critical.
+AdaptiveLayout critical is ${report.summary.byMethod.adaptiveLayout.critical.count <= report.summary.byMethod.fixedTemplate.critical.count ? 'not above' : 'above'} fixedTemplate critical.
 
 ## Adaptive PNG / ZIP Export
 

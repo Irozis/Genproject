@@ -4,32 +4,32 @@
 | --- | ---: |
 | Total formats | 126 |
 | Total results | 1890 |
-| Ready | 81 (4.3%) |
-| NeedsFix | 1591 (84.2%) |
-| Critical | 218 (11.5%) |
+| Ready | 323 (17.1%) |
+| NeedsFix | 1265 (66.9%) |
+| Critical | 302 (16.0%) |
 
 ## Results By Method
 
 | Method | Total | Ready | NeedsFix | Critical |
 | --- | ---: | ---: | ---: | ---: |
 | simpleScale | 630 | 0 (0.0%) | 445 (70.6%) | 185 (29.4%) |
-| fixedTemplate | 630 | 40 (6.3%) | 560 (88.9%) | 30 (4.8%) |
-| adaptiveLayout | 630 | 41 (6.5%) | 586 (93.0%) | 3 (0.5%) |
+| fixedTemplate | 630 | 110 (17.5%) | 435 (69.0%) | 85 (13.5%) |
+| adaptiveLayout | 630 | 213 (33.8%) | 385 (61.1%) | 32 (5.1%) |
 
 ## Top 5 NeedsFix Reasons
 
-- textTooSmall: 1442
-- ctaDetachedFromText: 1348
-- subtitle: 918
-- title: 904
-- bodyOverflow: 634
+- subtitle: 1028
+- title: 854
+- bodyOverflow: 724
+- subtitleOverflow: 724
+- text overflow: 484
 
 ## Top 5 Critical Reasons
 
-- cta: 105
-- title critically overlaps cta (100.0% of smaller block): 80
+- title: 134
+- cta: 120
+- title critically overlaps cta (100.0% of smaller block): 95
 - title critically overlaps subtitle (100.0% of smaller block): 80
-- title: 75
 - subtitle critically overlaps cta (100.0% of smaller block): 70
 
 ## Methodology Warning Counts
@@ -38,7 +38,7 @@
 - heuristicRuleApplied: 1890
 - layoutNotOfficiallySpecified: 1890
 - percentageRegionsAreInternalModel: 1890
-- needsManualReview: 1734
+- needsManualReview: 1697
 - unknownRuleSource: 1545
 
 ## Diploma Conclusion
@@ -66,10 +66,11 @@ The audit produced reproducible technical validation records for the generated a
 | Method | Critical cases |
 | --- | ---: |
 | simpleScale | 185 |
-| fixedTemplate | 30 |
-| adaptiveLayout | 3 |
+| fixedTemplate | 85 |
+| adaptiveLayout | 32 |
 
 AdaptiveLayout critical is below simpleScale critical.
+AdaptiveLayout critical is not above fixedTemplate critical.
 
 ## Adaptive PNG / ZIP Export
 
