@@ -268,10 +268,12 @@ describe('buildScene demo-safe layout policy', () => {
   }
 
   it.each([
-    ['vk-teaser-image-text-145x85', 'horizontal'],
+    ['vk-teaser-image-text-145x85', 'tinySmall'],
     ['yandex-rsy-320x50', 'ultraWideHorizontal'],
     ['yandex-rsy-728x90', 'ultraWideHorizontal'],
-    ['yandex-rsy-300x250', 'tinySmall'],
+    ['yandex-rsy-300x250', 'lowHorizontal'],
+    ['yandex-rsy-970x250', 'lowHorizontal'],
+    ['yandex-market-stretch', 'ultraWideHorizontal'],
     ['vk-square', 'square'],
     ['instagram-story', 'vertical'],
     ['yandex-rsy-160x600', 'tallVertical'],
@@ -284,7 +286,7 @@ describe('buildScene demo-safe layout policy', () => {
   })
 
   it('uses split-style placement for horizontal banners with meaningful image coverage', () => {
-    for (const formatKey of ['yandex-rsy-728x90', 'yandex-rsy-300x250'] as const) {
+    for (const formatKey of ['yandex-rsy-970x250', 'yandex-market-stretch'] as const) {
       const scene = buildScene(masterWithImage, formatKey, DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
       expect(scene.image).toBeDefined()
       expect(scene.title).toBeDefined()
@@ -306,6 +308,34 @@ describe('buildScene demo-safe layout policy', () => {
       expect(scene.decor).toBeUndefined()
       expect(scene.title?.maxLines).toBeLessThanOrEqual(2)
     }
+  })
+
+  it('uses logo-only fallback text when no logo asset is available', () => {
+    const scene = buildScene(masterWithImage, '2gis-logo-200x200', DEFAULT_BRAND_KIT, DEFAULT_ENABLED)
+
+    expect(scene.layoutPolicy?.formatKind).toBe('logoOnly')
+    expect(scene.logo).toBeUndefined()
+    expect(scene.title).toBeDefined()
+    expect(scene.subtitle).toBeUndefined()
+    expect(scene.cta).toBeUndefined()
+    expect(scene.image).toBeUndefined()
+    expect(scene.title!.align).toBe('center')
+    expect(scene.title!.x + scene.title!.w / 2).toBeCloseTo(50, 5)
+  })
+
+  it('uses centered logo asset for logo formats when logo is available', () => {
+    const scene = buildScene(
+      { ...masterWithImage, logo: masterWithImage.logo ? { ...masterWithImage.logo, src: 'data:image/png;base64,logo' } : undefined },
+      '2gis-logo-200x200',
+      DEFAULT_BRAND_KIT,
+      DEFAULT_ENABLED,
+    )
+
+    expect(scene.layoutPolicy?.formatKind).toBe('logoOnly')
+    expect(scene.logo).toBeDefined()
+    expect(scene.title).toBeUndefined()
+    expect(scene.logo!.x).toBeCloseTo(scene.logo!.y, 5)
+    expect(scene.logo!.w).toBeGreaterThanOrEqual(70)
   })
 
   it('keeps vertical formats in top or background image layouts with CTA attached to text', () => {

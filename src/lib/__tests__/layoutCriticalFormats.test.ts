@@ -82,7 +82,7 @@ describe('layout generator for critical fixture formats', () => {
 
   it('keeps text and CTA out of image region when logo is disabled', () => {
     const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
-    for (const format of minimalTestFormats.filter((item) => item.aspectRatio >= 2.2 || item.aspectRatio < 0.9)) {
+    for (const format of minimalTestFormats.filter((item) => (item.aspectRatio >= 2.2 || item.aspectRatio < 0.9) && !isTiny(item))) {
       const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true, logo: false }, {
         assetHint: imageHint,
         customFormats: minimalTestFormats,
@@ -110,7 +110,7 @@ describe('layout generator for critical fixture formats', () => {
       if (format.height <= 70) expect(scene.subtitle).toBeUndefined()
       if (scene.cta) {
         const ctaHeightPx = ((scene.cta.h ?? 0) / 100) * format.height
-        const maxHeight = format.height <= 70 ? format.height * 0.45 : format.height <= 120 ? 34 : Math.max(48, format.height * 0.18)
+        const maxHeight = format.height <= 70 ? format.height * 0.5 : format.height <= 120 ? 38 : Math.max(64, format.height * 0.2)
         expect(ctaHeightPx).toBeLessThanOrEqual(maxHeight + 0.5)
       }
     }
@@ -119,7 +119,7 @@ describe('layout generator for critical fixture formats', () => {
   it('fills split image slots in representative horizontal formats', () => {
     const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
     const requestedSizes = new Set(['728x90', '960x150', '1000x120', '1200x628', '1920x640', '2880x300'])
-    const formats = minimalTestFormats.filter((item) => requestedSizes.has(`${item.width}x${item.height}`))
+    const formats = minimalTestFormats.filter((item) => requestedSizes.has(`${item.width}x${item.height}`) && !isTiny(item))
 
     for (const format of formats) {
       const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
@@ -144,7 +144,7 @@ describe('layout generator for critical fixture formats', () => {
     const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
     const requestedSizes = new Set(['728x90', '960x150', '1000x120', '1920x640', '2184x270', '2880x300', '2880x400', '2934x456', '3000x360'])
     const formats: FormatRuleSet[] = [
-      ...minimalTestFormats.filter((item) => requestedSizes.has(`${item.width}x${item.height}`)),
+      ...minimalTestFormats.filter((item) => requestedSizes.has(`${item.width}x${item.height}`) && !isTiny(item)),
       getFormat('ok-horizontal-1200x628'),
     ]
     const modes: Array<{ mode: CompositionModel; master: Scene; expectsImage: boolean }> = [
@@ -173,6 +173,182 @@ describe('layout generator for critical fixture formats', () => {
           expect(scene.cta.y + (scene.cta.h ?? 0)).toBeLessThanOrEqual(100 - format.safeZone.bottom + 0.5)
         }
       }
+    }
+  })
+
+  it('centers CTA with the title block in low and ultra-wide horizontal formats', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const acceptanceFormats: FormatRuleSet[] = [
+      getFormat('wb-orders-mobile-720x300'),
+      minimalTestFormats.find((item) => item.width === 960 && item.height === 300)!,
+      getFormat('yandex-rsy-970x250'),
+      getFormat('ozon-showcase-1440x400'),
+      getFormat('wb-orders-site-2880x300'),
+      getFormat('yandex-rsy-3000x360-3x'),
+    ]
+
+    for (const format of acceptanceFormats) {
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+        override: 'split-right-image',
+      })
+      expect(scene.title).toBeDefined()
+      expect(scene.cta).toBeDefined()
+      expect(scene.subtitle).toBeUndefined()
+
+      const safeCenterY = format.safeZone.top + (100 - format.safeZone.top - format.safeZone.bottom) / 2
+      const ctaCenterY = scene.cta!.y + (scene.cta!.h ?? 0) / 2
+      const titleCenterY = scene.title!.y + blockRect(scene.title!, format).h / 2
+      const ctaHeightPx = ((scene.cta!.h ?? 0) / 100) * format.height
+      const ctaBottomSlack = 100 - format.safeZone.bottom - (scene.cta!.y + (scene.cta!.h ?? 0))
+
+      expect(Math.abs(ctaCenterY - safeCenterY)).toBeLessThanOrEqual(2)
+      expect(Math.abs(titleCenterY - safeCenterY)).toBeLessThanOrEqual(5)
+      expect(Math.abs(ctaCenterY - titleCenterY)).toBeLessThanOrEqual(6)
+      expect(ctaHeightPx).toBeGreaterThanOrEqual(30)
+      expect(ctaBottomSlack).toBeGreaterThan(8)
+      expect(scene.cta!.x).toBeGreaterThanOrEqual(scene.title!.x + scene.title!.w)
+    }
+  })
+
+  it('keeps normal horizontal split text stack centered without bottom-pinning CTA', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const format = getFormat('ok-horizontal-1200x628')
+    const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+      assetHint: imageHint,
+      customFormats: minimalTestFormats,
+      override: 'split-right-image',
+    })
+
+    expect(scene.title).toBeDefined()
+    expect(scene.subtitle).toBeDefined()
+    expect(scene.cta).toBeDefined()
+    expect(scene.cta!.y).toBeGreaterThan(scene.title!.y)
+
+    const safeCenterY = format.safeZone.top + (100 - format.safeZone.top - format.safeZone.bottom) / 2
+    const textBlocks = [scene.title!, scene.subtitle!, scene.cta!]
+    const stackTop = Math.min(...textBlocks.map((block) => block.y))
+    const stackBottom = Math.max(...textBlocks.map((block) => block.y + blockRect(block, format).h))
+    const stackCenterY = stackTop + (stackBottom - stackTop) / 2
+    const ctaBottomSlack = 100 - format.safeZone.bottom - (scene.cta!.y + (scene.cta!.h ?? 0))
+
+    expect(Math.abs(stackCenterY - safeCenterY)).toBeLessThanOrEqual(4)
+    expect(ctaBottomSlack).toBeGreaterThan(10)
+  })
+
+  it('keeps subtitle visible in roomy vertical, card, and horizontal formats', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const formatKeys = [
+      'yandex-rsy-600x1000-2x',
+      'yandex-rsy-480x1200-2x',
+      'yandex-rsy-480x1800-3x',
+      'yandex-rsy-480x800-2x',
+      'vk-wb-social-1000x700',
+      'yandex-rsy-900x750-3x',
+      'avito-premium-750x564',
+      'wb-checkout-app-960x412',
+    ] as const
+
+    for (const formatKey of formatKeys) {
+      const format = getFormat(formatKey)
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+
+      expect(scene.subtitle).toBeDefined()
+      expect(checkOverflow(scene, format).some((issue) => /Subtitle overlaps|overlaps Subtitle/.test(issue.message))).toBe(false)
+    }
+  })
+
+  it('never overlaps title and CTA in tiny and compact formats', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const formatKeys = [
+      'yandex-rsy-300x250',
+      'avito-html5-320x240',
+      'yandex-rsy-320x100',
+      '2gis-directory-banner-319x57',
+      'yandex-rsy-320x50',
+    ] as const
+
+    for (const formatKey of formatKeys) {
+      const format = getFormat(formatKey)
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+      const messages = checkOverflow(scene, format).map((issue) => issue.message)
+
+      expect(scene.subtitle).toBeUndefined()
+      expect(messages.some((message) => /Title overlaps Cta|Cta overlaps Title/.test(message))).toBe(false)
+      if (scene.title) expect(scene.title.maxLines).toBeLessThanOrEqual(format.height <= 70 ? 1 : 2)
+    }
+  })
+
+  it('uses readable type sizes in narrow vertical formats', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const formatKeys = [
+      'yandex-rsy-480x1800-3x',
+      'yandex-rsy-480x1200-2x',
+      'yandex-rsy-320x1200-2x',
+      'yandex-rsy-300x600',
+      'yandex-rsy-240x600',
+      'yandex-rsy-160x600',
+    ] as const
+
+    for (const formatKey of formatKeys) {
+      const format = getFormat(formatKey)
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+      const titlePx = ((scene.title?.fontSize ?? 0) / 100) * format.width
+      const ctaPx = ((scene.cta?.fontSize ?? 0) / 100) * format.width
+      const imageH = scene.image?.h ?? 0
+
+      expect(titlePx).toBeGreaterThanOrEqual(Math.min(18, Math.max(16, format.width * 0.045)))
+      expect(ctaPx).toBeGreaterThanOrEqual(12)
+      expect(imageH).toBeGreaterThanOrEqual(45)
+      expect(imageH).toBeLessThanOrEqual(55)
+      expect(scene.subtitle).toBeDefined()
+    }
+  })
+
+  it('keeps low-horizontal and ultra-wide CTA readable and centered with title group', () => {
+    const imageHint = assetHintFromAnalysis(testImageAnalysisHorizontal)
+    const formatKeys = [
+      'yandex-rsy-728x90',
+      'yandex-rsy-970x250',
+      'wb-orders-app-1074x276',
+      'yandex-rsy-1456x180-2x',
+      'yandex-rsy-2910x750-3x',
+      'avito-home-2934x456',
+      'wb-checkout-site-2880x400',
+      'yandex-rsy-3000x360-3x',
+    ] as const
+
+    for (const formatKey of formatKeys) {
+      const format = getFormat(formatKey)
+      const scene = buildScene(testContentWithImageHorizontal, format.key, testBrandLight, { ...DEFAULT_ENABLED, image: true }, {
+        assetHint: imageHint,
+        customFormats: minimalTestFormats,
+      })
+      expect(scene.subtitle).toBeUndefined()
+      expect(scene.cta).toBeDefined()
+
+      const ctaFontPx = ((scene.cta!.fontSize ?? 0) / 100) * format.width
+      const ctaHeightPx = ((scene.cta!.h ?? 0) / 100) * format.height
+      const safeCenterY = format.safeZone.top + (100 - format.safeZone.top - format.safeZone.bottom) / 2
+      const titleTop = scene.title?.y ?? scene.cta!.y
+      const titleBottom = scene.title ? scene.title.y + blockRect(scene.title, format).h : scene.cta!.y
+      const ctaBottom = scene.cta!.y + (scene.cta!.h ?? 0)
+      const groupCenterY = Math.min(titleTop, scene.cta!.y) + (Math.max(titleBottom, ctaBottom) - Math.min(titleTop, scene.cta!.y)) / 2
+
+      expect(ctaFontPx).toBeGreaterThanOrEqual(11)
+      expect(ctaHeightPx).toBeGreaterThanOrEqual(format.height <= 120 ? 24 : 44)
+      expect(Math.abs(groupCenterY - safeCenterY)).toBeLessThanOrEqual(9)
+      expect(checkOverflow(scene, format).some((issue) => /Title overlaps Cta|Cta overlaps Title/.test(issue.message))).toBe(false)
     }
   })
 
@@ -249,8 +425,12 @@ function rectsOverlap(
 
 function expectedSplitImageSlotWidth(format: { aspectRatio: number; safeZone: { left: number; right: number } }): number {
   const innerW = 100 - format.safeZone.left - format.safeZone.right
-  const ratio = format.aspectRatio >= 6 ? 0.28 : format.aspectRatio >= 4 ? 0.34 : 0.45
-  const minW = format.aspectRatio >= 6 ? 24 : format.aspectRatio >= 4 ? 30 : 40
-  const maxW = format.aspectRatio >= 6 ? 36 : 55
+  const ratio = format.aspectRatio >= 6 ? 0.28 : format.aspectRatio >= 4 ? 0.32 : format.aspectRatio >= 2.2 ? 0.34 : 0.5
+  const minW = format.aspectRatio >= 6 ? 24 : format.aspectRatio >= 4 ? 28 : format.aspectRatio >= 2.2 ? 33 : 45
+  const maxW = format.aspectRatio >= 6 ? 35 : format.aspectRatio >= 4 ? 38 : format.aspectRatio >= 2.2 ? 42 : 55
   return Math.min(maxW, Math.max(minW, innerW * ratio))
+}
+
+function isTiny(format: { width: number; height: number }): boolean {
+  return format.width <= 340 || format.height <= 120 || format.width * format.height <= 50000
 }

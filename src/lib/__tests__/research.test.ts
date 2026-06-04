@@ -204,6 +204,8 @@ describe('research validation report', () => {
       exportOk: false,
       requiredElementsPresent: true,
       criticalTechnicalViolations: [],
+      seriousLayoutWarnings: [],
+      minorLayoutWarnings: [],
       layoutWarnings: [],
       methodologyWarnings: [],
       manualReviewNotes: [],

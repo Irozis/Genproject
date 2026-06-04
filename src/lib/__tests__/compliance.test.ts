@@ -241,8 +241,9 @@ describe('runCompliance', () => {
     const result = runCompliance(scene, getFormat('yandex-rsy-728x90'), DEFAULT_BRAND_KIT)
 
     expect(result.layoutWarnings.map((item) => item.code)).toEqual(
-      expect.arrayContaining(['imageTooSmall', 'splitImageTooSmall', 'splitCollapsedToTextOnly', 'largeEmptyAreaDetected', 'textTooSmall', 'layoutFallbackApplied', 'horizontalModeNeedsCompactFallback']),
+      expect.arrayContaining(['imageTooSmall', 'splitImageTooSmall', 'splitCollapsedToTextOnly', 'largeEmptyAreaDetected', 'layoutFallbackApplied', 'horizontalModeNeedsCompactFallback']),
     )
+    expect(result.layoutWarnings.some((item) => item.code === 'textTooSmall')).toBe(false)
     expect(result.heuristicWarnings.map((item) => item.code)).toEqual(
       expect.arrayContaining(['heuristicRuleApplied', 'derivedRuleApplied', 'needsManualReview', 'layoutNotOfficiallySpecified', 'percentageRegionsAreInternalModel', 'gradientRuleIsHeuristic']),
     )

@@ -237,8 +237,9 @@ function enforceTextStack(scene: Scene, rules: FormatRuleSet): Scene {
 
   if (title && isTinyFormat(rules)) title = compactTinyTitle(title, rules)
   if (title) {
-    title = normalizeTextCapacity(title, rules, rules.maxTitleLines)
-    title = expandTitleLines(title, rules)
+    const maxTitleLines = isTinyFormat(rules) ? (rules.height <= 70 ? 1 : 2) : rules.maxTitleLines
+    title = normalizeTextCapacity(title, rules, maxTitleLines)
+    if (!isTinyFormat(rules)) title = expandTitleLines(title, rules)
   }
   if (subtitle) subtitle = normalizeTextCapacity(subtitle, rules, subtitle.maxLines)
   if (cta) cta = normalizeTextCapacity(cta, rules, 1, true)
@@ -351,7 +352,7 @@ function enforceTextGaps(scene: Scene, rules: FormatRuleSet): Scene {
   }
   if (out.subtitle && out.cta) {
     out.cta = { ...out.cta, y: Math.max(out.cta.y, textBottom(out.subtitle, rules) + gap) }
-  } else if (out.title && out.cta) {
+  } else if (out.title && out.cta && rangesOverlap(out.title.x, out.title.w, out.cta.x, out.cta.w)) {
     out.cta = { ...out.cta, y: Math.max(out.cta.y, textBottom(out.title, rules) + gap) }
   }
 
