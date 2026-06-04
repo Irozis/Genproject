@@ -1,0 +1,2005 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>layout-engine-v2 manual review</title>
+  <style>
+    body {
+      margin: 24px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #111111;
+    }
+    h1, h2, h3 {
+      margin: 0 0 8px;
+    }
+    .intro {
+      max-width: 980px;
+      margin-bottom: 24px;
+      line-height: 1.45;
+    }
+    .format-section {
+      border-top: 3px solid #222222;
+      padding-top: 18px;
+      margin-top: 28px;
+    }
+    .format-meta {
+      margin-bottom: 12px;
+      color: #333333;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(260px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .case-card {
+      border: 1px solid #cccccc;
+      border-radius: 10px;
+      padding: 12px;
+      background: #fafafa;
+    }
+    .case-header {
+      min-height: 56px;
+    }
+    .case-meta {
+      font-size: 13px;
+      color: #333333;
+    }
+    .preview-svg {
+      width: 100%;
+      height: 260px;
+      border: 1px solid #dddddd;
+      background: #ffffff;
+      object-fit: contain;
+    }
+    .case-info {
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .rubric {
+      border-collapse: collapse;
+      margin-top: 12px;
+      margin-bottom: 24px;
+    }
+    .rubric th, .rubric td {
+      border: 1px solid #cccccc;
+      padding: 6px 10px;
+      text-align: left;
+    }
+    code {
+      background: #eeeeee;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="intro">
+    <h1>layout-engine-v2 manual review</h1>
+    <p><b>Project:</b> default-project-source</p>
+    <p><b>Formats:</b> 20; <b>Methods:</b> scaling, fixedLayout, candidateSelection; <b>Cases:</b> 60</p>
+    <p>Цель: вручную проверить контрольную выборку результатов. Проверяющий оценивает не художественное качество, а техническую пригодность: читаемость текста, сохранение обязательных элементов, отсутствие явных наложений и пригодность результата для первичной адаптации.</p>
+
+    <table class="rubric">
+      <thead>
+        <tr><th>Оценка</th><th>Смысл</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>0</td><td>Критический дефект, результат технически непригоден</td></tr>
+        <tr><td>1</td><td>Есть заметные недочёты, требуется ручная доработка</td></tr>
+        <tr><td>2</td><td>Технически пригоден для первичной адаптации</td></tr>
+      </tbody>
+    </table>
+
+    <p>Заполнять нужно файл <code>layout-v2-manual-review.csv</code>: поля <code>manualScore</code>, <code>criticalDefect</code>, <code>readabilityOk</code>, <code>requiredPreserved</code>, <code>comment</code>.</p>
+  </div>
+
+  
+  <section class="format-section">
+    <h2>yandex-rsy-960x150-3x — Яндекс Директ / РСЯ Медийный баннер 960x150 (3x)</h2>
+    <div class="format-meta">960×150; group: horizontal</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 960 150" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="960" height="150" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="480" y="12.000000000000002" width="422.4" height="126" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="484" y="34" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="57.599999999999994" y="27.000000000000004" width="576" height="27.000000000000004" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="49" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="57.599999999999994" y="66" width="480" height="15" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="77" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="57.599999999999994" y="126" width="288" height="10.500000000000002" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="132.5" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="768" y="9" width="134.4" height="9" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="772" y="14" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="57.599999999999994" y="9" width="172.79999999999998" height="9" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="14" font-size="18" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 960 150" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="960" height="150" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="430.88" y="4" width="525.12" height="142" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="434.88" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="418.88" height="66" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="78" width="418.88" height="37.28" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="100" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="123.28" width="418.88" height="22.72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="142" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 960 150" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="960" height="150" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="765.6" y="4" width="190.4" height="142" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="769.6" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="108" y="4" width="521.6" height="142" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="112" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="637.6" y="4" width="120" height="142" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="641.6" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="142" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-640x200-2x — Яндекс Директ / РСЯ Медийный баннер 640x200 (2x)</h2>
+    <div class="format-meta">640×200; group: horizontal</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1250</b> |
+      critical: <b>1</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 640 200" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="640" height="200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="320" y="16" width="281.59999999999997" height="167.99999999999997" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="324" y="36" font-size="16" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="38.4" y="36" width="384" height="36" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="56" font-size="16" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="38.4" y="88" width="320" height="20" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="104" font-size="16" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="38.4" y="167.99999999999997" width="192" height="14" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="177.99999999999997" font-size="16" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="512" y="11.999999999999998" width="89.60000000000001" height="11.999999999999998" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="516" y="19.999999999999996" font-size="16" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="38.4" y="11.999999999999998" width="115.2" height="11.999999999999998" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="19.999999999999996" font-size="16" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:3|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 640 200" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="640" height="200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="290.08" y="4" width="345.92" height="192" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="294.08" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="278.08" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="60" width="278.08" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="80" font-size="16" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="108" width="278.08" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="128" font-size="16" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="165.28" width="278.08" height="30.72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="185.28" font-size="16" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → split</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 640 200" role="img" aria-label="split preview">
+  <rect x="0" y="0" width="640" height="200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="290.08" y="4" width="345.92" height="192" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="294.08" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="278.08" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="60" width="278.08" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="80" font-size="16" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="108" width="278.08" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="128" font-size="16" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="165.28" width="278.08" height="30.72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="185.28" font-size="16" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-960x300-3x — Яндекс Директ / РСЯ Медийный баннер 960x300 (3x)</h2>
+    <div class="format-meta">960×300; group: horizontal</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1250</b> |
+      critical: <b>1</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 960 300" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="960" height="300" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="480" y="24.000000000000004" width="422.4" height="252" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="484" y="46" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="57.599999999999994" y="54.00000000000001" width="576" height="54.00000000000001" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="76" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="57.599999999999994" y="132" width="480" height="30" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="154" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="57.599999999999994" y="252" width="288" height="21.000000000000004" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="269" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="768" y="18" width="134.4" height="18" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="772" y="32" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="57.599999999999994" y="18" width="172.79999999999998" height="18" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="61.599999999999994" y="32" font-size="18" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:3|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 960 300" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="960" height="300" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="434.88" y="4" width="521.12" height="292" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="438.88" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="418.88" height="66" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="82" width="418.88" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="104" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="134" width="418.88" height="38.687999999999995" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="156" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="249.28" width="418.88" height="46.72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="271.28" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → split</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 960 300" role="img" aria-label="split preview">
+  <rect x="0" y="0" width="960" height="300" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="434.88" y="4" width="521.12" height="292" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="438.88" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="418.88" height="66" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="82" width="418.88" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="104" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="134" width="418.88" height="38.687999999999995" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="156" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="249.28" width="418.88" height="46.72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="271.28" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-480x320 — Яндекс Директ / РСЯ Медийный баннер 480x320</h2>
+    <div class="format-meta">480×320; group: horizontal</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1250</b> |
+      critical: <b>1</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 320" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="480" height="320" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="240" y="25.6" width="211.2" height="268.79999999999995" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="244" y="41.6" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="28.799999999999997" y="57.6" width="288" height="57.6" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="73.6" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="28.799999999999997" y="140.79999999999998" width="240" height="32" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="156.79999999999998" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="28.799999999999997" y="268.79999999999995" width="144" height="22.400000000000002" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="284.79999999999995" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="384" y="19.2" width="67.2" height="19.2" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="388" y="34.4" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="28.799999999999997" y="19.2" width="86.39999999999999" height="19.2" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="34.4" font-size="12" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:3|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 320" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="480" height="320" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="224.48000000000002" y="4" width="251.51999999999998" height="312" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="228.48000000000002" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="207.68" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="64.8" width="207.68" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="80.8" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="117.6" width="207.68" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="133.6" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="266.08" width="207.68" height="49.92" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="282.08" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → split</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 320" role="img" aria-label="split preview">
+  <rect x="0" y="0" width="480" height="320" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="224.48000000000002" y="4" width="251.51999999999998" height="312" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="228.48000000000002" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="4" width="207.68" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="64.8" width="207.68" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="80.8" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="117.6" width="207.68" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="133.6" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="266.08" width="207.68" height="49.92" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="282.08" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-320x1200-2x — Яндекс Директ / РСЯ Медийный баннер 320x1200 (2x)</h2>
+    <div class="format-meta">320×1200; group: vertical</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1250</b> |
+      critical: <b>1</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 1200" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="320" height="1200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="160" y="96.00000000000001" width="140.79999999999998" height="1008" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="164" y="108.00000000000001" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="19.2" y="216.00000000000003" width="192" height="216.00000000000003" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="228.00000000000003" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="19.2" y="528" width="160" height="120" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="540" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="19.2" y="1008" width="96" height="84.00000000000001" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="1020" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="256" y="72" width="44.800000000000004" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="260" y="84" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="19.2" y="72" width="57.6" height="72" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="84" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:3|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 1200" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="320" height="1200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="4" y="4" width="312" height="572.16" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="588.9599999999999" width="312" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="600.9599999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="649.7599999999999" width="312" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="661.7599999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="702.5599999999998" width="312" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="714.5599999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="68.64" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → hero</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 1200" role="img" aria-label="hero preview">
+  <rect x="0" y="0" width="320" height="1200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="4" y="4" width="312" height="1192" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="743.04" width="199.68" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="755.04" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="803.8399999999999" width="199.68" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="815.8399999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="856.6399999999999" width="199.68" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="868.6399999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="74.88" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-480x1800-3x — Яндекс Директ / РСЯ Медийный баннер 480x1800 (3x)</h2>
+    <div class="format-meta">480×1800; group: vertical</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>50</b> |
+      critical: <b>0</b> |
+      warnings: <b>1</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 1800" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="480" height="1800" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="240" y="144.00000000000003" width="211.2" height="1512" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="244" y="160.00000000000003" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="28.799999999999997" y="324" width="288" height="324" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="340" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="28.799999999999997" y="792" width="240" height="180" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="808" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="28.799999999999997" y="1512" width="144" height="126.00000000000001" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="1528" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="384" y="108" width="67.2" height="108" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="388" y="124" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="28.799999999999997" y="108" width="86.39999999999999" height="108" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="124" font-size="12" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 1800" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="480" height="1800" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="4" y="4" width="472" height="860.16" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="883.36" width="472" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="899.36" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="950.5600000000001" width="472" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="966.5600000000001" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="1009.7600000000001" width="472" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="1025.7600000000002" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="103.84" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → hero</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 1800" role="img" aria-label="hero preview">
+  <rect x="0" y="0" width="480" height="1800" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="4" y="4" width="472" height="1792" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="4" y="1115.04" width="302.08" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="1131.04" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="4" y="1182.24" width="302.08" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="8" y="1198.24" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="4" y="1241.44" width="302.08" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="8" y="1257.44" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="113.28" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="20" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-240x400 — Яндекс Директ / РСЯ Медийный баннер 240x400</h2>
+    <div class="format-meta">240×400; group: vertical</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1250</b> |
+      critical: <b>1</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 240 400" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="240" height="400" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="120" y="32" width="105.6" height="335.99999999999994" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="124" y="44" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="14.399999999999999" y="72" width="144" height="72" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="18.4" y="84" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="14.399999999999999" y="176" width="120" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="18.4" y="188" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="14.399999999999999" y="335.99999999999994" width="72" height="28" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="18.4" y="347.99999999999994" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="192" y="23.999999999999996" width="33.6" height="23.999999999999996" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="196" y="36" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="14.399999999999999" y="23.999999999999996" width="43.199999999999996" height="23.999999999999996" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="18.4" y="36" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:3|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 240 400" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="240" height="400" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="7" y="7" width="226" height="184.79999999999998" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="19" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="7" y="201.39999999999998" width="226" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="11" y="213.39999999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="7" y="259" width="226" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="271" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="7" y="308.6" width="226" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="11" y="320.6" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="7" y="7" width="49.72" height="38.5" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="11" y="19" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → imageTop</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 240 400" role="img" aria-label="imageTop preview">
+  <rect x="0" y="0" width="240" height="400" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="7" y="7" width="226" height="184.79999999999998" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="19" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="7" y="201.39999999999998" width="226" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="11" y="213.39999999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="7" y="259" width="226" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="271" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="7" y="308.6" width="226" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="11" y="320.6" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="7" y="7" width="49.72" height="38.5" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="11" y="19" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-480x800-2x — Яндекс Директ / РСЯ Медийный баннер 480x800 (2x)</h2>
+    <div class="format-meta">480×800; group: vertical</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>50</b> |
+      critical: <b>0</b> |
+      warnings: <b>1</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 800" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="480" height="800" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="240" y="64" width="211.2" height="671.9999999999999" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="244" y="80" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="28.799999999999997" y="144" width="288" height="144" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="160" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="28.799999999999997" y="352" width="240" height="80" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="368" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="28.799999999999997" y="671.9999999999999" width="144" height="56" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="687.9999999999999" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="384" y="47.99999999999999" width="67.2" height="47.99999999999999" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="388" y="63.99999999999999" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="28.799999999999997" y="47.99999999999999" width="86.39999999999999" height="47.99999999999999" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="32.8" y="63.99999999999999" font-size="12" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 800" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="480" height="800" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="7" y="7" width="466" height="376.8" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="23" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="7" y="403" width="466" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="11" y="419" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="7" y="470.2" width="466" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="486.2" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="7" y="529.4" width="466" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="11" y="545.4" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="7" y="7" width="102.52" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="11" y="23" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → hero</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 480 800" role="img" aria-label="hero preview">
+  <rect x="0" y="0" width="480" height="800" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="7" y="7" width="466" height="785" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="23" font-size="12" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="7" y="493.7" width="298.24" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="11" y="509.7" font-size="12" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="7" y="560.9000000000001" width="298.24" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="576.9000000000001" font-size="12" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="7" y="620.1000000000001" width="298.24" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="11" y="636.1000000000001" font-size="12" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="7" y="7" width="111.83999999999999" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="11" y="23" font-size="12" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-320x50 — Яндекс Директ / РСЯ Медийный баннер 320x50</h2>
+    <div class="format-meta">320×50; group: small</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1950</b> |
+      critical: <b>2</b> |
+      warnings: <b>4</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 50" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="320" height="50" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="160" y="4" width="140.79999999999998" height="41.99999999999999" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="164" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="19.2" y="9" width="192" height="9" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="14" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="19.2" y="22" width="160" height="5" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="23" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="19.2" y="41.99999999999999" width="96" height="3.5" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="41.49999999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="256" y="2.9999999999999996" width="44.800000000000004" height="2.9999999999999996" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="260" y="1.9999999999999991" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="19.2" y="2.9999999999999996" width="57.6" height="2.9999999999999996" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="1.9999999999999991" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|unsafe_zone:1|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 50" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="320" height="50" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="64.16" y="4" width="175.2" height="42" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="68.16" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="243.35999999999999" y="4" width="68.64" height="42" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="247.35999999999999" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="56.16" height="42" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 50" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="320" height="50" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="64.16" y="4" width="175.2" height="42" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="68.16" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="243.35999999999999" y="4" width="68.64" height="42" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="247.35999999999999" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="56.16" height="42" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>2gis-search-banner-319x57 — 2ГИС Баннер в поисковой выдаче</h2>
+    <div class="format-meta">319×57; group: small</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1950</b> |
+      critical: <b>2</b> |
+      warnings: <b>4</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 319 57" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="319" height="57" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="159.5" y="4.5600000000000005" width="140.36" height="47.879999999999995" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="163.5" y="16.560000000000002" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="19.14" y="10.26" width="191.4" height="10.26" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="16.52" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="19.14" y="25.08" width="159.5" height="5.7" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="26.779999999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="19.14" y="47.879999999999995" width="95.7" height="3.9900000000000007" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="47.87" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="255.20000000000002" y="3.42" width="44.66000000000001" height="3.42" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="259.20000000000005" y="2.84" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="19.14" y="3.42" width="57.42000000000001" height="3.42" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="2.84" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|unsafe_zone:1|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 319 57" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="319" height="57" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="65.25999999999999" y="6" width="172.2" height="45" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="69.25999999999999" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="241.45999999999998" y="6" width="67.54" height="45" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="245.45999999999998" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="6" width="55.26" height="45" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 319 57" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="319" height="57" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="65.25999999999999" y="6" width="172.2" height="45" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="69.25999999999999" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="241.45999999999998" y="6" width="67.54" height="45" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="245.45999999999998" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="6" width="55.26" height="45" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>2gis-directory-banner-319x57 — 2ГИС Баннер под окном справочника</h2>
+    <div class="format-meta">319×57; group: small</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1950</b> |
+      critical: <b>2</b> |
+      warnings: <b>4</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 319 57" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="319" height="57" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="159.5" y="4.5600000000000005" width="140.36" height="47.879999999999995" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="163.5" y="16.560000000000002" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="19.14" y="10.26" width="191.4" height="10.26" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="16.52" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="19.14" y="25.08" width="159.5" height="5.7" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="26.779999999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="19.14" y="47.879999999999995" width="95.7" height="3.9900000000000007" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="47.87" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="255.20000000000002" y="3.42" width="44.66000000000001" height="3.42" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="259.20000000000005" y="2.84" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="19.14" y="3.42" width="57.42000000000001" height="3.42" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="23.14" y="2.84" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|unsafe_zone:1|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 319 57" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="319" height="57" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="65.25999999999999" y="6" width="172.2" height="45" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="69.25999999999999" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="241.45999999999998" y="6" width="67.54" height="45" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="245.45999999999998" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="6" width="55.26" height="45" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 319 57" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="319" height="57" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="65.25999999999999" y="6" width="172.2" height="45" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="69.25999999999999" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="241.45999999999998" y="6" width="67.54" height="45" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="245.45999999999998" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="6" width="55.26" height="45" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-640x100-2x — Яндекс Директ / РСЯ Медийный баннер 640x100 (2x)</h2>
+    <div class="format-meta">640×100; group: wide</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 640 100" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="640" height="100" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="320" y="8" width="281.59999999999997" height="83.99999999999999" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="324" y="28" font-size="16" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="38.4" y="18" width="384" height="18" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="32" font-size="16" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="38.4" y="44" width="320" height="10" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="50" font-size="16" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="38.4" y="83.99999999999999" width="192" height="7" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="86.99999999999999" font-size="16" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="512" y="5.999999999999999" width="89.60000000000001" height="5.999999999999999" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="516" y="7.999999999999998" font-size="16" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="38.4" y="5.999999999999999" width="115.2" height="5.999999999999999" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="42.4" y="7.999999999999998" font-size="16" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 640 100" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="640" height="100" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="509.6" y="4" width="126.4" height="92" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="513.6" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="104" y="4" width="277.6" height="92" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="108" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="385.6" y="4" width="120" height="92" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="389.6" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="92" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 640 100" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="640" height="100" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="509.6" y="4" width="126.4" height="92" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="513.6" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="104" y="4" width="277.6" height="92" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="108" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="385.6" y="4" width="120" height="92" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="389.6" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="92" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="24" font-size="16" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-320x100 — Яндекс Директ / РСЯ Медийный баннер 320x100</h2>
+    <div class="format-meta">320×100; group: wide</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 100" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="320" height="100" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="160" y="8" width="140.79999999999998" height="83.99999999999999" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="164" y="20" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="19.2" y="18" width="192" height="18" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="30" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="19.2" y="44" width="160" height="10" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="50" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="19.2" y="83.99999999999999" width="96" height="7" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="86.99999999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="256" y="5.999999999999999" width="44.800000000000004" height="5.999999999999999" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="260" y="7.999999999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="19.2" y="5.999999999999999" width="57.6" height="5.999999999999999" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="23.2" y="7.999999999999998" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 100" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="320" height="100" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="64.16" y="4" width="175.2" height="92" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="68.16" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="243.35999999999999" y="4" width="68.64" height="92" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="247.35999999999999" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="56.16" height="92" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 320 100" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="320" height="100" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="64.16" y="4" width="175.2" height="92" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="68.16" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="243.35999999999999" y="4" width="68.64" height="92" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="247.35999999999999" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="56.16" height="92" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="16" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-728x90 — Яндекс Директ / РСЯ Медийный баннер 728x90</h2>
+    <div class="format-meta">728×90; group: wide</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 728 90" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="728" height="90" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="364" y="7.2" width="320.32" height="75.6" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="368" y="29.2" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="43.68" y="16.2" width="436.79999999999995" height="16.2" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="47.68" y="28.4" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="43.68" y="39.599999999999994" width="364" height="9" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="47.68" y="44.599999999999994" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="43.68" y="75.6" width="218.39999999999998" height="6.300000000000001" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="47.68" y="77.89999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="582.4" y="5.3999999999999995" width="101.92" height="5.3999999999999995" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="586.4" y="6.799999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="43.68" y="5.3999999999999995" width="131.04" height="5.3999999999999995" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="47.68" y="6.799999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 728 90" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="728" height="90" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="580" y="4" width="144" height="82" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="584" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="104" y="4" width="348" height="82" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="108" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="456" y="4" width="120" height="82" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="460" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="82" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 728 90" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="728" height="90" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="580" y="4" width="144" height="82" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="584" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="104" y="4" width="348" height="82" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="108" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="456" y="4" width="120" height="82" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="460" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="82" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-1000x120 — Яндекс Директ / РСЯ Медийный баннер 1000x120</h2>
+    <div class="format-meta">1000×120; group: wide</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 1000 120" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="1000" height="120" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="500" y="9.6" width="440" height="100.79999999999998" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="504" y="31.6" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="60" y="21.599999999999998" width="600" height="21.599999999999998" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="64" y="39.199999999999996" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="60" y="52.8" width="500" height="12" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="64" y="60.8" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="60" y="100.79999999999998" width="300" height="8.4" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="64" y="105.19999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="800" y="7.199999999999999" width="140.00000000000003" height="7.199999999999999" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="804" y="10.399999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="60" y="7.199999999999999" width="180" height="7.199999999999999" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="64" y="10.399999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 1000 120" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="1000" height="120" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="797.6" y="4" width="198.4" height="112" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="801.6" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="104.8" y="4" width="563.2" height="112" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="108.8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="672.8" y="4" width="120" height="112" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="676.8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="112" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 1000 120" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="1000" height="120" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="797.6" y="4" width="198.4" height="112" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="801.6" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="104.8" y="4" width="563.2" height="112" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="108.8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="672.8" y="4" width="120" height="112" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="676.8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="4" y="4" width="96" height="112" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="8" y="26" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-300x250 — Яндекс Директ / РСЯ Медийный баннер 300x250</h2>
+    <div class="format-meta">300×250; group: square</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1250</b> |
+      critical: <b>1</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 300 250" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="300" height="250" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="150" y="20" width="132" height="209.99999999999997" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="154" y="32" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="18" y="45" width="180" height="45" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="22" y="57" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="18" y="110" width="150" height="25" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="22" y="122" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="18" y="209.99999999999997" width="90" height="17.500000000000004" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="22" y="221.99999999999997" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="240" y="15" width="42.00000000000001" height="15" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="244" y="26" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="18" y="15" width="54.00000000000001" height="15" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="22" y="26" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:3|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>150</b> |
+      critical: <b>0</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 300 250" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="300" height="250" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="6" y="6" width="288" height="238" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="6" y="153.56" width="184.32" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="10" y="165.56" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="6" y="6" width="69.12" height="28.56" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:3</p>
+    <p><b>Hidden:</b> subtitle, cta, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → split</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 300 250" role="img" aria-label="split preview">
+  <rect x="0" y="0" width="300" height="250" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="142.72" y="6" width="151.28" height="238" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="146.72" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="6" y="6" width="126.72" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="10" y="18" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="6" y="64" width="126.72" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="10" y="76" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="6" y="114" width="126.72" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="10" y="126" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="205.92000000000002" width="126.72" height="38.08" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="217.92000000000002" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-600x500-2x — Яндекс Директ / РСЯ Медийный баннер 600x500 (2x)</h2>
+    <div class="format-meta">600×500; group: square</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>50</b> |
+      critical: <b>0</b> |
+      warnings: <b>1</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 600 500" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="600" height="500" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="300" y="40" width="264" height="419.99999999999994" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="304" y="59" font-size="15" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="36" y="90" width="360" height="90" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="40" y="109" font-size="15" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="36" y="220" width="300" height="50" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="40" y="239" font-size="15" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="36" y="419.99999999999994" width="180" height="35.00000000000001" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="40" y="438.99999999999994" font-size="15" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="480" y="30" width="84.00000000000001" height="30" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="484" y="49" font-size="15" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="36" y="30" width="108.00000000000001" height="30" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="40" y="49" font-size="15" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 600 500" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="600" height="500" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="6" y="6" width="588" height="488" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="10" y="25" font-size="15" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="6" y="308.56" width="376.32" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="10" y="327.56" font-size="15" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="6" y="376.56" width="376.32" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="10" y="395.56" font-size="15" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="6" y="436.56" width="376.32" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="10" y="455.56" font-size="15" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="6" width="141.12" height="58.559999999999995" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="25" font-size="15" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → hero</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 600 500" role="img" aria-label="hero preview">
+  <rect x="0" y="0" width="600" height="500" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="6" y="6" width="588" height="488" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="10" y="25" font-size="15" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="6" y="308.56" width="376.32" height="48" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="10" y="327.56" font-size="15" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="6" y="376.56" width="376.32" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="10" y="395.56" font-size="15" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="6" y="436.56" width="376.32" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="10" y="455.56" font-size="15" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="6" y="6" width="141.12" height="58.559999999999995" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="10" y="25" font-size="15" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>vk-teaser-large-145x165 — VK Реклама / ВКонтакте Тизер большое изображение</h2>
+    <div class="format-meta">145×165; group: logo</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 145 165" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="145" height="165" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="72.50000000000001" y="13.200000000000001" width="63.800000000000004" height="138.6" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="76.50000000000001" y="25.200000000000003" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="8.700000000000001" y="29.700000000000003" width="87.00000000000001" height="29.700000000000003" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="12.700000000000001" y="41.7" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="8.700000000000001" y="72.60000000000001" width="72.50000000000001" height="16.5" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="12.700000000000001" y="84.60000000000001" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="8.700000000000001" y="138.6" width="43.50000000000001" height="11.550000000000002" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="12.700000000000001" y="146.15" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="116.00000000000001" y="9.9" width="20.300000000000004" height="9.9" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="120.00000000000001" y="15.8" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="8.700000000000001" y="9.9" width="26.100000000000005" height="9.9" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="12.700000000000001" y="15.8" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>150</b> |
+      critical: <b>0</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 145 165" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="145" height="165" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="5" y="111.76249999999999" width="135" height="24" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="9" y="123.76249999999999" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="25.25" y="61.2375" width="94.5" height="42.525" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="29.25" y="73.2375" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:3</p>
+    <p><b>Hidden:</b> product-image, subtitle, cta, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → compact</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 145 165" role="img" aria-label="compact preview">
+  <rect x="0" y="0" width="145" height="165" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="53" y="5" width="17" height="155" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="57" y="17" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="78" y="5" width="54" height="155" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="82" y="17" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="5" y="5" width="40" height="155" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="9" y="17" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> product-image, subtitle, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-160x600 — Яндекс Директ / РСЯ Медийный баннер 160x600</h2>
+    <div class="format-meta">160×600; group: narrow</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>1650</b> |
+      critical: <b>2</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 160 600" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="160" height="600" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="80" y="48.00000000000001" width="70.39999999999999" height="504" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="84" y="60.00000000000001" font-size="8" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="9.6" y="108.00000000000001" width="96" height="108.00000000000001" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="13.6" y="120.00000000000001" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="9.6" y="264" width="80" height="60" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="13.6" y="276" font-size="8" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="9.6" y="504" width="48" height="42.00000000000001" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="13.6" y="516" font-size="8" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="128" y="36" width="22.400000000000002" height="36" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="132" y="48" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="9.6" y="36" width="28.8" height="36" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="13.6" y="48" font-size="8" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> text_too_small:4|hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>150</b> |
+      critical: <b>0</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 160 600" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="160" height="600" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="4" y="331.94" width="152" height="24" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="343.94" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="26.800000000000004" y="276.06" width="106.39999999999999" height="47.879999999999995" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="30.800000000000004" y="288.06" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:3</p>
+    <p><b>Hidden:</b> product-image, subtitle, cta, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → logoOnly</h3>
+    <div class="case-meta">
+      score: <b>150</b> |
+      critical: <b>0</b> |
+      warnings: <b>3</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 160 600" role="img" aria-label="logoOnly preview">
+  <rect x="0" y="0" width="160" height="600" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="4" y="331.94" width="152" height="24" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="8" y="343.94" font-size="8" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="26.800000000000004" y="276.06" width="106.39999999999999" height="47.879999999999995" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="30.800000000000004" y="288.06" font-size="8" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:3</p>
+    <p><b>Hidden:</b> product-image, subtitle, cta, badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+
+  <section class="format-section">
+    <h2>yandex-rsy-720x1200-3x — Яндекс Директ / РСЯ Медийный баннер 720x1200 (3x)</h2>
+    <div class="format-meta">720×1200; group: vertical</div>
+    <div class="cards">
+      
+<section class="case-card method-scaling">
+  <div class="case-header">
+    <h3>scaling → scaling</h3>
+    <div class="case-meta">
+      score: <b>50</b> |
+      critical: <b>0</b> |
+      warnings: <b>1</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 720 1200" role="img" aria-label="scaling preview">
+  <rect x="0" y="0" width="720" height="1200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="360" y="96.00000000000001" width="316.79999999999995" height="1008" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="364" y="118.00000000000001" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="43.199999999999996" y="216.00000000000003" width="432" height="216.00000000000003" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="47.199999999999996" y="238.00000000000003" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="43.199999999999996" y="528" width="360" height="120" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="47.199999999999996" y="550" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="43.199999999999996" y="1008" width="216" height="84.00000000000001" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="47.199999999999996" y="1030" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="576" y="72" width="100.80000000000001" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="580" y="94" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+<rect x="43.199999999999996" y="72" width="129.6" height="72" fill="#fff3b0" stroke="#333333" stroke-width="2" />
+<text x="47.199999999999996" y="94" font-size="18" font-family="Arial, sans-serif" fill="#111111">badge</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:1</p>
+    <p><b>Hidden:</b> decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-fixedLayout">
+  <div class="case-header">
+    <h3>fixedLayout → fixedLayout</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 720 1200" role="img" aria-label="fixedLayout preview">
+  <rect x="0" y="0" width="720" height="1200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="7" y="7" width="706" height="568.8" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="29" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="7" y="604.5999999999999" width="706" height="58.50000000000001" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="11" y="626.5999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="7" y="691.8999999999999" width="706" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="713.8999999999999" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="7" y="760.6999999999998" width="706" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="11" y="782.6999999999998" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="7" y="7" width="155.32" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="11" y="29" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+
+<section class="case-card method-candidateSelection">
+  <div class="case-header">
+    <h3>candidateSelection → hero</h3>
+    <div class="case-meta">
+      score: <b>100</b> |
+      critical: <b>0</b> |
+      warnings: <b>2</b>
+    </div>
+  </div>
+  
+<svg class="preview-svg" viewBox="0 0 720 1200" role="img" aria-label="hero preview">
+  <rect x="0" y="0" width="720" height="1200" fill="#f7f7f7" stroke="#cccccc" />
+  <rect x="7" y="7" width="706" height="1185" fill="#cfe8ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="29" font-size="18" font-family="Arial, sans-serif" fill="#111111">image</text>
+<rect x="7" y="741.7" width="451.84000000000003" height="58.50000000000001" fill="#ffe0a3" stroke="#333333" stroke-width="2" />
+<text x="11" y="763.7" font-size="18" font-family="Arial, sans-serif" fill="#111111">headline: Новый оффер **готов** к запуску</text>
+<rect x="7" y="829" width="451.84000000000003" height="40" fill="#e4d7ff" stroke="#333333" stroke-width="2" />
+<text x="11" y="851" font-size="18" font-family="Arial, sans-serif" fill="#111111">subtitle: Замените текст, фото и CTA, затем адаптируйте мастер под все форматы.</text>
+<rect x="7" y="897.8" width="451.84000000000003" height="32" fill="#b8f0c2" stroke="#333333" stroke-width="2" />
+<text x="11" y="919.8" font-size="18" font-family="Arial, sans-serif" fill="#111111">cta: Начать</text>
+<rect x="7" y="7" width="169.44" height="72" fill="#ffd1dc" stroke="#333333" stroke-width="2" />
+<text x="11" y="29" font-size="18" font-family="Arial, sans-serif" fill="#111111">logo</text>
+</svg>
+  <div class="case-info">
+    <p><b>Issues:</b> hidden_optional:2</p>
+    <p><b>Hidden:</b> badge, decor</p>
+    <p><b>Manual score:</b> 0 = critical defect, 1 = needs correction, 2 = technically acceptable.</p>
+  </div>
+</section>
+    </div>
+  </section>
+</body>
+</html>
