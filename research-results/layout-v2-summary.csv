@@ -1,0 +1,4 @@
+method,totalFormats,clean,withoutCritical,warningOnly,critical,averageScore,totalCriticalIssues,totalWarningIssues,totalOutOfBounds,totalOverlap,totalTextTooSmall,totalMissingRequired,totalUnsafeZone,totalHiddenOptional
+scaling,126,0,83,83,43,546.03,57,226,0,0,154,0,3,126
+fixedLayout,126,0,126,126,0,103.17,0,260,0,0,0,0,0,260
+candidateSelection,126,0,126,126,0,100.4,0,253,0,0,0,0,0,253

@@ -1,0 +1,51 @@
+Research result for project: default-project-source
+Formats: 126
+Methods: scaling, fixedLayout, candidateSelection
+
+Scaling baseline:
+- total formats: 126
+- clean without issues: 0
+- without critical issues: 83
+- warning only: 83
+- critical: 43
+- average score: 546.03
+- total critical issues: 57
+- total warning issues: 226
+- out of bounds: 0
+- overlap: 0
+- text too small: 154
+- missing required: 0
+- unsafe zone: 3
+- hidden optional: 126
+
+Fixed-layout baseline:
+- total formats: 126
+- clean without issues: 0
+- without critical issues: 126
+- warning only: 126
+- critical: 0
+- average score: 103.17
+- total critical issues: 0
+- total warning issues: 260
+- out of bounds: 0
+- overlap: 0
+- text too small: 0
+- missing required: 0
+- unsafe zone: 0
+- hidden optional: 260
+
+Candidate selection:
+- total formats: 126
+- clean without issues: 0
+- without critical issues: 126
+- warning only: 126
+- critical: 0
+- average score: 100.4
+- total critical issues: 0
+- total warning issues: 253
+- out of bounds: 0
+- overlap: 0
+- text too small: 0
+- missing required: 0
+- unsafe zone: 0
+- hidden optional: 253
