@@ -1,0 +1,18 @@
+Оценить каждый PNG без знания метода генерации.
+
+manualScore:
+0 - непригодно
+1 - требует ручной доработки
+2 - пригодно как стартовая заготовка
+
+readabilityOk:
+yes/no
+
+requiredPreserved:
+yes/no
+
+majorOverlap:
+yes/no
+
+comment:
+краткий комментарий, если есть проблема

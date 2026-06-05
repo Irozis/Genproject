@@ -19,6 +19,12 @@ describe('researchSummary', () => {
       expect(row.clean + row.warningOnly + row.critical).toBe(result.formatCount)
       expect(row.withoutCritical).toBe(row.clean + row.warningOnly)
       expect(row.averageScore).toBeGreaterThanOrEqual(0)
+      expect(row.totalActionsToFix).toBeGreaterThanOrEqual(0)
+      expect(row.averageActionsToFix).toBeGreaterThanOrEqual(0)
+      expect(row.estimatedCorrectionTimeSecTotal).toBe(row.totalActionsToFix * 30)
+      expect(row.averageEstimatedCorrectionTimeSec).toBe(
+        Math.round((row.estimatedCorrectionTimeSecTotal / row.totalFormats) * 100) / 100,
+      )
     }
   })
 
@@ -45,6 +51,10 @@ describe('researchSummary', () => {
         'totalMissingRequired',
         'totalUnsafeZone',
         'totalHiddenOptional',
+        'totalActionsToFix',
+        'averageActionsToFix',
+        'estimatedCorrectionTimeSecTotal',
+        'averageEstimatedCorrectionTimeSec',
       ].join(','),
     )
 
@@ -66,6 +76,10 @@ describe('researchSummary', () => {
     expect(text).toContain('- clean without issues:')
     expect(text).toContain('- without critical issues:')
     expect(text).toContain('- average score:')
+    expect(text).toContain('- total actions to fix:')
+    expect(text).toContain('- average actions to fix:')
+    expect(text).toContain('- estimated correction time total:')
+    expect(text).toContain('- estimated correction time average:')
   })
 
   it('is deterministic for identical research results', () => {

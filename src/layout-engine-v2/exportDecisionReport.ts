@@ -1,3 +1,4 @@
+import { calculateActionsToFix } from './actionsToFix'
 import type { LayoutDecision, ValidationIssue, ValidationIssueType } from './types'
 
 export interface CandidateReportRow {
@@ -23,6 +24,9 @@ export interface CandidateReportRow {
   hiddenOptionalCount: number
   hiddenElementsCount: number
   hiddenElements: string
+  actionsToFix: number
+  estimatedCorrectionTimeSec: number
+  fixReasons: string
   issueSummary: string
   reason: string
 }
@@ -105,6 +109,9 @@ function rowToCsv(row: CandidateReportRow): string {
     row.hiddenOptionalCount,
     row.hiddenElementsCount,
     row.hiddenElements,
+    row.actionsToFix,
+    row.estimatedCorrectionTimeSec,
+    row.fixReasons,
     row.issueSummary,
     row.reason,
   ]
@@ -135,6 +142,9 @@ export const DECISION_REPORT_CSV_HEADER = [
   'hiddenOptionalCount',
   'hiddenElementsCount',
   'hiddenElements',
+  'actionsToFix',
+  'estimatedCorrectionTimeSec',
+  'fixReasons',
   'issueSummary',
   'reason',
 ].join(',')
@@ -148,6 +158,7 @@ export function createDecisionReport(params: {
 
   const rows = evaluations.map((evaluation): CandidateReportRow => {
     const selected = evaluation.candidate.id === params.decision.selected.candidate.id
+    const actionsToFix = calculateActionsToFix(evaluation)
 
     return {
       projectId: params.projectId,
@@ -176,6 +187,9 @@ export function createDecisionReport(params: {
       hiddenOptionalCount: countIssuesByType(evaluation.issues, 'hidden_optional'),
       hiddenElementsCount: evaluation.hiddenElements.length,
       hiddenElements: evaluation.hiddenElements.join('|'),
+      actionsToFix: actionsToFix.actionsToFix,
+      estimatedCorrectionTimeSec: actionsToFix.estimatedCorrectionTimeSec,
+      fixReasons: actionsToFix.reasons.join('|'),
       issueSummary: summarizeIssues(evaluation.issues),
       reason: selected ? params.decision.reason : '',
     }

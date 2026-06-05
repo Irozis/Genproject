@@ -1,0 +1,91 @@
+caseId,randomFileName,formatId,formatName,group,method,selectedLayout,score,actionsToFix,estimatedCorrectionTimeSec
+case_001,case_001.png,2gis-directory-banner-319x57,2ГИС Баннер под окном справочника,small,scaling,scaling,1950,5,150
+case_002,case_002.png,2gis-directory-banner-319x57,2ГИС Баннер под окном справочника,small,fixedLayout,fixedLayout,100,3,90
+case_003,case_003.png,2gis-directory-banner-319x57,2ГИС Баннер под окном справочника,small,candidateSelection,fixedLayout,100,3,90
+case_004,case_004.png,yandex-rsy-1000x120,Яндекс Директ / РСЯ Медийный баннер 1000x120,wide,scaling,scaling,1650,4,120
+case_005,case_005.png,yandex-rsy-1000x120,Яндекс Директ / РСЯ Медийный баннер 1000x120,wide,fixedLayout,fixedLayout,100,1,30
+case_006,case_006.png,yandex-rsy-1000x120,Яндекс Директ / РСЯ Медийный баннер 1000x120,wide,candidateSelection,fixedLayout,100,1,30
+case_007,case_007.png,2gis-bg-1440x800,2ГИС Фон рекламного блока,horizontal,scaling,scaling,50,0,0
+case_008,case_008.png,2gis-bg-1440x800,2ГИС Фон рекламного блока,horizontal,fixedLayout,fixedLayout,100,0,0
+case_009,case_009.png,2gis-bg-1440x800,2ГИС Фон рекламного блока,horizontal,candidateSelection,fixedLayout,100,0,0
+case_010,case_010.png,2gis-story-1080x1920,2ГИС Сторис 9:16,vertical,scaling,scaling,50,0,0
+case_011,case_011.png,2gis-story-1080x1920,2ГИС Сторис 9:16,vertical,fixedLayout,fixedLayout,100,0,0
+case_012,case_012.png,2gis-story-1080x1920,2ГИС Сторис 9:16,vertical,candidateSelection,fixedLayout,100,0,0
+case_013,case_013.png,2gis-partner-mobile-800x800,2ГИС Баннер в профиле партнера mobile,square,scaling,scaling,50,0,0
+case_014,case_014.png,2gis-partner-mobile-800x800,2ГИС Баннер в профиле партнера mobile,square,fixedLayout,fixedLayout,100,0,0
+case_015,case_015.png,2gis-partner-mobile-800x800,2ГИС Баннер в профиле партнера mobile,square,candidateSelection,fixedLayout,100,0,0
+case_016,case_016.png,yandex-rsy-160x600,Яндекс Директ / РСЯ Медийный баннер 160x600,narrow,scaling,scaling,1650,4,120
+case_017,case_017.png,yandex-rsy-160x600,Яндекс Директ / РСЯ Медийный баннер 160x600,narrow,fixedLayout,fixedLayout,100,0,0
+case_018,case_018.png,yandex-rsy-160x600,Яндекс Директ / РСЯ Медийный баннер 160x600,narrow,candidateSelection,fixedLayout,100,0,0
+case_019,case_019.png,2gis-logo-200x200,2ГИС Логотип 200x200,logo,scaling,scaling,1250,3,90
+case_020,case_020.png,2gis-logo-200x200,2ГИС Логотип 200x200,logo,fixedLayout,fixedLayout,150,4,120
+case_021,case_021.png,2gis-logo-200x200,2ГИС Логотип 200x200,logo,candidateSelection,hero,150,2,60
+case_022,case_022.png,2gis-search-banner-319x57,2ГИС Баннер в поисковой выдаче,small,scaling,scaling,1950,5,150
+case_023,case_023.png,2gis-search-banner-319x57,2ГИС Баннер в поисковой выдаче,small,fixedLayout,fixedLayout,100,3,90
+case_024,case_024.png,2gis-search-banner-319x57,2ГИС Баннер в поисковой выдаче,small,candidateSelection,fixedLayout,100,3,90
+case_025,case_025.png,yandex-rsy-320x100,Яндекс Директ / РСЯ Медийный баннер 320x100,wide,scaling,scaling,1650,4,120
+case_026,case_026.png,yandex-rsy-320x100,Яндекс Директ / РСЯ Медийный баннер 320x100,wide,fixedLayout,fixedLayout,100,3,90
+case_027,case_027.png,yandex-rsy-320x100,Яндекс Директ / РСЯ Медийный баннер 320x100,wide,candidateSelection,split,150,2,60
+case_028,case_028.png,2gis-card-bg-800x400,2ГИС Фоновое изображение карточки,horizontal,scaling,scaling,450,1,30
+case_029,case_029.png,2gis-card-bg-800x400,2ГИС Фоновое изображение карточки,horizontal,fixedLayout,fixedLayout,100,0,0
+case_030,case_030.png,2gis-card-bg-800x400,2ГИС Фоновое изображение карточки,horizontal,candidateSelection,fixedLayout,100,0,0
+case_031,case_031.png,2gis-story-720x1280,2ГИС Сторис 9:16,vertical,scaling,scaling,50,0,0
+case_032,case_032.png,2gis-story-720x1280,2ГИС Сторис 9:16,vertical,fixedLayout,fixedLayout,100,0,0
+case_033,case_033.png,2gis-story-720x1280,2ГИС Сторис 9:16,vertical,candidateSelection,fixedLayout,100,0,0
+case_034,case_034.png,2gis-search-bg-500x600,2ГИС Рекламный блок в поисковой выдаче: фон,square,scaling,scaling,50,0,0
+case_035,case_035.png,2gis-search-bg-500x600,2ГИС Рекламный блок в поисковой выдаче: фон,square,fixedLayout,fixedLayout,100,0,0
+case_036,case_036.png,2gis-search-bg-500x600,2ГИС Рекламный блок в поисковой выдаче: фон,square,candidateSelection,fixedLayout,100,0,0
+case_037,case_037.png,yandex-rsy-240x600,Яндекс Директ / РСЯ Медийный баннер 240x600,narrow,scaling,scaling,1250,3,90
+case_038,case_038.png,yandex-rsy-240x600,Яндекс Директ / РСЯ Медийный баннер 240x600,narrow,fixedLayout,fixedLayout,100,0,0
+case_039,case_039.png,yandex-rsy-240x600,Яндекс Директ / РСЯ Медийный баннер 240x600,narrow,candidateSelection,fixedLayout,100,0,0
+case_040,case_040.png,2gis-logo-range,2ГИС Логотип компании 132-3000,logo,scaling,scaling,1250,3,90
+case_041,case_041.png,2gis-logo-range,2ГИС Логотип компании 132-3000,logo,fixedLayout,fixedLayout,150,4,120
+case_042,case_042.png,2gis-logo-range,2ГИС Логотип компании 132-3000,logo,candidateSelection,hero,150,2,60
+case_043,case_043.png,yandex-rsy-320x50,Яндекс Директ / РСЯ Медийный баннер 320x50,small,scaling,scaling,1950,5,150
+case_044,case_044.png,yandex-rsy-320x50,Яндекс Директ / РСЯ Медийный баннер 320x50,small,fixedLayout,fixedLayout,100,3,90
+case_045,case_045.png,yandex-rsy-320x50,Яндекс Директ / РСЯ Медийный баннер 320x50,small,candidateSelection,fixedLayout,100,3,90
+case_046,case_046.png,yandex-rsy-640x100-2x,Яндекс Директ / РСЯ Медийный баннер 640x100 (2x),wide,scaling,scaling,1650,4,120
+case_047,case_047.png,yandex-rsy-640x100-2x,Яндекс Директ / РСЯ Медийный баннер 640x100 (2x),wide,fixedLayout,fixedLayout,100,1,30
+case_048,case_048.png,yandex-rsy-640x100-2x,Яндекс Директ / РСЯ Медийный баннер 640x100 (2x),wide,candidateSelection,fixedLayout,100,1,30
+case_049,case_049.png,2gis-partner-desktop-800x320,2ГИС Баннер в профиле партнера desktop,horizontal,scaling,scaling,1250,3,90
+case_050,case_050.png,2gis-partner-desktop-800x320,2ГИС Баннер в профиле партнера desktop,horizontal,fixedLayout,fixedLayout,100,0,0
+case_051,case_051.png,2gis-partner-desktop-800x320,2ГИС Баннер в профиле партнера desktop,horizontal,candidateSelection,fixedLayout,100,0,0
+case_052,case_052.png,2gis-story-810x1440,2ГИС Сторис 9:16,vertical,scaling,scaling,50,0,0
+case_053,case_053.png,2gis-story-810x1440,2ГИС Сторис 9:16,vertical,fixedLayout,fixedLayout,100,0,0
+case_054,case_054.png,2gis-story-810x1440,2ГИС Сторис 9:16,vertical,candidateSelection,fixedLayout,100,0,0
+case_055,case_055.png,avito-native-472x472,Авито Реклама Нативный баннер 1:1,square,scaling,scaling,50,0,0
+case_056,case_056.png,avito-native-472x472,Авито Реклама Нативный баннер 1:1,square,fixedLayout,fixedLayout,150,1,30
+case_057,case_057.png,avito-native-472x472,Авито Реклама Нативный баннер 1:1,square,candidateSelection,imageTop,100,0,0
+case_058,case_058.png,vk-community-145x145,VK Реклама / ВКонтакте Продвижение сообщества,logo,scaling,scaling,1650,4,120
+case_059,case_059.png,vk-community-145x145,VK Реклама / ВКонтакте Продвижение сообщества,logo,fixedLayout,fixedLayout,150,4,120
+case_060,case_060.png,vk-community-145x145,VK Реклама / ВКонтакте Продвижение сообщества,logo,candidateSelection,compact,100,3,90
+case_061,case_061.png,yandex-rsy-728x90,Яндекс Директ / РСЯ Медийный баннер 728x90,wide,scaling,scaling,1650,4,120
+case_062,case_062.png,yandex-rsy-728x90,Яндекс Директ / РСЯ Медийный баннер 728x90,wide,fixedLayout,fixedLayout,100,1,30
+case_063,case_063.png,yandex-rsy-728x90,Яндекс Директ / РСЯ Медийный баннер 728x90,wide,candidateSelection,fixedLayout,100,1,30
+case_064,case_064.png,avito-display-720x240,Авито Реклама Медийный стандарт 3:1,horizontal,scaling,scaling,1250,3,90
+case_065,case_065.png,avito-display-720x240,Авито Реклама Медийный стандарт 3:1,horizontal,fixedLayout,fixedLayout,100,0,0
+case_066,case_066.png,avito-display-720x240,Авито Реклама Медийный стандарт 3:1,horizontal,candidateSelection,fixedLayout,100,0,0
+case_067,case_067.png,2gis-story-900x1600,2ГИС Сторис 9:16,vertical,scaling,scaling,50,0,0
+case_068,case_068.png,2gis-story-900x1600,2ГИС Сторис 9:16,vertical,fixedLayout,fixedLayout,100,0,0
+case_069,case_069.png,2gis-story-900x1600,2ГИС Сторис 9:16,vertical,candidateSelection,fixedLayout,100,0,0
+case_070,case_070.png,ok-square-1080x1080,Одноклассники / myTarget Социальный квадрат 1:1,square,scaling,scaling,50,0,0
+case_071,case_071.png,ok-square-1080x1080,Одноклассники / myTarget Социальный квадрат 1:1,square,fixedLayout,fixedLayout,100,0,0
+case_072,case_072.png,ok-square-1080x1080,Одноклассники / myTarget Социальный квадрат 1:1,square,candidateSelection,fixedLayout,100,0,0
+case_073,case_073.png,vk-teaser-large-145x165,VK Реклама / ВКонтакте Тизер большое изображение,logo,scaling,scaling,1650,4,120
+case_074,case_074.png,vk-teaser-large-145x165,VK Реклама / ВКонтакте Тизер большое изображение,logo,fixedLayout,fixedLayout,150,4,120
+case_075,case_075.png,vk-teaser-large-145x165,VK Реклама / ВКонтакте Тизер большое изображение,logo,candidateSelection,compact,100,3,90
+case_076,case_076.png,avito-home-1320x492,Авито Реклама Баннер на главной 8:3,horizontal,scaling,scaling,50,0,0
+case_077,case_077.png,avito-home-1320x492,Авито Реклама Баннер на главной 8:3,horizontal,fixedLayout,fixedLayout,100,0,0
+case_078,case_078.png,avito-home-1320x492,Авито Реклама Баннер на главной 8:3,horizontal,candidateSelection,fixedLayout,100,0,0
+case_079,case_079.png,avito-display-472x628,Авито Реклама Медийный стандарт 3:4,vertical,scaling,scaling,50,0,0
+case_080,case_080.png,avito-display-472x628,Авито Реклама Медийный стандарт 3:4,vertical,fixedLayout,fixedLayout,100,0,0
+case_081,case_081.png,avito-display-472x628,Авито Реклама Медийный стандарт 3:4,vertical,candidateSelection,fixedLayout,100,0,0
+case_082,case_082.png,ozon-fresh-square,Ozon Performance Квадратный 1:1,square,scaling,scaling,50,0,0
+case_083,case_083.png,ozon-fresh-square,Ozon Performance Квадратный 1:1,square,fixedLayout,fixedLayout,100,0,0
+case_084,case_084.png,ozon-fresh-square,Ozon Performance Квадратный 1:1,square,candidateSelection,fixedLayout,100,0,0
+case_085,case_085.png,avito-home-2934x456,Авито Реклама Баннер на главной 13:2,horizontal,scaling,scaling,50,0,0
+case_086,case_086.png,avito-home-2934x456,Авито Реклама Баннер на главной 13:2,horizontal,fixedLayout,fixedLayout,100,0,0
+case_087,case_087.png,avito-home-2934x456,Авито Реклама Баннер на главной 13:2,horizontal,candidateSelection,fixedLayout,100,0,0
+case_088,case_088.png,avito-display-600x1200,Авито Реклама Медийный стандарт 1:2,vertical,scaling,scaling,50,0,0
+case_089,case_089.png,avito-display-600x1200,Авито Реклама Медийный стандарт 1:2,vertical,fixedLayout,fixedLayout,100,0,0
+case_090,case_090.png,avito-display-600x1200,Авито Реклама Медийный стандарт 1:2,vertical,candidateSelection,fixedLayout,100,0,0

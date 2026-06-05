@@ -23,6 +23,7 @@ describe('fixedVsCandidateReport', () => {
     expect(rows[0]?.group).toBe('horizontal')
     expect(rows[0]?.fixedLayoutName).toBe('split')
     expect(rows[0]?.candidateSelectionName).toBeTruthy()
+    expect(['fixedFallback', 'generated']).toContain(rows[0]?.candidateSource)
   })
 
   it('calculates deltas and candidate result flags', () => {
@@ -36,10 +37,18 @@ describe('fixedVsCandidateReport', () => {
     expect(row.deltaCritical).toBe(row.fixedCriticalCount - row.candidateCriticalCount)
     expect(row.deltaWarning).toBe(row.fixedWarningCount - row.candidateWarningCount)
     expect(row.deltaHiddenElements).toBe(row.fixedHiddenElementsCount - row.candidateHiddenElementsCount)
+    expect(row.deltaActionsToFix).toBe(row.fixedActionsToFix - row.candidateActionsToFix)
+    expect(row.deltaEstimatedCorrectionTimeSec).toBe(
+      row.fixedEstimatedCorrectionTimeSec - row.candidateEstimatedCorrectionTimeSec,
+    )
     expect([row.candidateBetter, row.candidateWorse, row.candidateEqual].filter(Boolean)).toHaveLength(1)
     expect(row.candidateBetter).toBe(row.deltaScore > 0)
     expect(row.candidateWorse).toBe(row.deltaScore < 0)
     expect(row.candidateEqual).toBe(row.deltaScore === 0)
+    expect([row.candidateBetterByActions, row.candidateWorseByActions, row.candidateEqualByActions].filter(Boolean)).toHaveLength(1)
+    expect(row.candidateBetterByActions).toBe(row.deltaActionsToFix > 0)
+    expect(row.candidateWorseByActions).toBe(row.deltaActionsToFix < 0)
+    expect(row.candidateEqualByActions).toBe(row.deltaActionsToFix === 0)
   })
 
   it('summarizes pairwise comparison rows', () => {
@@ -55,6 +64,12 @@ describe('fixedVsCandidateReport', () => {
     expect(summary.sameLayoutCount + summary.differentLayoutCount).toBe(3)
     expect(summary.candidateBetterCount + summary.candidateEqualCount + summary.candidateWorseCount).toBe(3)
     expect(summary.deltaHiddenElementsTotal).toBe(summary.totalFixedHiddenElements - summary.totalCandidateHiddenElements)
+    expect(
+      summary.candidateBetterByActionsCount +
+        summary.candidateEqualByActionsCount +
+        summary.candidateWorseByActionsCount,
+    ).toBe(3)
+    expect(summary.totalDeltaActionsToFix).toBe(rows.reduce((sum, row) => sum + row.deltaActionsToFix, 0))
   })
 
   it('writes the requested CSV header', () => {
@@ -73,6 +88,7 @@ describe('fixedVsCandidateReport', () => {
         'group',
         'fixedLayoutName',
         'candidateSelectionName',
+        'candidateSource',
         'sameLayout',
         'fixedScore',
         'candidateScore',
@@ -91,6 +107,15 @@ describe('fixedVsCandidateReport', () => {
         'candidateBetter',
         'candidateWorse',
         'candidateEqual',
+        'fixedActionsToFix',
+        'candidateActionsToFix',
+        'deltaActionsToFix',
+        'fixedEstimatedCorrectionTimeSec',
+        'candidateEstimatedCorrectionTimeSec',
+        'deltaEstimatedCorrectionTimeSec',
+        'candidateBetterByActions',
+        'candidateWorseByActions',
+        'candidateEqualByActions',
       ].join(','),
     )
   })
@@ -108,5 +133,8 @@ describe('fixedVsCandidateReport', () => {
     expect(text).toContain('- sameLayoutCount:')
     expect(text).toContain('- candidateBetterCount:')
     expect(text).toContain('- deltaHiddenElementsTotal:')
+    expect(text).toContain('- candidateBetterByActionsCount:')
+    expect(text).toContain('- averageDeltaActionsToFix:')
+    expect(text).toContain('- averageDeltaEstimatedCorrectionTimeSec:')
   })
 })

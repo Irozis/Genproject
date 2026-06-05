@@ -1,11 +1,17 @@
 Fixed-layout vs candidate selection
 - totalFormats: 126
-- sameLayoutCount: 60
-- differentLayoutCount: 66
-- candidateBetterCount: 8
-- candidateEqualCount: 117
+- sameLayoutCount: 0
+- differentLayoutCount: 126
+- candidateBetterCount: 5
+- candidateEqualCount: 120
 - candidateWorseCount: 1
-- averageDeltaScore: 2.78
+- averageDeltaScore: 1.59
 - totalFixedHiddenElements: 286
-- totalCandidateHiddenElements: 279
-- deltaHiddenElementsTotal: 7
+- totalCandidateHiddenElements: 276
+- deltaHiddenElementsTotal: 10
+- candidateBetterByActionsCount: 10
+- candidateEqualByActionsCount: 116
+- candidateWorseByActionsCount: 0
+- averageDeltaActionsToFix: 0.1
+- totalDeltaActionsToFix: 13
+- averageDeltaEstimatedCorrectionTimeSec: 3.1

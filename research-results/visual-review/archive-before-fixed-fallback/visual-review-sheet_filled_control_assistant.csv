@@ -1,0 +1,91 @@
+﻿caseId,randomFileName,manualScore,readabilityOk,requiredPreserved,majorOverlap,comment
+case_001,case_001.png,1,no,yes,no,Мелкий текст и CTA; требуется упрощение
+case_002,case_002.png,2,yes,yes,no,
+case_003,case_003.png,2,yes,yes,no,
+case_004,case_004.png,1,yes,yes,no,"Мелкий вторичный текст/CTA, много пустоты"
+case_005,case_005.png,2,yes,yes,no,
+case_006,case_006.png,2,yes,yes,no,
+case_007,case_007.png,2,yes,yes,no,
+case_008,case_008.png,2,yes,yes,no,
+case_009,case_009.png,1,yes,yes,yes,Текст и CTA размещены поверх изображения/декора
+case_010,case_010.png,2,yes,yes,no,
+case_011,case_011.png,2,yes,yes,no,
+case_012,case_012.png,1,yes,yes,yes,"Текст/CTA поверх изображения, композиция требует доводки"
+case_013,case_013.png,2,yes,yes,no,
+case_014,case_014.png,1,yes,yes,yes,Текст расположен поверх изображения/декора
+case_015,case_015.png,1,yes,yes,yes,Текст расположен поверх изображения/декора
+case_016,case_016.png,1,no,yes,no,Для узкого формата текст слишком мелкий
+case_017,case_017.png,2,yes,yes,no,
+case_018,case_018.png,1,yes,yes,no,Сильно упрощено: только логотип и заголовок
+case_019,case_019.png,2,yes,yes,no,
+case_020,case_020.png,1,yes,yes,no,Сильно упрощено: только логотип и заголовок
+case_021,case_021.png,2,yes,yes,no,"Плотная компоновка, но читаемо"
+case_022,case_022.png,1,no,yes,no,Мелкий текст для малого баннера
+case_023,case_023.png,2,yes,yes,no,
+case_024,case_024.png,2,yes,yes,no,
+case_025,case_025.png,1,yes,yes,no,Мелкий вторичный текст/CTA
+case_026,case_026.png,2,yes,yes,no,
+case_027,case_027.png,2,yes,yes,no,
+case_028,case_028.png,2,yes,yes,no,
+case_029,case_029.png,2,yes,yes,no,
+case_030,case_030.png,2,yes,yes,no,
+case_031,case_031.png,2,yes,yes,no,
+case_032,case_032.png,2,yes,yes,no,
+case_033,case_033.png,1,yes,yes,yes,Основной текст на краю и пересекается с декоративной графикой
+case_034,case_034.png,2,yes,yes,no,
+case_035,case_035.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_036,case_036.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_037,case_037.png,1,no,yes,no,Текст мелкий для узкого формата
+case_038,case_038.png,2,yes,yes,no,
+case_039,case_039.png,1,no,yes,yes,"Текст мелкий, частично пересекается с декором"
+case_040,case_040.png,2,yes,yes,no,
+case_041,case_041.png,1,yes,yes,no,Сильно упрощено: только логотип и заголовок
+case_042,case_042.png,2,yes,yes,no,
+case_043,case_043.png,1,no,yes,no,Мелкий текст для широкого малого баннера
+case_044,case_044.png,2,yes,yes,no,
+case_045,case_045.png,2,yes,yes,no,
+case_046,case_046.png,1,yes,yes,no,Мелкий вторичный текст/CTA
+case_047,case_047.png,2,yes,yes,no,
+case_048,case_048.png,2,yes,yes,no,
+case_049,case_049.png,2,yes,yes,no,
+case_050,case_050.png,2,yes,yes,no,
+case_051,case_051.png,2,yes,yes,no,
+case_052,case_052.png,2,yes,yes,no,
+case_053,case_053.png,2,yes,yes,no,
+case_054,case_054.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_055,case_055.png,2,yes,yes,no,
+case_056,case_056.png,1,yes,yes,yes,"Текст поверх изображения/декора, требуется доводка"
+case_057,case_057.png,1,yes,yes,no,Заголовок близко к краю/частично обрезан
+case_058,case_058.png,2,yes,yes,no,
+case_059,case_059.png,1,yes,yes,no,Сильно упрощено: только логотип и заголовок
+case_060,case_060.png,0,no,no,no,Заголовок обрезан и нечитабелен
+case_061,case_061.png,1,no,yes,no,Мелкий текст для широкого формата
+case_062,case_062.png,2,yes,yes,no,
+case_063,case_063.png,2,yes,yes,no,
+case_064,case_064.png,1,yes,yes,no,Мелкий вторичный текст/CTA
+case_065,case_065.png,2,yes,yes,no,
+case_066,case_066.png,2,yes,yes,no,
+case_067,case_067.png,2,yes,yes,no,
+case_068,case_068.png,2,yes,yes,no,
+case_069,case_069.png,1,yes,yes,yes,Текст/CTA поверх изображения/декора
+case_070,case_070.png,2,yes,yes,no,
+case_071,case_071.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_072,case_072.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_073,case_073.png,2,yes,yes,no,
+case_074,case_074.png,1,yes,yes,no,Сильно упрощено: только логотип и заголовок
+case_075,case_075.png,0,no,no,no,Заголовок обрезан и нечитабелен
+case_076,case_076.png,2,yes,yes,no,
+case_077,case_077.png,2,yes,yes,no,
+case_078,case_078.png,2,yes,yes,no,
+case_079,case_079.png,2,yes,yes,no,
+case_080,case_080.png,2,yes,yes,no,
+case_081,case_081.png,1,yes,yes,yes,Текст/CTA поверх изображения/декора
+case_082,case_082.png,2,yes,yes,no,
+case_083,case_083.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_084,case_084.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора
+case_085,case_085.png,1,no,yes,no,Мелкий текст для широкого формата
+case_086,case_086.png,2,yes,yes,no,
+case_087,case_087.png,2,yes,yes,no,
+case_088,case_088.png,2,yes,yes,no,
+case_089,case_089.png,2,yes,yes,no,
+case_090,case_090.png,1,yes,yes,yes,Текст и CTA поверх изображения/декора

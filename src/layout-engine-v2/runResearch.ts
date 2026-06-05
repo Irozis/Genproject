@@ -30,6 +30,10 @@ export interface ResearchMethodSummary {
   totalMissingRequired: number
   totalUnsafeZone: number
   totalHiddenOptional: number
+  totalActionsToFix: number
+  averageActionsToFix: number
+  estimatedCorrectionTimeSecTotal: number
+  averageEstimatedCorrectionTimeSec: number
 }
 
 export interface ResearchResult {
@@ -145,9 +149,28 @@ function runMethod(params: {
     return selectBestLayoutCandidate([candidate], params.format)
   }
 
-  const candidates = generateLayoutCandidates(params.source, params.format)
+  const candidates = buildCandidateSelectionCandidates(params.source, params.format)
 
   return selectBestLayoutCandidate(candidates, params.format)
+}
+
+export function buildCandidateSelectionCandidates(source: SourceMaterialV2, format: FormatSpecV2): LayoutCandidate[] {
+  const generatedCandidates = generateLayoutCandidates(source, format)
+  const generatedIds = new Set(generatedCandidates.map((candidate) => candidate.id))
+  const fixedCandidate = buildFixedLayoutCandidate(source, format)
+  const fixedFallback: LayoutCandidate = {
+    ...fixedCandidate,
+    id: generatedIds.has(fixedCandidate.id)
+      ? `${format.id}:candidateSelectionFallback:${fixedCandidate.name}`
+      : fixedCandidate.id,
+    metadata: {
+      ...fixedCandidate.metadata,
+      methodFamily: 'candidateSelectionFallback',
+      sourceCandidate: 'fixedLayout',
+    },
+  }
+
+  return [fixedFallback, ...generatedCandidates]
 }
 
 function summarizeMethod(method: ResearchMethod, reports: ReturnType<typeof createDecisionReport>[]): ResearchMethodSummary {
@@ -158,6 +181,8 @@ function summarizeMethod(method: ResearchMethod, reports: ReturnType<typeof crea
   const totalScore = selectedRows.reduce((sum, row) => sum + row.score, 0)
   const totalCriticalIssues = selectedRows.reduce((sum, row) => sum + row.criticalCount, 0)
   const totalWarningIssues = selectedRows.reduce((sum, row) => sum + row.warningCount, 0)
+  const totalActionsToFix = selectedRows.reduce((sum, row) => sum + row.actionsToFix, 0)
+  const estimatedCorrectionTimeSecTotal = selectedRows.reduce((sum, row) => sum + row.estimatedCorrectionTimeSec, 0)
 
   return {
     method,
@@ -176,6 +201,10 @@ function summarizeMethod(method: ResearchMethod, reports: ReturnType<typeof crea
     totalMissingRequired: selectedRows.reduce((sum, row) => sum + row.missingRequiredCount, 0),
     totalUnsafeZone: selectedRows.reduce((sum, row) => sum + row.unsafeZoneCount, 0),
     totalHiddenOptional: selectedRows.reduce((sum, row) => sum + row.hiddenOptionalCount, 0),
+    totalActionsToFix,
+    averageActionsToFix: totalFormats > 0 ? totalActionsToFix / totalFormats : 0,
+    estimatedCorrectionTimeSecTotal,
+    averageEstimatedCorrectionTimeSec: totalFormats > 0 ? estimatedCorrectionTimeSecTotal / totalFormats : 0,
   }
 }
 

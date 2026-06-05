@@ -101,6 +101,10 @@ describe('exportDecisionReport', () => {
     expect(report.selectedScore).toBe(decision.selected.score)
     expect(report.selectedCriticalCount).toBe(decision.selected.criticalCount)
     expect(report.selectedWarningCount).toBe(decision.selected.warningCount)
+    expect(report.rows.find((row) => row.selected)?.actionsToFix).toBeGreaterThanOrEqual(0)
+    expect(report.rows.find((row) => row.selected)?.estimatedCorrectionTimeSec).toBe(
+      (report.rows.find((row) => row.selected)?.actionsToFix ?? 0) * 30,
+    )
   })
 
   it('keeps candidate metadata in report rows', () => {
@@ -132,6 +136,7 @@ describe('exportDecisionReport', () => {
     expect(lines.length).toBe(report.rows.length + 1)
     expect(csv).toContain('candidateSelection')
     expect(csv).toContain(report.selectedLayout)
+    expect(lines[0]).toContain('actionsToFix,estimatedCorrectionTimeSec,fixReasons')
   })
 
   it('creates a combined CSV for multiple reports with a single header', () => {

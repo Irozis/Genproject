@@ -7,6 +7,7 @@ export interface FixedVsCandidateRow {
   group: string
   fixedLayoutName: string
   candidateSelectionName: string
+  candidateSource: 'fixedFallback' | 'generated'
   sameLayout: boolean
   fixedScore: number
   candidateScore: number
@@ -25,6 +26,15 @@ export interface FixedVsCandidateRow {
   candidateBetter: boolean
   candidateWorse: boolean
   candidateEqual: boolean
+  fixedActionsToFix: number
+  candidateActionsToFix: number
+  deltaActionsToFix: number
+  fixedEstimatedCorrectionTimeSec: number
+  candidateEstimatedCorrectionTimeSec: number
+  deltaEstimatedCorrectionTimeSec: number
+  candidateBetterByActions: boolean
+  candidateWorseByActions: boolean
+  candidateEqualByActions: boolean
 }
 
 export interface FixedVsCandidateSummary {
@@ -38,6 +48,12 @@ export interface FixedVsCandidateSummary {
   totalFixedHiddenElements: number
   totalCandidateHiddenElements: number
   deltaHiddenElementsTotal: number
+  candidateBetterByActionsCount: number
+  candidateEqualByActionsCount: number
+  candidateWorseByActionsCount: number
+  averageDeltaActionsToFix: number
+  totalDeltaActionsToFix: number
+  averageDeltaEstimatedCorrectionTimeSec: number
 }
 
 const CSV_HEADER = [
@@ -46,6 +62,7 @@ const CSV_HEADER = [
   'group',
   'fixedLayoutName',
   'candidateSelectionName',
+  'candidateSource',
   'sameLayout',
   'fixedScore',
   'candidateScore',
@@ -64,6 +81,15 @@ const CSV_HEADER = [
   'candidateBetter',
   'candidateWorse',
   'candidateEqual',
+  'fixedActionsToFix',
+  'candidateActionsToFix',
+  'deltaActionsToFix',
+  'fixedEstimatedCorrectionTimeSec',
+  'candidateEstimatedCorrectionTimeSec',
+  'deltaEstimatedCorrectionTimeSec',
+  'candidateBetterByActions',
+  'candidateWorseByActions',
+  'candidateEqualByActions',
 ]
 
 function round(value: number, digits = 2): number {
@@ -98,6 +124,12 @@ function fixedTemplateName(row: CandidateReportRow): string {
   return suffix ?? row.candidateName
 }
 
+function candidateSource(row: CandidateReportRow): FixedVsCandidateRow['candidateSource'] {
+  return row.methodFamily === 'candidateSelectionFallback' || row.decisionMode === 'predefined-template'
+    ? 'fixedFallback'
+    : 'generated'
+}
+
 export function buildFixedVsCandidateRows(result: ResearchResult): FixedVsCandidateRow[] {
   return result.formats.map((format) => {
     const fixedReport = result.reports.find((report) => report.formatId === format.id && report.method === 'fixedLayout')
@@ -111,10 +143,13 @@ export function buildFixedVsCandidateRows(result: ResearchResult): FixedVsCandid
     const candidate = selectedRow(candidateReport)
     const fixedLayoutName = fixedTemplateName(fixed)
     const candidateSelectionName = candidate.candidateName
+    const selectedCandidateSource = candidateSource(candidate)
     const deltaScore = fixed.score - candidate.score
     const deltaCritical = fixed.criticalCount - candidate.criticalCount
     const deltaWarning = fixed.warningCount - candidate.warningCount
     const deltaHiddenElements = fixed.hiddenElementsCount - candidate.hiddenElementsCount
+    const deltaActionsToFix = fixed.actionsToFix - candidate.actionsToFix
+    const deltaEstimatedCorrectionTimeSec = fixed.estimatedCorrectionTimeSec - candidate.estimatedCorrectionTimeSec
 
     return {
       formatId: format.id,
@@ -122,6 +157,7 @@ export function buildFixedVsCandidateRows(result: ResearchResult): FixedVsCandid
       group: format.group,
       fixedLayoutName,
       candidateSelectionName,
+      candidateSource: selectedCandidateSource,
       sameLayout: fixedLayoutName === candidateSelectionName,
       fixedScore: fixed.score,
       candidateScore: candidate.score,
@@ -140,6 +176,15 @@ export function buildFixedVsCandidateRows(result: ResearchResult): FixedVsCandid
       candidateBetter: deltaScore > 0,
       candidateWorse: deltaScore < 0,
       candidateEqual: deltaScore === 0,
+      fixedActionsToFix: fixed.actionsToFix,
+      candidateActionsToFix: candidate.actionsToFix,
+      deltaActionsToFix,
+      fixedEstimatedCorrectionTimeSec: fixed.estimatedCorrectionTimeSec,
+      candidateEstimatedCorrectionTimeSec: candidate.estimatedCorrectionTimeSec,
+      deltaEstimatedCorrectionTimeSec,
+      candidateBetterByActions: deltaActionsToFix > 0,
+      candidateWorseByActions: deltaActionsToFix < 0,
+      candidateEqualByActions: deltaActionsToFix === 0,
     }
   })
 }
@@ -149,6 +194,11 @@ export function summarizeFixedVsCandidateRows(rows: FixedVsCandidateRow[]): Fixe
   const totalDeltaScore = rows.reduce((sum, row) => sum + row.deltaScore, 0)
   const totalFixedHiddenElements = rows.reduce((sum, row) => sum + row.fixedHiddenElementsCount, 0)
   const totalCandidateHiddenElements = rows.reduce((sum, row) => sum + row.candidateHiddenElementsCount, 0)
+  const totalDeltaActionsToFix = rows.reduce((sum, row) => sum + row.deltaActionsToFix, 0)
+  const totalDeltaEstimatedCorrectionTimeSec = rows.reduce(
+    (sum, row) => sum + row.deltaEstimatedCorrectionTimeSec,
+    0,
+  )
 
   return {
     totalFormats,
@@ -161,6 +211,13 @@ export function summarizeFixedVsCandidateRows(rows: FixedVsCandidateRow[]): Fixe
     totalFixedHiddenElements,
     totalCandidateHiddenElements,
     deltaHiddenElementsTotal: totalFixedHiddenElements - totalCandidateHiddenElements,
+    candidateBetterByActionsCount: rows.filter((row) => row.candidateBetterByActions).length,
+    candidateEqualByActionsCount: rows.filter((row) => row.candidateEqualByActions).length,
+    candidateWorseByActionsCount: rows.filter((row) => row.candidateWorseByActions).length,
+    averageDeltaActionsToFix: totalFormats > 0 ? round(totalDeltaActionsToFix / totalFormats, 2) : 0,
+    totalDeltaActionsToFix,
+    averageDeltaEstimatedCorrectionTimeSec:
+      totalFormats > 0 ? round(totalDeltaEstimatedCorrectionTimeSec / totalFormats, 2) : 0,
   }
 }
 
@@ -172,6 +229,7 @@ export function fixedVsCandidateRowsToCsv(rows: FixedVsCandidateRow[]): string {
       row.group,
       row.fixedLayoutName,
       row.candidateSelectionName,
+      row.candidateSource,
       row.sameLayout,
       row.fixedScore,
       row.candidateScore,
@@ -190,6 +248,15 @@ export function fixedVsCandidateRowsToCsv(rows: FixedVsCandidateRow[]): string {
       row.candidateBetter,
       row.candidateWorse,
       row.candidateEqual,
+      row.fixedActionsToFix,
+      row.candidateActionsToFix,
+      row.deltaActionsToFix,
+      row.fixedEstimatedCorrectionTimeSec,
+      row.candidateEstimatedCorrectionTimeSec,
+      row.deltaEstimatedCorrectionTimeSec,
+      row.candidateBetterByActions,
+      row.candidateWorseByActions,
+      row.candidateEqualByActions,
     ]
       .map(csvEscape)
       .join(','),
@@ -211,6 +278,12 @@ export function fixedVsCandidateSummaryToText(summary: FixedVsCandidateSummary):
     `- totalFixedHiddenElements: ${summary.totalFixedHiddenElements}`,
     `- totalCandidateHiddenElements: ${summary.totalCandidateHiddenElements}`,
     `- deltaHiddenElementsTotal: ${summary.deltaHiddenElementsTotal}`,
+    `- candidateBetterByActionsCount: ${summary.candidateBetterByActionsCount}`,
+    `- candidateEqualByActionsCount: ${summary.candidateEqualByActionsCount}`,
+    `- candidateWorseByActionsCount: ${summary.candidateWorseByActionsCount}`,
+    `- averageDeltaActionsToFix: ${summary.averageDeltaActionsToFix}`,
+    `- totalDeltaActionsToFix: ${summary.totalDeltaActionsToFix}`,
+    `- averageDeltaEstimatedCorrectionTimeSec: ${summary.averageDeltaEstimatedCorrectionTimeSec}`,
   ].join('\n')
 }
 

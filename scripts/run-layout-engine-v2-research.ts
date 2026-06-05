@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { getDefaultProjectSourceMaterial } from '../src/layout-engine-v2/defaultProjectSource'
 import { createFixedVsCandidateReport } from '../src/layout-engine-v2/fixedVsCandidateReport'
+import { exportVisualReview } from '../src/layout-engine-v2/exportVisualReview'
 import { runCatalogResearch } from '../src/layout-engine-v2/runCatalogResearch'
 import {
   researchSummaryTableToCsv,
@@ -51,12 +52,14 @@ function main(): void {
   writeTextFile('layout-v2-fixed-vs-candidate.csv', fixedVsCandidateReport.csv)
   writeTextFile('layout-v2-fixed-vs-candidate-summary.txt', fixedVsCandidateReport.summaryText)
   writeTextFile('layout-v2-report.json', JSON.stringify(jsonReport, null, 2))
+  const visualReview = exportVisualReview(result, OUTPUT_DIR)
 
   console.log(`layout-engine-v2 research completed`)
   console.log(`projectId: ${result.projectId}`)
   console.log(`formats: ${result.formatCount}`)
   console.log(`methods: ${result.methods.join(', ')}`)
   console.log(`output: ${OUTPUT_DIR}`)
+  console.log(`visualReview: ${visualReview.directory}`)
   console.log('')
   console.log(summaryText)
 }

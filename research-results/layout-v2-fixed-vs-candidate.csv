@@ -1,127 +1,127 @@
-formatId,formatName,group,fixedLayoutName,candidateSelectionName,sameLayout,fixedScore,candidateScore,deltaScore,fixedCriticalCount,candidateCriticalCount,deltaCritical,fixedWarningCount,candidateWarningCount,deltaWarning,fixedHiddenElements,candidateHiddenElements,fixedHiddenElementsCount,candidateHiddenElementsCount,deltaHiddenElements,candidateBetter,candidateWorse,candidateEqual
-yandex-rsy-160x600,Яндекс Директ / РСЯ Медийный баннер 160x600,narrow,imageTop,logoOnly,false,100,150,-50,0,0,0,2,3,-1,badge|decor,product-image|subtitle|cta|badge|decor,2,5,-3,false,true,false
-yandex-rsy-320x1200-2x,Яндекс Директ / РСЯ Медийный баннер 320x1200 (2x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-480x1800-3x,Яндекс Директ / РСЯ Медийный баннер 480x1800 (3x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-240x400,Яндекс Директ / РСЯ Медийный баннер 240x400,vertical,imageTop,imageTop,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-480x800-2x,Яндекс Директ / РСЯ Медийный баннер 480x800 (2x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-720x1200-3x,Яндекс Директ / РСЯ Медийный баннер 720x1200 (3x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-240x600,Яндекс Директ / РСЯ Медийный баннер 240x600,narrow,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-480x1200-2x,Яндекс Директ / РСЯ Медийный баннер 480x1200 (2x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-720x1800-3x,Яндекс Директ / РСЯ Медийный баннер 720x1800 (3x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-300x250,Яндекс Директ / РСЯ Медийный баннер 300x250,square,hero,split,false,150,100,50,0,0,0,3,2,1,subtitle|cta|badge|decor,badge|decor,4,2,2,true,false,false
-yandex-rsy-600x500-2x,Яндекс Директ / РСЯ Медийный баннер 600x500 (2x),square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-900x750-3x,Яндекс Директ / РСЯ Медийный баннер 900x750 (3x),square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-300x300,Яндекс Директ / РСЯ Медийный баннер 300x300,square,hero,split,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,badge|decor,3,2,1,false,false,true
-yandex-rsy-600x600-2x,Яндекс Директ / РСЯ Медийный баннер 600x600 (2x),square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-900x900-3x,Яндекс Директ / РСЯ Медийный баннер 900x900 (3x),square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-300x500,Яндекс Директ / РСЯ Медийный баннер 300x500,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-600x1000-2x,Яндекс Директ / РСЯ Медийный баннер 600x1000 (2x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-900x1500-3x,Яндекс Директ / РСЯ Медийный баннер 900x1500 (3x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-300x600,Яндекс Директ / РСЯ Медийный баннер 300x600,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-600x1200-2x,Яндекс Директ / РСЯ Медийный баннер 600x1200 (2x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-900x1800-3x,Яндекс Директ / РСЯ Медийный баннер 900x1800 (3x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-320x50,Яндекс Директ / РСЯ Медийный баннер 320x50,small,compact,compact,true,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true
-yandex-rsy-640x100-2x,Яндекс Директ / РСЯ Медийный баннер 640x100 (2x),wide,compact,compact,true,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true
-yandex-rsy-960x150-3x,Яндекс Директ / РСЯ Медийный баннер 960x150 (3x),horizontal,split,compact,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true
-yandex-rsy-320x100,Яндекс Директ / РСЯ Медийный баннер 320x100,wide,compact,compact,true,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true
-yandex-rsy-640x200-2x,Яндекс Директ / РСЯ Медийный баннер 640x200 (2x),horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-960x300-3x,Яндекс Директ / РСЯ Медийный баннер 960x300 (3x),horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-320x480,Яндекс Директ / РСЯ Медийный баннер 320x480,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-640x960-2x,Яндекс Директ / РСЯ Медийный баннер 640x960 (2x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-960x1440-3x,Яндекс Директ / РСЯ Медийный баннер 960x1440 (3x),vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-336x280,Яндекс Директ / РСЯ Медийный баннер 336x280,square,hero,split,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,badge|decor,3,2,1,false,false,true
-yandex-rsy-672x560-2x,Яндекс Директ / РСЯ Медийный баннер 672x560 (2x),square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-1008x840-3x,Яндекс Директ / РСЯ Медийный баннер 1008x840 (3x),square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-480x320,Яндекс Директ / РСЯ Медийный баннер 480x320,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-960x640-2x,Яндекс Директ / РСЯ Медийный баннер 960x640 (2x),horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-1440x960-3x,Яндекс Директ / РСЯ Медийный баннер 1440x960 (3x),horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-728x90,Яндекс Директ / РСЯ Медийный баннер 728x90,wide,compact,compact,true,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true
-yandex-rsy-1456x180-2x,Яндекс Директ / РСЯ Медийный баннер 1456x180 (2x),horizontal,split,compact,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true
-yandex-rsy-2184x270-3x,Яндекс Директ / РСЯ Медийный баннер 2184x270 (3x),horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-970x250,Яндекс Директ / РСЯ Медийный баннер 970x250,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-1940x500-2x,Яндекс Директ / РСЯ Медийный баннер 1940x500 (2x),horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-2910x750-3x,Яндекс Директ / РСЯ Медийный баннер 2910x750 (3x),horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-rsy-1000x120,Яндекс Директ / РСЯ Медийный баннер 1000x120,wide,compact,compact,true,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true
-yandex-rsy-2000x240-2x,Яндекс Директ / РСЯ Медийный баннер 2000x240 (2x),horizontal,split,textPriority,false,150,100,50,0,0,0,3,2,1,cta|badge|decor,badge|decor,3,2,1,true,false,false
-yandex-rsy-3000x360-3x,Яндекс Директ / РСЯ Медийный баннер 3000x360 (3x),horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-square,VK Пост 1:1,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-universal-square-600x600,VK Реклама / ВКонтакте Универсальный квадрат,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-vertical,VK Реклама / ВКонтакте Универсальный вертикальный 4:5,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-landscape,VK Реклама / ВКонтакте Универсальный горизонтальный 16:9,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-stories-720x1280,VK Реклама / ВКонтакте Сторис / клипы,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-stories,VK История,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-carousel-600x600,VK Реклама / ВКонтакте Карусель,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-vk-teaser-image-text-145x85,VK Реклама / ВКонтакте Тизер изображение и текст,horizontal,split,compact,false,150,100,50,0,0,0,3,2,1,subtitle|cta|badge|decor,product-image|subtitle|badge|decor,4,4,0,true,false,false
-vk-teaser-large-145x165,VK Реклама / ВКонтакте Тизер большое изображение,logo,logoOnly,compact,false,150,100,50,0,0,0,3,2,1,product-image|subtitle|cta|badge|decor,product-image|subtitle|badge|decor,5,4,1,true,false,false
-vk-community-145x145,VK Реклама / ВКонтакте Продвижение сообщества,logo,logoOnly,compact,false,150,100,50,0,0,0,3,2,1,product-image|subtitle|cta|badge|decor,product-image|subtitle|badge|decor,5,4,1,true,false,false
-vk-wb-social-1000x700,VK Реклама / ВКонтакте Баннер WB для соцсетей,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ok-square-1080x1080,Одноклассники / myTarget Социальный квадрат 1:1,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ok-vertical-1080x1350,Одноклассники / myTarget Социальный вертикальный 4:5,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ok-horizontal-1200x628,Одноклассники / myTarget Horizontal social,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ok-stories-1080x1920,Одноклассники / myTarget Stories 9:16,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-native-600x750,Авито Реклама Нативный баннер 4:5,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-native-720x540,Авито Реклама Нативный баннер 4:3,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-native-472x472,Авито Реклама Нативный баннер 1:1,square,hero,imageTop,false,150,100,50,0,0,0,3,2,1,cta|badge|decor,badge|decor,3,2,1,true,false,false
-avito-home-2934x456,Авито Реклама Баннер на главной 13:2,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-home-1320x492,Авито Реклама Баннер на главной 8:3,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-display-600x1200,Авито Реклама Медийный стандарт 1:2,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-display-472x628,Авито Реклама Медийный стандарт 3:4,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-display-720x240,Авито Реклама Медийный стандарт 3:1,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-premium-750x564,Авито Реклама Медийный премиум 4:3,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-premium-1960x654,Авито Реклама Медийный премиум 3:1,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-premium-600x1200,Авито Реклама Медийный премиум 1:2,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-skyscraper,Авито Реклама Медийный премиум 1:3,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-html5-300x600,Авито Реклама HTML5 300x600,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-html5-320x240,Авито Реклама HTML5 320x240,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-html5-980x325,Авито Реклама HTML5 980x325,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-html5-300x900,Авито Реклама HTML5 premium 300x900,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-native-768x1024,Ozon Performance Нативный баннер 3:4,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-card,Ozon Performance Мобильный / товарный 3:4,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-fresh-square,Ozon Performance Квадратный 1:1,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-horizontal-1200x628,Ozon Performance Горизонтальный,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-wide-1920x640,Ozon Performance Широкоформатный,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-showcase-1440x400,Ozon Performance Баннер главной / витрины,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-ozon-showcase-1440x600,Ozon Performance Баннер главной / витрины высокий,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-home-site-1472x600,"Wildberries / WB Media Главная, сайт",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-home-app-720x400,"Wildberries / WB Media Главная, приложение",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-orders-site-2880x300,"Wildberries / WB Media ЛК / заказы, сайт",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-orders-mobile-720x300,"Wildberries / WB Media ЛК / заказы, мобильная версия",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-orders-app-1074x276,"Wildberries / WB Media ЛК / заказы, приложение",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-checkout-site-2880x400,"Wildberries / WB Media Страница обработки заказа, сайт",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-checkout-mobile-720x400,"Wildberries / WB Media Страница обработки заказа, мобильная версия",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-checkout-app-960x412,"Wildberries / WB Media Страница обработки заказа, приложение",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-context-site-2880x300,"Wildberries / WB Media Контекстный баннер, сайт",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-context-app-960x412,"Wildberries / WB Media Контекстный баннер, приложение",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-context-mobile-656x300,"Wildberries / WB Media Контекстный баннер, мобильная версия сайта",horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-push-500x350,Wildberries / WB Media Push-уведомление,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-vk-social-1000x700,Wildberries / WB Media Баннер в соцсетях ВКонтакте,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-ok-social-1080x1080,Wildberries / WB Media Баннер в соцсетях Одноклассники,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-logo-range,2ГИС Логотип компании 132-3000,logo,logoOnly,compact,false,150,100,50,0,0,0,3,2,1,product-image|subtitle|cta|badge|decor,product-image|subtitle|badge|decor,5,4,1,true,false,false
-2gis-logo-200x200,2ГИС Логотип 200x200,logo,logoOnly,compact,false,150,100,50,0,0,0,3,2,1,product-image|subtitle|cta|badge|decor,product-image|subtitle|badge|decor,5,4,1,true,false,false
-2gis-card-bg-800x400,2ГИС Фоновое изображение карточки,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-story-720x1280,2ГИС Сторис 9:16,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-story-810x1440,2ГИС Сторис 9:16,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-story-900x1600,2ГИС Сторис 9:16,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-story-1080x1920,2ГИС Сторис 9:16,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-search-bg-500x600,2ГИС Рекламный блок в поисковой выдаче: фон,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-partner-desktop-800x320,2ГИС Баннер в профиле партнера desktop,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-partner-mobile-800x800,2ГИС Баннер в профиле партнера mobile,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-2gis-search-banner-319x57,2ГИС Баннер в поисковой выдаче,small,compact,compact,true,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true
-2gis-directory-banner-319x57,2ГИС Баннер под окном справочника,small,compact,compact,true,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true
-2gis-bg-1440x800,2ГИС Фон рекламного блока,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-official-sponsored-message,Telegram Ads Official sponsored message text-only,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-story,Telegram История,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-post-1080x1080,Telegram channel post Native post 1:1,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-post-1080x1350,Telegram channel post Native post 4:5,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-post-1200x628,Telegram channel post Native post horizontal,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-post-1920x1080,Telegram channel post Native post 16:9,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-telegram-post-800x400,Telegram channel post Практический горизонтальный баннер для поста,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-instagram-story,Instagram Story 9:16,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-market-banner,Yandex Market Banner,horizontal,split,split,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-market-card,Яндекс Маркет Карточка 1:1,square,hero,hero,true,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-yandex-market-stretch,Яндекс Маркет Растяжка,horizontal,split,compact,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true
-yandex-market-vertical,Яндекс Маркет Вертикальная карточка,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-card,Wildberries / WB Media Карточка 3:4,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-wb-infographic,Wildberries / WB Media Инфографика 3:4,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-listing,Авито Реклама Объявление,horizontal,split,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
-avito-fullscreen,Авито Реклама Видеолента,vertical,imageTop,hero,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true
+formatId,formatName,group,fixedLayoutName,candidateSelectionName,candidateSource,sameLayout,fixedScore,candidateScore,deltaScore,fixedCriticalCount,candidateCriticalCount,deltaCritical,fixedWarningCount,candidateWarningCount,deltaWarning,fixedHiddenElements,candidateHiddenElements,fixedHiddenElementsCount,candidateHiddenElementsCount,deltaHiddenElements,candidateBetter,candidateWorse,candidateEqual,fixedActionsToFix,candidateActionsToFix,deltaActionsToFix,fixedEstimatedCorrectionTimeSec,candidateEstimatedCorrectionTimeSec,deltaEstimatedCorrectionTimeSec,candidateBetterByActions,candidateWorseByActions,candidateEqualByActions
+yandex-rsy-160x600,Яндекс Директ / РСЯ Медийный баннер 160x600,narrow,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-320x1200-2x,Яндекс Директ / РСЯ Медийный баннер 320x1200 (2x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-480x1800-3x,Яндекс Директ / РСЯ Медийный баннер 480x1800 (3x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-240x400,Яндекс Директ / РСЯ Медийный баннер 240x400,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-480x800-2x,Яндекс Директ / РСЯ Медийный баннер 480x800 (2x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-720x1200-3x,Яндекс Директ / РСЯ Медийный баннер 720x1200 (3x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-240x600,Яндекс Директ / РСЯ Медийный баннер 240x600,narrow,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-480x1200-2x,Яндекс Директ / РСЯ Медийный баннер 480x1200 (2x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-720x1800-3x,Яндекс Директ / РСЯ Медийный баннер 720x1800 (3x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-300x250,Яндекс Директ / РСЯ Медийный баннер 300x250,square,hero,split,generated,false,150,100,50,0,0,0,3,2,1,subtitle|cta|badge|decor,badge|decor,4,2,2,true,false,false,2,0,2,60,0,60,true,false,false
+yandex-rsy-600x500-2x,Яндекс Директ / РСЯ Медийный баннер 600x500 (2x),square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-900x750-3x,Яндекс Директ / РСЯ Медийный баннер 900x750 (3x),square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-300x300,Яндекс Директ / РСЯ Медийный баннер 300x300,square,hero,split,generated,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,badge|decor,3,2,1,false,false,true,1,0,1,30,0,30,true,false,false
+yandex-rsy-600x600-2x,Яндекс Директ / РСЯ Медийный баннер 600x600 (2x),square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-900x900-3x,Яндекс Директ / РСЯ Медийный баннер 900x900 (3x),square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-300x500,Яндекс Директ / РСЯ Медийный баннер 300x500,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-600x1000-2x,Яндекс Директ / РСЯ Медийный баннер 600x1000 (2x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-900x1500-3x,Яндекс Директ / РСЯ Медийный баннер 900x1500 (3x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-300x600,Яндекс Директ / РСЯ Медийный баннер 300x600,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-600x1200-2x,Яндекс Директ / РСЯ Медийный баннер 600x1200 (2x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-900x1800-3x,Яндекс Директ / РСЯ Медийный баннер 900x1800 (3x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-320x50,Яндекс Директ / РСЯ Медийный баннер 320x50,small,compact,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true,3,3,0,90,90,0,false,false,true
+yandex-rsy-640x100-2x,Яндекс Директ / РСЯ Медийный баннер 640x100 (2x),wide,compact,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true,1,1,0,30,30,0,false,false,true
+yandex-rsy-960x150-3x,Яндекс Директ / РСЯ Медийный баннер 960x150 (3x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true,1,1,0,30,30,0,false,false,true
+yandex-rsy-320x100,Яндекс Директ / РСЯ Медийный баннер 320x100,wide,compact,split,generated,false,100,150,-50,0,0,0,2,3,-1,product-image|subtitle|badge|decor,subtitle|cta|badge|decor,4,4,0,false,true,false,3,2,1,90,60,30,true,false,false
+yandex-rsy-640x200-2x,Яндекс Директ / РСЯ Медийный баннер 640x200 (2x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-960x300-3x,Яндекс Директ / РСЯ Медийный баннер 960x300 (3x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-320x480,Яндекс Директ / РСЯ Медийный баннер 320x480,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-640x960-2x,Яндекс Директ / РСЯ Медийный баннер 640x960 (2x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-960x1440-3x,Яндекс Директ / РСЯ Медийный баннер 960x1440 (3x),vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-336x280,Яндекс Директ / РСЯ Медийный баннер 336x280,square,hero,split,generated,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,badge|decor,3,2,1,false,false,true,1,0,1,30,0,30,true,false,false
+yandex-rsy-672x560-2x,Яндекс Директ / РСЯ Медийный баннер 672x560 (2x),square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-1008x840-3x,Яндекс Директ / РСЯ Медийный баннер 1008x840 (3x),square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-480x320,Яндекс Директ / РСЯ Медийный баннер 480x320,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-960x640-2x,Яндекс Директ / РСЯ Медийный баннер 960x640 (2x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-1440x960-3x,Яндекс Директ / РСЯ Медийный баннер 1440x960 (3x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-728x90,Яндекс Директ / РСЯ Медийный баннер 728x90,wide,compact,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true,1,1,0,30,30,0,false,false,true
+yandex-rsy-1456x180-2x,Яндекс Директ / РСЯ Медийный баннер 1456x180 (2x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true,1,1,0,30,30,0,false,false,true
+yandex-rsy-2184x270-3x,Яндекс Директ / РСЯ Медийный баннер 2184x270 (3x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-970x250,Яндекс Директ / РСЯ Медийный баннер 970x250,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-1940x500-2x,Яндекс Директ / РСЯ Медийный баннер 1940x500 (2x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-2910x750-3x,Яндекс Директ / РСЯ Медийный баннер 2910x750 (3x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-rsy-1000x120,Яндекс Директ / РСЯ Медийный баннер 1000x120,wide,compact,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true,1,1,0,30,30,0,false,false,true
+yandex-rsy-2000x240-2x,Яндекс Директ / РСЯ Медийный баннер 2000x240 (2x),horizontal,split,textPriority,generated,false,150,100,50,0,0,0,3,2,1,cta|badge|decor,badge|decor,3,2,1,true,false,false,1,0,1,30,0,30,true,false,false
+yandex-rsy-3000x360-3x,Яндекс Директ / РСЯ Медийный баннер 3000x360 (3x),horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-square,VK Пост 1:1,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-universal-square-600x600,VK Реклама / ВКонтакте Универсальный квадрат,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-vertical,VK Реклама / ВКонтакте Универсальный вертикальный 4:5,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-landscape,VK Реклама / ВКонтакте Универсальный горизонтальный 16:9,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-stories-720x1280,VK Реклама / ВКонтакте Сторис / клипы,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-stories,VK История,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-carousel-600x600,VK Реклама / ВКонтакте Карусель,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+vk-teaser-image-text-145x85,VK Реклама / ВКонтакте Тизер изображение и текст,horizontal,split,fixedLayout,fixedFallback,false,150,150,0,0,0,0,3,3,0,subtitle|cta|badge|decor,subtitle|cta|badge|decor,4,4,0,false,false,true,2,2,0,60,60,0,false,false,true
+vk-teaser-large-145x165,VK Реклама / ВКонтакте Тизер большое изображение,logo,logoOnly,compact,generated,false,150,100,50,0,0,0,3,2,1,product-image|subtitle|cta|badge|decor,product-image|subtitle|badge|decor,5,4,1,true,false,false,4,3,1,120,90,30,true,false,false
+vk-community-145x145,VK Реклама / ВКонтакте Продвижение сообщества,logo,logoOnly,compact,generated,false,150,100,50,0,0,0,3,2,1,product-image|subtitle|cta|badge|decor,product-image|subtitle|badge|decor,5,4,1,true,false,false,4,3,1,120,90,30,true,false,false
+vk-wb-social-1000x700,VK Реклама / ВКонтакте Баннер WB для соцсетей,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ok-square-1080x1080,Одноклассники / myTarget Социальный квадрат 1:1,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ok-vertical-1080x1350,Одноклассники / myTarget Социальный вертикальный 4:5,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ok-horizontal-1200x628,Одноклассники / myTarget Horizontal social,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ok-stories-1080x1920,Одноклассники / myTarget Stories 9:16,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-native-600x750,Авито Реклама Нативный баннер 4:5,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-native-720x540,Авито Реклама Нативный баннер 4:3,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-native-472x472,Авито Реклама Нативный баннер 1:1,square,hero,imageTop,generated,false,150,100,50,0,0,0,3,2,1,cta|badge|decor,badge|decor,3,2,1,true,false,false,1,0,1,30,0,30,true,false,false
+avito-home-2934x456,Авито Реклама Баннер на главной 13:2,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-home-1320x492,Авито Реклама Баннер на главной 8:3,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-display-600x1200,Авито Реклама Медийный стандарт 1:2,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-display-472x628,Авито Реклама Медийный стандарт 3:4,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-display-720x240,Авито Реклама Медийный стандарт 3:1,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-premium-750x564,Авито Реклама Медийный премиум 4:3,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-premium-1960x654,Авито Реклама Медийный премиум 3:1,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-premium-600x1200,Авито Реклама Медийный премиум 1:2,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-skyscraper,Авито Реклама Медийный премиум 1:3,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-html5-300x600,Авито Реклама HTML5 300x600,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-html5-320x240,Авито Реклама HTML5 320x240,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-html5-980x325,Авито Реклама HTML5 980x325,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-html5-300x900,Авито Реклама HTML5 premium 300x900,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-native-768x1024,Ozon Performance Нативный баннер 3:4,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-card,Ozon Performance Мобильный / товарный 3:4,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-fresh-square,Ozon Performance Квадратный 1:1,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-horizontal-1200x628,Ozon Performance Горизонтальный,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-wide-1920x640,Ozon Performance Широкоформатный,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-showcase-1440x400,Ozon Performance Баннер главной / витрины,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+ozon-showcase-1440x600,Ozon Performance Баннер главной / витрины высокий,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-home-site-1472x600,"Wildberries / WB Media Главная, сайт",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-home-app-720x400,"Wildberries / WB Media Главная, приложение",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-orders-site-2880x300,"Wildberries / WB Media ЛК / заказы, сайт",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-orders-mobile-720x300,"Wildberries / WB Media ЛК / заказы, мобильная версия",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-orders-app-1074x276,"Wildberries / WB Media ЛК / заказы, приложение",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-checkout-site-2880x400,"Wildberries / WB Media Страница обработки заказа, сайт",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-checkout-mobile-720x400,"Wildberries / WB Media Страница обработки заказа, мобильная версия",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-checkout-app-960x412,"Wildberries / WB Media Страница обработки заказа, приложение",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-context-site-2880x300,"Wildberries / WB Media Контекстный баннер, сайт",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-context-app-960x412,"Wildberries / WB Media Контекстный баннер, приложение",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-context-mobile-656x300,"Wildberries / WB Media Контекстный баннер, мобильная версия сайта",horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-push-500x350,Wildberries / WB Media Push-уведомление,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-vk-social-1000x700,Wildberries / WB Media Баннер в соцсетях ВКонтакте,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-ok-social-1080x1080,Wildberries / WB Media Баннер в соцсетях Одноклассники,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-logo-range,2ГИС Логотип компании 132-3000,logo,logoOnly,hero,generated,false,150,150,0,0,0,0,3,3,0,product-image|subtitle|cta|badge|decor,subtitle|cta|badge|decor,5,4,1,false,false,true,4,2,2,120,60,60,true,false,false
+2gis-logo-200x200,2ГИС Логотип 200x200,logo,logoOnly,hero,generated,false,150,150,0,0,0,0,3,3,0,product-image|subtitle|cta|badge|decor,subtitle|cta|badge|decor,5,4,1,false,false,true,4,2,2,120,60,60,true,false,false
+2gis-card-bg-800x400,2ГИС Фоновое изображение карточки,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-story-720x1280,2ГИС Сторис 9:16,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-story-810x1440,2ГИС Сторис 9:16,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-story-900x1600,2ГИС Сторис 9:16,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-story-1080x1920,2ГИС Сторис 9:16,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-search-bg-500x600,2ГИС Рекламный блок в поисковой выдаче: фон,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-partner-desktop-800x320,2ГИС Баннер в профиле партнера desktop,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-partner-mobile-800x800,2ГИС Баннер в профиле партнера mobile,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+2gis-search-banner-319x57,2ГИС Баннер в поисковой выдаче,small,compact,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true,3,3,0,90,90,0,false,false,true
+2gis-directory-banner-319x57,2ГИС Баннер под окном справочника,small,compact,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,product-image|subtitle|badge|decor,product-image|subtitle|badge|decor,4,4,0,false,false,true,3,3,0,90,90,0,false,false,true
+2gis-bg-1440x800,2ГИС Фон рекламного блока,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-official-sponsored-message,Telegram Ads Official sponsored message text-only,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-story,Telegram История,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-post-1080x1080,Telegram channel post Native post 1:1,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-post-1080x1350,Telegram channel post Native post 4:5,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-post-1200x628,Telegram channel post Native post horizontal,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-post-1920x1080,Telegram channel post Native post 16:9,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+telegram-post-800x400,Telegram channel post Практический горизонтальный баннер для поста,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+instagram-story,Instagram Story 9:16,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-market-banner,Yandex Market Banner,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-market-card,Яндекс Маркет Карточка 1:1,square,hero,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+yandex-market-stretch,Яндекс Маркет Растяжка,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,subtitle|badge|decor,subtitle|badge|decor,3,3,0,false,false,true,1,1,0,30,30,0,false,false,true
+yandex-market-vertical,Яндекс Маркет Вертикальная карточка,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-card,Wildberries / WB Media Карточка 3:4,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+wb-infographic,Wildberries / WB Media Инфографика 3:4,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-listing,Авито Реклама Объявление,horizontal,split,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true
+avito-fullscreen,Авито Реклама Видеолента,vertical,imageTop,fixedLayout,fixedFallback,false,100,100,0,0,0,0,2,2,0,badge|decor,badge|decor,2,2,0,false,false,true,0,0,0,0,0,0,false,false,true

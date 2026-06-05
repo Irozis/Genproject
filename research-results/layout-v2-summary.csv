@@ -1,4 +1,4 @@
-method,totalFormats,clean,withoutCritical,warningOnly,critical,averageScore,totalCriticalIssues,totalWarningIssues,totalOutOfBounds,totalOverlap,totalTextTooSmall,totalMissingRequired,totalUnsafeZone,totalHiddenOptional
-scaling,126,0,83,83,43,546.03,57,226,0,0,154,0,3,126
-fixedLayout,126,0,126,126,0,103.17,0,260,0,0,0,0,0,260
-candidateSelection,126,0,126,126,0,100.4,0,253,0,0,0,0,0,253
+method,totalFormats,clean,withoutCritical,warningOnly,critical,averageScore,totalCriticalIssues,totalWarningIssues,totalOutOfBounds,totalOverlap,totalTextTooSmall,totalMissingRequired,totalUnsafeZone,totalHiddenOptional,totalActionsToFix,averageActionsToFix,estimatedCorrectionTimeSecTotal,averageEstimatedCorrectionTimeSec
+scaling,126,0,83,83,43,546.03,57,226,0,0,154,0,3,126,157,1.25,4710,37.38
+fixedLayout,126,0,126,126,0,103.17,0,260,0,0,0,0,0,260,42,0.33,1260,10
+candidateSelection,126,0,126,126,0,101.59,0,256,0,0,0,0,0,256,29,0.23,870,6.9

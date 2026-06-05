@@ -17,6 +17,10 @@ Scaling baseline:
 - missing required: 0
 - unsafe zone: 3
 - hidden optional: 126
+- total actions to fix: 157
+- average actions to fix: 1.25
+- estimated correction time total: 4710 sec
+- estimated correction time average: 37.38 sec
 
 Fixed-layout baseline:
 - total formats: 126
@@ -33,6 +37,10 @@ Fixed-layout baseline:
 - missing required: 0
 - unsafe zone: 0
 - hidden optional: 260
+- total actions to fix: 42
+- average actions to fix: 0.33
+- estimated correction time total: 1260 sec
+- estimated correction time average: 10 sec
 
 Candidate selection:
 - total formats: 126
@@ -40,12 +48,16 @@ Candidate selection:
 - without critical issues: 126
 - warning only: 126
 - critical: 0
-- average score: 100.4
+- average score: 101.59
 - total critical issues: 0
-- total warning issues: 253
+- total warning issues: 256
 - out of bounds: 0
 - overlap: 0
 - text too small: 0
 - missing required: 0
 - unsafe zone: 0
-- hidden optional: 253
+- hidden optional: 256
+- total actions to fix: 29
+- average actions to fix: 0.23
+- estimated correction time total: 870 sec
+- estimated correction time average: 6.9 sec

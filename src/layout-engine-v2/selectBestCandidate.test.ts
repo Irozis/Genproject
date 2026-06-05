@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { calculateActionsToFix } from './actionsToFix'
+import { buildFixedLayoutCandidate } from './fixedLayoutBaseline'
 import { sampleFormats, sampleSourceMaterial } from './fixtures'
 import { generateLayoutCandidates } from './generateCandidates'
 import {
   countCriticalIssues,
-  countPreservedRequiredAndImportant,
   countWarningIssues,
   evaluateLayoutCandidate,
   scoreLayoutCandidate,
@@ -155,24 +156,36 @@ describe('score and select layout candidates', () => {
     expect(decision.selected.candidate.id).toBe(expectedBest?.candidate.id)
   })
 
-  it('uses preserved required and important elements as a tie-breaker', () => {
+  it('prefers fixedLayout fallback when score, actions, critical and warnings are tied', () => {
     const format = formatById('horizontal-1200x628')
-    const candidates = generateLayoutCandidates(sampleSourceMaterial, format)
-    const split = candidateByName(candidates, 'split')
-    const hero = candidateByName(candidates, 'hero')
+    const fixedFallback = {
+      ...buildFixedLayoutCandidate(sampleSourceMaterial, format),
+      metadata: {
+        methodFamily: 'candidateSelectionFallback',
+        sourceCandidate: 'fixedLayout',
+        decisionMode: 'predefined-template',
+      },
+    }
+    const generatedTwin: LayoutCandidate = {
+      ...fixedFallback,
+      id: `${format.id}:generatedTwin`,
+      name: 'hero',
+      metadata: {
+        methodFamily: 'generated',
+      },
+    }
 
-    const splitPreserved = countPreservedRequiredAndImportant(split)
-    const heroWithoutLogo = replaceElement(hero, 'logo', {
-      visible: false,
-      rect: { x: 0, y: 0, width: 0, height: 0 },
-    })
-    const heroPreserved = countPreservedRequiredAndImportant(heroWithoutLogo)
+    const fixedEvaluation = evaluateLayoutCandidate(fixedFallback, format)
+    const generatedEvaluation = evaluateLayoutCandidate(generatedTwin, format)
 
-    expect(splitPreserved).toBeGreaterThan(heroPreserved)
+    expect(generatedEvaluation.score).toBe(fixedEvaluation.score)
+    expect(calculateActionsToFix(generatedEvaluation).actionsToFix).toBe(calculateActionsToFix(fixedEvaluation).actionsToFix)
+    expect(generatedEvaluation.criticalCount).toBe(fixedEvaluation.criticalCount)
+    expect(generatedEvaluation.warningCount).toBe(fixedEvaluation.warningCount)
 
-    const decision = selectBestLayoutCandidate([heroWithoutLogo, split], format)
+    const decision = selectBestLayoutCandidate([generatedTwin, fixedFallback], format)
 
-    expect(decision.selected.candidate.id).toBe(split.id)
+    expect(decision.selected.candidate.id).toBe(fixedFallback.id)
   })
 
   it('creates a deterministic decision object for identical inputs', () => {

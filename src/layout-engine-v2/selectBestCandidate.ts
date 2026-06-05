@@ -1,32 +1,38 @@
-import {
-  countPreservedRequiredAndImportant,
-  evaluateLayoutCandidate,
-} from './scoreCandidate'
+import { calculateActionsToFix } from './actionsToFix'
+import { evaluateLayoutCandidate } from './scoreCandidate'
 import type { CandidateEvaluation, FormatSpecV2, LayoutCandidate, LayoutDecision, ValidationIssue } from './types'
 
 const DETERMINISTIC_CREATED_AT = '1970-01-01T00:00:00.000Z'
 
 function compareEvaluations(first: CandidateEvaluation, second: CandidateEvaluation): number {
-  const firstHasCritical = first.criticalCount > 0
-  const secondHasCritical = second.criticalCount > 0
+  if (first.criticalCount !== second.criticalCount) {
+    return first.criticalCount - second.criticalCount
+  }
 
-  if (firstHasCritical !== secondHasCritical) {
-    return firstHasCritical ? 1 : -1
+  const firstActionsToFix = calculateActionsToFix(first).actionsToFix
+  const secondActionsToFix = calculateActionsToFix(second).actionsToFix
+
+  if (firstActionsToFix !== secondActionsToFix) {
+    return firstActionsToFix - secondActionsToFix
   }
 
   if (first.score !== second.score) {
     return first.score - second.score
   }
 
-  const firstPreserved = countPreservedRequiredAndImportant(first.candidate)
-  const secondPreserved = countPreservedRequiredAndImportant(second.candidate)
-
-  if (firstPreserved !== secondPreserved) {
-    return secondPreserved - firstPreserved
-  }
-
   if (first.warningCount !== second.warningCount) {
     return first.warningCount - second.warningCount
+  }
+
+  const firstIsFixedFallback =
+    first.candidate.metadata?.methodFamily === 'fixedLayout' ||
+    first.candidate.metadata?.decisionMode === 'predefined-template'
+  const secondIsFixedFallback =
+    second.candidate.metadata?.methodFamily === 'fixedLayout' ||
+    second.candidate.metadata?.decisionMode === 'predefined-template'
+
+  if (firstIsFixedFallback !== secondIsFixedFallback) {
+    return firstIsFixedFallback ? -1 : 1
   }
 
   return first.candidate.name.localeCompare(second.candidate.name)

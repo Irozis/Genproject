@@ -1,0 +1,18 @@
+control visual review / контрольная визуальная оценка
+
+totalCases: 90
+totalRatings: 270
+averageManualScore: 1.6407
+score0Count: 16
+score1Count: 65
+score2Count: 189
+readabilityOkRate: 0.9000
+requiredPreservedRate: 0.9889
+majorOverlapRate: 0.0963
+fullAgreementCases: 35
+strongDisagreementCases: 14
+
+by evaluator:
+- evaluator-1: ratings=90, averageManualScore=1.4778, score0=14, score1=19, score2=57, readabilityOkRate=0.8444, requiredPreservedRate=1, majorOverlapRate=0.1556
+- evaluator-2: ratings=90, averageManualScore=1.9111, score0=0, score1=8, score2=82, readabilityOkRate=1, requiredPreservedRate=1, majorOverlapRate=0.0889
+- control-assistant: ratings=90, averageManualScore=1.5333, score0=2, score1=38, score2=50, readabilityOkRate=0.8556, requiredPreservedRate=0.9667, majorOverlapRate=0.0444

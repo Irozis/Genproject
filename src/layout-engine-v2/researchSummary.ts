@@ -16,6 +16,10 @@ export interface ResearchSummaryTableRow {
   totalMissingRequired: number
   totalUnsafeZone: number
   totalHiddenOptional: number
+  totalActionsToFix: number
+  averageActionsToFix: number
+  estimatedCorrectionTimeSecTotal: number
+  averageEstimatedCorrectionTimeSec: number
 }
 
 function round(value: number, digits = 2): number {
@@ -41,6 +45,10 @@ export function toResearchSummaryTable(result: ResearchResult): ResearchSummaryT
     totalMissingRequired: summary.totalMissingRequired,
     totalUnsafeZone: summary.totalUnsafeZone,
     totalHiddenOptional: summary.totalHiddenOptional,
+    totalActionsToFix: summary.totalActionsToFix,
+    averageActionsToFix: round(summary.averageActionsToFix, 2),
+    estimatedCorrectionTimeSecTotal: summary.estimatedCorrectionTimeSecTotal,
+    averageEstimatedCorrectionTimeSec: round(summary.averageEstimatedCorrectionTimeSec, 2),
   }))
 }
 
@@ -61,6 +69,10 @@ export function researchSummaryTableToCsv(rows: ResearchSummaryTableRow[]): stri
     'totalMissingRequired',
     'totalUnsafeZone',
     'totalHiddenOptional',
+    'totalActionsToFix',
+    'averageActionsToFix',
+    'estimatedCorrectionTimeSecTotal',
+    'averageEstimatedCorrectionTimeSec',
   ].join(',')
 
   const body = rows.map((row) =>
@@ -80,6 +92,10 @@ export function researchSummaryTableToCsv(rows: ResearchSummaryTableRow[]): stri
       row.totalMissingRequired,
       row.totalUnsafeZone,
       row.totalHiddenOptional,
+      row.totalActionsToFix,
+      row.averageActionsToFix,
+      row.estimatedCorrectionTimeSecTotal,
+      row.averageEstimatedCorrectionTimeSec,
     ].join(','),
   )
 
@@ -122,6 +138,10 @@ export function researchSummaryToText(result: ResearchResult): string {
     lines.push(`- missing required: ${summary.totalMissingRequired}`)
     lines.push(`- unsafe zone: ${summary.totalUnsafeZone}`)
     lines.push(`- hidden optional: ${summary.totalHiddenOptional}`)
+    lines.push(`- total actions to fix: ${summary.totalActionsToFix}`)
+    lines.push(`- average actions to fix: ${round(summary.averageActionsToFix, 2)}`)
+    lines.push(`- estimated correction time total: ${summary.estimatedCorrectionTimeSecTotal} sec`)
+    lines.push(`- estimated correction time average: ${round(summary.averageEstimatedCorrectionTimeSec, 2)} sec`)
     lines.push('')
   }
 
