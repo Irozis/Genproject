@@ -1,0 +1,11 @@
+Fixed-layout vs candidate selection
+- totalFormats: 126
+- sameLayoutCount: 60
+- differentLayoutCount: 66
+- candidateBetterCount: 8
+- candidateEqualCount: 117
+- candidateWorseCount: 1
+- averageDeltaScore: 2.78
+- totalFixedHiddenElements: 286
+- totalCandidateHiddenElements: 279
+- deltaHiddenElementsTotal: 7

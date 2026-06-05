@@ -1,12 +1,11 @@
 import { createDecisionReport, decisionReportsToCsv } from './exportDecisionReport'
+import { buildFixedLayoutCandidate } from './fixedLayoutBaseline'
 import { sampleFormats, sampleSourceMaterial } from './fixtures'
 import { generateLayoutCandidates } from './generateCandidates'
 import { selectBestLayoutCandidate } from './selectBestCandidate'
 import type {
-  FormatGroup,
   FormatSpecV2,
   LayoutCandidate,
-  LayoutCandidateName,
   LayoutElement,
   LayoutRect,
   SourceMaterialV2,
@@ -36,6 +35,7 @@ export interface ResearchMethodSummary {
 export interface ResearchResult {
   projectId: string
   formatCount: number
+  formats: FormatSpecV2[]
   methods: ResearchMethod[]
   reports: ReturnType<typeof createDecisionReport>[]
   csv: string
@@ -128,73 +128,6 @@ export function buildScalingCandidate(source: SourceMaterialV2, format: FormatSp
   }
 }
 
-function preferredFixedLayouts(group: FormatGroup): LayoutCandidateName[] {
-  if (group === 'horizontal') {
-    return ['split', 'compact', 'hero', 'imagePriority', 'logoOnly']
-  }
-
-  if (group === 'vertical' || group === 'narrow') {
-    return ['imageTop', 'hero', 'textPriority', 'compact', 'logoOnly']
-  }
-
-  if (group === 'square') {
-    return ['hero', 'imageTop', 'split', 'textPriority', 'imagePriority', 'logoOnly']
-  }
-
-  if (group === 'small' || group === 'wide') {
-    return ['compact', 'logoOnly', 'split']
-  }
-
-  if (group === 'logo') {
-    return ['logoOnly', 'compact']
-  }
-
-  return ['compact', 'logoOnly']
-}
-
-export function buildFixedLayoutCandidate(source: SourceMaterialV2, format: FormatSpecV2): LayoutCandidate {
-  const candidates = generateLayoutCandidates(source, format)
-  const preferred = preferredFixedLayouts(format.group)
-
-  for (const name of preferred) {
-    const candidate = candidates.find((item) => item.name === name)
-
-    if (candidate) {
-      return {
-        ...candidate,
-        id: `${format.id}:fixedLayout`,
-        name: 'fixedLayout',
-        metadata: {
-          ...candidate.metadata,
-          notes: [
-            `Fixed-layout baseline: selected predefined "${candidate.name}" scheme for group "${format.group}" without score-based comparison.`,
-          ],
-          sourceCandidateName: candidate.name,
-        },
-      }
-    }
-  }
-
-  const fallback = candidates[0]
-
-  if (!fallback) {
-    throw new Error(`Cannot build fixedLayout baseline for "${format.id}": no candidates available.`)
-  }
-
-  return {
-    ...fallback,
-    id: `${format.id}:fixedLayout`,
-    name: 'fixedLayout',
-    metadata: {
-      ...fallback.metadata,
-      notes: [
-        `Fixed-layout baseline: fallback to first available "${fallback.name}" scheme because no preferred scheme matched.`,
-      ],
-      sourceCandidateName: fallback.name,
-    },
-  }
-}
-
 function runMethod(params: {
   method: ResearchMethod
   source: SourceMaterialV2
@@ -274,6 +207,7 @@ export function runResearch(params: {
   return {
     projectId: source.id,
     formatCount: formats.length,
+    formats,
     methods,
     reports,
     csv: decisionReportsToCsv(reports),

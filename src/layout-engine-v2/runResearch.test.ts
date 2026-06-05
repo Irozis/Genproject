@@ -8,6 +8,7 @@ describe('runResearch', () => {
 
     expect(result.projectId).toBe(sampleSourceMaterial.id)
     expect(result.formatCount).toBe(sampleFormats.length)
+    expect(result.formats).toEqual(sampleFormats)
     expect(result.methods).toEqual(['scaling', 'fixedLayout', 'candidateSelection'])
     expect(result.reports.length).toBe(sampleFormats.length * 3)
   })

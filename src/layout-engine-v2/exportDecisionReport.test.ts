@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { buildFixedLayoutCandidate } from './fixedLayoutBaseline'
 import { sampleFormats, sampleSourceMaterial } from './fixtures'
 import { generateLayoutCandidates } from './generateCandidates'
 import { selectBestLayoutCandidate } from './selectBestCandidate'
@@ -100,6 +101,21 @@ describe('exportDecisionReport', () => {
     expect(report.selectedScore).toBe(decision.selected.score)
     expect(report.selectedCriticalCount).toBe(decision.selected.criticalCount)
     expect(report.selectedWarningCount).toBe(decision.selected.warningCount)
+  })
+
+  it('keeps candidate metadata in report rows', () => {
+    const format = formatById('horizontal-1200x628')
+    const fixedCandidate = buildFixedLayoutCandidate(sampleSourceMaterial, format)
+    const decision = selectBestLayoutCandidate([fixedCandidate], format)
+    const report = createDecisionReport({
+      projectId: sampleSourceMaterial.id,
+      method: 'fixedLayout',
+      decision,
+    })
+
+    expect(report.rows[0]?.methodFamily).toBe('fixedLayout')
+    expect(report.rows[0]?.candidateCount).toBe(1)
+    expect(report.rows[0]?.decisionMode).toBe('predefined-template')
   })
 
   it('creates a CSV string with a header and candidate rows', () => {

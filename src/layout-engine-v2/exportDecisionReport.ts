@@ -6,6 +6,9 @@ export interface CandidateReportRow {
   method: string
   candidateId: string
   candidateName: string
+  methodFamily: string
+  candidateCount: number | string
+  decisionMode: string
   selected: boolean
   score: number
   criticalCount: number
@@ -85,6 +88,9 @@ function rowToCsv(row: CandidateReportRow): string {
     row.method,
     row.candidateId,
     row.candidateName,
+    row.methodFamily,
+    row.candidateCount,
+    row.decisionMode,
     row.selected,
     row.score,
     row.criticalCount,
@@ -112,6 +118,9 @@ export const DECISION_REPORT_CSV_HEADER = [
   'method',
   'candidateId',
   'candidateName',
+  'methodFamily',
+  'candidateCount',
+  'decisionMode',
   'selected',
   'score',
   'criticalCount',
@@ -146,6 +155,13 @@ export function createDecisionReport(params: {
       method: params.method,
       candidateId: evaluation.candidate.id,
       candidateName: evaluation.candidate.name,
+      methodFamily: typeof evaluation.candidate.metadata?.methodFamily === 'string' ? evaluation.candidate.metadata.methodFamily : '',
+      candidateCount:
+        typeof evaluation.candidate.metadata?.candidateCount === 'number' ||
+        typeof evaluation.candidate.metadata?.candidateCount === 'string'
+          ? evaluation.candidate.metadata.candidateCount
+          : '',
+      decisionMode: typeof evaluation.candidate.metadata?.decisionMode === 'string' ? evaluation.candidate.metadata.decisionMode : '',
       selected,
       score: evaluation.score,
       criticalCount: evaluation.criticalCount,
