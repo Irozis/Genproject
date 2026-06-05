@@ -1,118 +1,127 @@
-# Adaptive Graphics MVP
+# Программный комплекс для адаптации рекламных материалов к различным цифровым форматам
 
-Deterministic React app for generating marketplace/social promo graphics across multiple formats and composition models.
+Проект предназначен для первичной технической адаптации рекламных материалов к набору цифровых форматов. Система не заменяет дизайнера и не гарантирует художественную завершенность макета: она формирует стартовую технически пригодную заготовку, выявляет critical-дефекты и формирует воспроизводимые отчеты для последующей доводки.
 
-## Stack
+Основной проверяемый эффект проекта связан с отказом от простого масштабирования в пользу перестроения компоновки: снижается число critical-дефектов и уменьшается объем действий, необходимых для исправления результата (`actionsToFix`).
 
-- React 18 + TypeScript strict (`noUncheckedIndexedAccess`)
-- Vite
-- Plain CSS variables + SVG renderer
-- Vitest
+## Функциональность
 
-## Supported Formats
+- каталог из 126 рекламных форматов;
+- модель исходного рекламного материала;
+- `layout-engine-v2` для перестроения компоновки под целевой формат;
+- generation candidates для проверки альтернативных компоновок;
+- `fixedLayout` baseline как сильная базовая стратегия;
+- `candidateSelection` with FixedLayout fallback;
+- validator для выявления technical/critical-дефектов;
+- расчет `actionsToFix`;
+- CSV/JSON/TXT reports;
+- visual review pipeline для оценки восприятия подготовленных заготовок;
+- экспорт SVG/PNG/PDF/ZIP в интерфейсе приложения.
 
-- `marketplace-card` — 1200x1200
-- `marketplace-highlight` — 1080x1350
-- `social-square` — 1080x1080
-- `story-vertical` — 1080x1920
-- custom formats (`custom:*`) via sidebar builder
+## Стек
 
-## Composition Models
+- React;
+- TypeScript;
+- Vite;
+- Electron;
+- Vitest;
+- Playwright;
+- SVG/PNG export.
 
-- `text-dominant` — no image, typography-first layout
-- `split-right-image` — text left, image right
-- `hero-overlay` — full-bleed image with scrim-backed text stack
-- `image-top-text-bottom` — visual top, copy and CTA below
+## Методы адаптации
 
-## Keyboard Shortcuts Cheat-Sheet
+В автоматическом эксперименте сравниваются три метода:
 
-- `Ctrl/Cmd + Z` — Undo
-- `Ctrl/Cmd + Shift + Z` (or `Ctrl + Y`) — Redo
-- `T` — toggle title
-- `S` — toggle subtitle
-- `C` — toggle CTA
-- `B` — toggle badge
-- `L` — toggle logo
-- `I` — toggle image
-- `Space + Drag` — pan preview
-- `Ctrl/Cmd + Wheel` — zoom preview
-- `Shift + Click` on image hotspot — set per-format focal
-- `Shift + Alt + Click` on image hotspot — reset focal override
+1. `scaling` - простое масштабирование исходной компоновки;
+2. `fixedLayout` - детерминированное перестроение компоновки;
+3. `candidateSelection` - выбор кандидата с FixedLayout fallback.
 
-## Visual Snapshot
+`fixedLayout` рассматривается как сильная базовая стратегия. `candidateSelection` является безопасной надстройкой: она использует `fixedLayout` как fallback и выбирает generated-кандидата только при улучшении по техническим метрикам.
 
-Project currently does not include a committed screenshot asset. Add one image under the repo and reference it here when preparing release notes.
+## Экспериментальные результаты
 
-## Verification Commands
+Каталог содержит 126 рекламных форматов. Автоматический эксперимент покрывает 126 форматов x 3 метода = 378 случаев.
 
-```bash
-npx tsc --noEmit
-npx vitest run
-npx vite build
-```
+| Метод              | Critical | actionsToFix | Visual score |
+| ------------------ | -------: | -----------: | -----------: |
+| scaling            |       43 |          157 |         1,44 |
+| fixedLayout        |        0 |           42 |         1,75 |
+| candidateSelection |        0 |           29 |         1,73 |
 
-## Website and Desktop Builds
+Основной эффект достигается при отказе от простого масштабирования и переходе к перестроению компоновки. `candidateSelection` использует `fixedLayout` как fallback и улучшает часть случаев без ухудшения по `actionsToFix`.
 
-The normal Vite website workflow is unchanged:
+Pairwise-сравнение `candidateSelection` и `fixedLayout`:
+
+- `fixedFallback` выбран 116 раз;
+- `generated` выбран 10 раз;
+- `candidateSelection` лучше `fixedLayout` по `actionsToFix` в 10 случаях;
+- одинаково в 116 случаях;
+- хуже в 0 случаях.
+
+Визуальная оценка использовалась для проверки восприятия технических заготовок, а не для доказательства художественной завершенности дизайна. В оценке участвовали 14 респондентов; проверено 60 PNG; собрано 840 оценок по шкале 0-2.
+
+## Команды запуска
+
+Установка зависимостей:
 
 ```bash
 npm install
-npm run dev
-npm run build
-npm run preview
 ```
 
-The Windows desktop app is an additional Electron wrapper around the local Vite build. It does not replace the website build and does not require hosting the app online.
+Запуск веб-версии:
+
+```bash
+npm run dev
+```
+
+Сборка:
+
+```bash
+npm run build
+```
+
+Тесты:
+
+```bash
+npm test
+```
+
+Desktop-режим через Electron:
 
 ```bash
 npm run desktop:dev
 ```
 
-Desktop development starts the Vite dev server on port 5173 and opens Electron against that local server.
+Запуск исследовательских сценариев:
 
 ```bash
-npm run desktop:dist
+npx tsx scripts/run-layout-engine-v2-research.ts
+npx tsx scripts/export-layout-engine-v2-visual-review-png.ts
+npx tsx scripts/analyze-layout-engine-v2-visual-review.ts
 ```
 
-The installer build runs a desktop-mode Vite build with relative asset paths, then packages the app with electron-builder/NSIS. The resulting Windows installer appears in `desktop-release/*.exe` and is configured to create Desktop and Start Menu shortcuts named `Ad Layout Generator`.
+## Где лежат результаты
 
-For an unpacked local package instead of an installer:
+- `research-results/layout-v2-summary.txt`
+- `research-results/layout-v2-summary.csv`
+- `research-results/layout-v2-decisions.csv`
+- `research-results/layout-v2-report.json`
+- `research-results/layout-v2-fixed-vs-candidate-summary.txt`
+- `research-results/visual-review/`
+- `research-results/visual-review/png/`
+- `research-results/visual-review/visual-review-control-summary.txt`
+- `research-results/visual-review/visual-review-control-by-method.csv`
 
-```bash
-npm run desktop:pack
-```
+Примеры PNG из визуальной проверки:
 
-## Desktop Release Verification
+- `research-results/visual-review/png/case_001.png`
+- `research-results/visual-review/png/case_002.png`
 
-Before sharing a Windows desktop build, run this smoke checklist:
+Скриншоты интерфейса можно разместить в `docs/assets/` после подготовки изображений интерфейса.
 
-- Install the generated `desktop-release/*.exe` installer.
-- Launch the app from the Desktop shortcut.
-- Launch the app from the Start Menu shortcut.
-- Upload an image through the app's file picker.
-- Generate layouts for the supported formats.
-- Export SVG, PNG, PDF, and ZIP outputs where those export options are available.
-- Restart the desktop app and verify the saved project/state is restored from localStorage.
-- Verify the website dev workflow still starts with `npm run dev`.
-- Verify the website production build still succeeds with `npm run build`.
+## Документация
 
-Desktop release notes:
+- [Методология экспериментальной проверки](docs/research-testing-methodology.md)
+- [Воспроизводимость результатов](docs/reproducibility.md)
+- [Заметки для защиты](docs/defense-notes.md)
 
-- ASAR packaging is disabled intentionally because local Windows build limitations blocked electron-builder's ASAR integrity rewrite step in this environment.
-- The installer is unsigned.
-- Windows SmartScreen may show a warning for the unsigned installer.
-- This is acceptable for local/demo usage; production distribution should add a proper app icon and code signing.
-
-## Coverage
-
-```bash
-npx vitest run --coverage
-```
-
-Focus modules for regression protection:
-
-- `buildScene`
-- `composition`
-- `fixLayout`
-- `paletteFromImage`
-- `serialize`
