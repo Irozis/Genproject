@@ -133,7 +133,7 @@ describe('score and select layout candidates', () => {
     expect(decision.rejected.some((evaluation) => evaluation.candidate.id === brokenHero.id)).toBe(true)
   })
 
-  it('selects the lowest score when all candidates have critical issues', () => {
+  it('prioritizes fewer critical issues before actions to fix when all candidates have critical issues', () => {
     const format = formatById('horizontal-1200x628')
     const candidates = generateLayoutCandidates(sampleSourceMaterial, format)
     const split = candidateByName(candidates, 'split')
@@ -150,7 +150,13 @@ describe('score and select layout candidates', () => {
     const splitEvaluation = evaluateLayoutCandidate(brokenSplit, format)
     const heroEvaluation = evaluateLayoutCandidate(badlyBrokenHero, format)
     const decision = selectBestLayoutCandidate([badlyBrokenHero, brokenSplit], format)
-    const expectedBest = [splitEvaluation, heroEvaluation].sort((first, second) => first.score - second.score)[0]
+    const expectedBest = [splitEvaluation, heroEvaluation].sort((first, second) => {
+      if (first.criticalCount !== second.criticalCount) {
+        return first.criticalCount - second.criticalCount
+      }
+
+      return calculateActionsToFix(first).actionsToFix - calculateActionsToFix(second).actionsToFix
+    })[0]
 
     expect(expectedBest).toBeDefined()
     expect(decision.selected.candidate.id).toBe(expectedBest?.candidate.id)

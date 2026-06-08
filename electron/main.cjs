@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell } = require('electron')
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
-const APP_TITLE = 'Ad Layout Generator'
+const APP_TITLE = 'Genproject Demo'
 const DEV_SERVER_URL = 'http://localhost:5173'
 
 function getIconPath() {

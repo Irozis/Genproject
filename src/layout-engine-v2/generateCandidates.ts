@@ -20,6 +20,7 @@ import {
   getGap,
   getImageTopZones,
   getLogoOnlyZones,
+  getMinElementGap,
   getSafeRect,
   getSplitZones,
 } from './rules'
@@ -31,6 +32,7 @@ interface ElementPlacement {
 }
 
 interface TextStack {
+  badge: ElementPlacement
   headline: ElementPlacement
   subtitle: ElementPlacement
   cta: ElementPlacement
@@ -114,74 +116,132 @@ function placeTextStack(
   format: FormatSpecV2,
   zone: LayoutRect,
   options: {
+    badgeVisible?: boolean
     subtitleVisible?: boolean
     ctaVisible?: boolean
   } = {},
 ): TextStack {
   const safeZone = positiveRectInside(zone, format)
-  const gap = getGap(format)
+  const badgeTextGap = getMinElementGap(format, 'badgeText')
+  const textTextGap = getMinElementGap(format, 'textText')
+  const textCtaGap = getMinElementGap(format, 'textCta')
+  const headlineCtaGap = getMinElementGap(format, 'headlineCta')
   const fontSizes = getBaseFontSizes(format)
 
+  const badge = findElementByRole(source, 'badge')
   const headline = findElementByRole(source, 'headline')
   const subtitle = findElementByRole(source, 'subtitle')
   const cta = findElementByRole(source, 'cta')
 
+  const badgeMinHeight = minVisibleHeight(badge, 24)
   const headlineMinHeight = minVisibleHeight(headline, 48)
   const subtitleMinHeight = minVisibleHeight(subtitle, 40)
   const ctaMinHeight = minVisibleHeight(cta, 32)
 
-  const headlineHeight = Math.min(
-    safeZone.height,
-    Math.max(Math.min(headlineMinHeight, safeZone.height), fontSizes.headline * 1.25),
-  )
+  const badgeHeight = Math.max(badgeMinHeight, fontSizes.badge * 1.5)
+  const headlineHeight = Math.max(headlineMinHeight, fontSizes.headline * 1.25)
+  const subtitleHeight = Math.max(subtitleMinHeight, fontSizes.subtitle * 1.35)
+  const ctaHeight = Math.max(ctaMinHeight, fontSizes.cta * 1.55)
 
-  let cursorY = safeZone.y + headlineHeight + gap
-  let remainingHeight = Math.max(0, safeZone.y + safeZone.height - cursorY)
+  const canAttemptBadge = options.badgeVisible !== false && badge !== undefined
+  const canAttemptSubtitle = options.subtitleVisible !== false && subtitle !== undefined
+  const canAttemptCta = options.ctaVisible !== false && cta !== undefined
 
-  const canShowSubtitle = options.subtitleVisible !== false && remainingHeight >= subtitleMinHeight
-  const subtitleHeight = canShowSubtitle ? Math.min(remainingHeight, Math.max(subtitleMinHeight, fontSizes.subtitle * 1.35)) : 0
+  const stackHeight = (state: { badge: boolean; subtitle: boolean; cta: boolean }) => {
+    let height = headlineHeight
 
-  if (canShowSubtitle) {
-    cursorY += subtitleHeight + gap
-    remainingHeight = Math.max(0, safeZone.y + safeZone.height - cursorY)
+    if (state.badge) {
+      height += badgeHeight + badgeTextGap
+    }
+
+    if (state.subtitle) {
+      height += textTextGap + subtitleHeight
+    }
+
+    if (state.cta) {
+      height += (state.subtitle ? textCtaGap : headlineCtaGap) + ctaHeight
+    }
+
+    return height
   }
 
-  const canShowCta = options.ctaVisible !== false && remainingHeight >= ctaMinHeight
-  const ctaHeight = canShowCta ? Math.min(remainingHeight, Math.max(ctaMinHeight, fontSizes.cta * 1.55)) : 0
+  const ctaMayBeHidden = cta?.priority !== 'required'
+  const fallbackState = { badge: false, subtitle: false, cta: false }
+  const states = [
+    { badge: canAttemptBadge, subtitle: canAttemptSubtitle, cta: canAttemptCta },
+    { badge: canAttemptBadge, subtitle: false, cta: canAttemptCta },
+    { badge: false, subtitle: false, cta: canAttemptCta },
+    { badge: false, subtitle: false, cta: canAttemptCta && !ctaMayBeHidden },
+    fallbackState,
+  ]
+  const selectedState = states.find((state) => stackHeight(state) <= safeZone.height) ?? fallbackState
+
+  let cursorY = safeZone.y
+
+  const badgeRect = selectedState.badge
+    ? {
+        x: safeZone.x,
+        y: cursorY,
+        width: safeZone.width,
+        height: Math.min(badgeHeight, safeZone.height),
+      }
+    : ZERO_RECT
+
+  if (selectedState.badge) {
+    cursorY += badgeRect.height + badgeTextGap
+  }
+
+  const headlineRect = {
+    x: safeZone.x,
+    y: cursorY,
+    width: safeZone.width,
+    height: Math.min(headlineHeight, Math.max(1, safeZone.y + safeZone.height - cursorY)),
+  }
+
+  cursorY += headlineRect.height
+
+  const subtitleRect = selectedState.subtitle
+    ? {
+        x: safeZone.x,
+        y: cursorY + textTextGap,
+        width: safeZone.width,
+        height: Math.min(subtitleHeight, Math.max(1, safeZone.y + safeZone.height - cursorY - textTextGap)),
+      }
+    : ZERO_RECT
+
+  if (selectedState.subtitle) {
+    cursorY = subtitleRect.y + subtitleRect.height
+  }
+
+  const ctaGap = selectedState.subtitle ? textCtaGap : headlineCtaGap
+  const ctaRect = selectedState.cta
+    ? {
+        x: safeZone.x,
+        y: cursorY + ctaGap,
+        width: safeZone.width,
+        height: Math.min(ctaHeight, Math.max(1, safeZone.y + safeZone.height - cursorY - ctaGap)),
+      }
+    : ZERO_RECT
 
   return {
+    badge: {
+      rect: badgeRect,
+      visible: selectedState.badge,
+      fontSize: fontSizes.badge,
+    },
     headline: {
-      rect: {
-        x: safeZone.x,
-        y: safeZone.y,
-        width: safeZone.width,
-        height: headlineHeight,
-      },
+      rect: headlineRect,
       visible: true,
       fontSize: fontSizes.headline,
     },
     subtitle: {
-      rect: canShowSubtitle
-        ? {
-            x: safeZone.x,
-            y: safeZone.y + headlineHeight + gap,
-            width: safeZone.width,
-            height: subtitleHeight,
-          }
-        : ZERO_RECT,
-      visible: canShowSubtitle,
+      rect: subtitleRect,
+      visible: selectedState.subtitle,
       fontSize: fontSizes.subtitle,
     },
     cta: {
-      rect: canShowCta
-        ? {
-            x: safeZone.x,
-            y: cursorY,
-            width: safeZone.width,
-            height: ctaHeight,
-          }
-        : ZERO_RECT,
-      visible: canShowCta,
+      rect: ctaRect,
+      visible: selectedState.cta,
       fontSize: fontSizes.cta,
     },
   }
@@ -230,6 +290,10 @@ function buildSplitCandidate(source: SourceMaterialV2, format: FormatSpecV2): La
       return textStack.headline
     }
 
+    if (element.role === 'badge') {
+      return textStack.badge
+    }
+
     if (element.role === 'subtitle') {
       return textStack.subtitle
     }
@@ -268,6 +332,10 @@ function buildImageTopCandidate(source: SourceMaterialV2, format: FormatSpecV2):
         return textStack.headline
       }
 
+      if (element.role === 'badge') {
+        return textStack.badge
+      }
+
       if (element.role === 'subtitle') {
         return textStack.subtitle
       }
@@ -291,6 +359,7 @@ function buildCompactCandidate(source: SourceMaterialV2, format: FormatSpecV2): 
   const cta = findElementByRole(source, 'cta')
   const ctaVisible = zones.ctaZone.width >= (cta?.minWidth ?? 54) && zones.ctaZone.height >= (cta?.minHeight ?? 32)
   const imageVisible = zones.imageZone.width > 0 && zones.imageZone.height > 0
+  const logoVisible = zones.logoZone.width > 0 && zones.logoZone.height > 0
 
   return buildCandidate(
     source,
@@ -303,11 +372,15 @@ function buildCompactCandidate(source: SourceMaterialV2, format: FormatSpecV2): 
       }
 
       if (element.role === 'logo') {
-        return { rect: zones.logoZone, visible: true }
+        return { rect: logoVisible ? zones.logoZone : ZERO_RECT, visible: logoVisible }
       }
 
       if (element.role === 'headline') {
         return { rect: zones.headlineZone, visible: true, fontSize: fontSizes.headline }
+      }
+
+      if (element.role === 'badge') {
+        return { rect: ZERO_RECT, visible: false, fontSize: fontSizes.badge }
       }
 
       if (element.role === 'subtitle') {
@@ -381,6 +454,10 @@ function buildLogoOnlyCandidate(source: SourceMaterialV2, format: FormatSpecV2):
         }
       }
 
+      if (element.role === 'badge') {
+        return { rect: ZERO_RECT, visible: false, fontSize: fontSizes.badge }
+      }
+
       if (element.role === 'subtitle') {
         return { rect: ZERO_RECT, visible: false, fontSize: fontSizes.subtitle }
       }
@@ -433,6 +510,10 @@ function buildHeroCandidate(source: SourceMaterialV2, format: FormatSpecV2): Lay
 
       if (element.role === 'headline') {
         return textStack.headline
+      }
+
+      if (element.role === 'badge') {
+        return textStack.badge
       }
 
       if (element.role === 'subtitle') {
@@ -498,6 +579,10 @@ function buildTextPriorityCandidate(source: SourceMaterialV2, format: FormatSpec
         return textStack.headline
       }
 
+      if (element.role === 'badge') {
+        return textStack.badge
+      }
+
       if (element.role === 'subtitle') {
         return textStack.subtitle
       }
@@ -557,6 +642,10 @@ function buildImagePriorityCandidate(source: SourceMaterialV2, format: FormatSpe
 
       if (element.role === 'headline') {
         return textStack.headline
+      }
+
+      if (element.role === 'badge') {
+        return textStack.badge
       }
 
       if (element.role === 'subtitle') {

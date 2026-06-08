@@ -23,6 +23,27 @@ export function getGap(format: FormatSpecV2): number {
   return clamp(base, 8, 48)
 }
 
+export function getMinElementGap(
+  format: FormatSpecV2,
+  pair: 'badgeText' | 'textText' | 'textCta' | 'headlineCta' | 'imageText',
+): number {
+  const shortestSide = Math.min(format.width, format.height)
+
+  if (pair === 'badgeText' || pair === 'textText') {
+    return clamp(shortestSide * 0.025, 4, 8)
+  }
+
+  if (pair === 'textCta') {
+    return clamp(shortestSide * 0.035, 8, 12)
+  }
+
+  if (pair === 'headlineCta') {
+    return clamp(shortestSide * 0.04, 10, 16)
+  }
+
+  return clamp(shortestSide * 0.035, 8, 12)
+}
+
 export function getMinTextWidth(format: FormatSpecV2): number {
   if (format.group === 'small' || format.group === 'wide') {
     return Math.max(80, format.width * 0.18)
@@ -40,12 +61,14 @@ export function getMinImageWidth(format: FormatSpecV2): number {
 }
 
 export function getBaseFontSizes(format: FormatSpecV2): {
+  badge: number
   headline: number
   subtitle: number
   cta: number
 } {
   if (format.group === 'small' || format.group === 'wide') {
     return {
+      badge: clamp(format.height * 0.2, 8, 14),
       headline: clamp(format.height * 0.38, 12, 24),
       subtitle: clamp(format.height * 0.24, 8, 16),
       cta: clamp(format.height * 0.24, 8, 16),
@@ -53,6 +76,7 @@ export function getBaseFontSizes(format: FormatSpecV2): {
   }
 
   return {
+    badge: clamp(format.width * 0.024, 9, 24),
     headline:
       format.group === 'vertical'
         ? clamp(format.width * 0.065, 18, 76)
@@ -102,7 +126,7 @@ export function canUseLogoOnly(format: FormatSpecV2): boolean {
 
 export function canUseTextPriority(format: FormatSpecV2): boolean {
   const safeRect = getSafeRect(format)
-  const canUseGroup = format.group === 'vertical' || format.group === 'square' || format.group === 'horizontal'
+  const canUseGroup = format.group === 'square' || format.group === 'horizontal'
 
   return canUseGroup && safeRect.width >= 220 && safeRect.height >= 220
 }
@@ -155,8 +179,8 @@ export function getImageTopZones(format: FormatSpecV2): {
   logoZone: LayoutRect
 } {
   const safeRect = getSafeRect(format)
-  const gap = getGap(format)
-  const imageHeight = safeRect.height * 0.48
+  const gap = getMinElementGap(format, 'imageText')
+  const imageHeight = format.group === 'vertical' ? safeRect.height * 0.54 : safeRect.height * 0.48
   const textY = safeRect.y + imageHeight + gap
   const textHeight = Math.max(0, safeRect.y + safeRect.height - textY)
   const logoHeight = Math.min(72, safeRect.height * 0.1)
@@ -192,6 +216,48 @@ export function getCompactZones(format: FormatSpecV2): {
 } {
   const safeRect = getSafeRect(format)
   const gap = getGap(format)
+  const isStackedCompact = safeRect.height >= 120 && safeRect.width <= 240 && safeRect.height >= safeRect.width * 0.75
+
+  if (isStackedCompact) {
+    const imageTextGap = getMinElementGap(format, 'imageText')
+    const headlineCtaGap = getMinElementGap(format, 'headlineCta')
+    const ctaHeight = clamp(safeRect.height * 0.2, 28, 40)
+    const headlineHeight = clamp(safeRect.height * 0.22, 30, 48)
+    const availableForImage = safeRect.height - headlineHeight - ctaHeight - imageTextGap - headlineCtaGap
+    const imageHeight = Math.max(0, availableForImage)
+    const imageVisibleHeight = imageHeight >= 40 ? imageHeight : Math.max(0, safeRect.height - headlineHeight - imageTextGap)
+    const headlineY = safeRect.y + imageVisibleHeight + imageTextGap
+    const ctaY = headlineY + headlineHeight + headlineCtaGap
+    const canReserveCta = ctaY + ctaHeight <= safeRect.y + safeRect.height
+
+    return {
+      logoZone: {
+        x: safeRect.x,
+        y: safeRect.y,
+        width: 0,
+        height: 0,
+      },
+      imageZone: {
+        x: safeRect.x,
+        y: safeRect.y,
+        width: safeRect.width,
+        height: imageVisibleHeight,
+      },
+      headlineZone: {
+        x: safeRect.x,
+        y: headlineY,
+        width: safeRect.width,
+        height: headlineHeight,
+      },
+      ctaZone: {
+        x: safeRect.x,
+        y: canReserveCta ? ctaY : safeRect.y + safeRect.height,
+        width: safeRect.width,
+        height: canReserveCta ? ctaHeight : 0,
+      },
+    }
+  }
+
   const logoWidth = clamp(safeRect.width * 0.18, 40, 96)
   const ctaWidth = clamp(safeRect.width * 0.22, 54, 120)
   const imageWidth = safeRect.width >= 520 ? safeRect.width * 0.2 : 0

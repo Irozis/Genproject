@@ -1,0 +1,19 @@
+Demo source material for Genproject defense
+
+Brand: Atlas Demo
+Product: modular desk organizer
+Campaign: Spring workspace refresh
+Headline: Organize your workspace in one click
+Subtitle: Clean product creatives for social, marketplace, and banner placements.
+CTA: Try the demo
+Badge: Demo kit
+
+Suggested image:
+demo-data/images/product-square.svg
+
+Suggested formats:
+- VK square
+- Instagram story
+- Yandex Market card
+- Ozon card
+- Avito listing

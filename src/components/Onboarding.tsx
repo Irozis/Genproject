@@ -17,7 +17,7 @@ export function Onboarding({ onCreate, onImportJson, recentProjects, onOpenRecen
   return (
     <div className="onboarding" data-testid="app-start">
       <header className="onboarding__brand">
-        <img className="app-logo app-logo--onboarding" src="/app-logo.png" alt="" aria-hidden="true" />
+        <img className="app-logo app-logo--onboarding" src="./app-logo.png" alt="" aria-hidden="true" />
         <span>Ad Layout Generator</span>
       </header>
 

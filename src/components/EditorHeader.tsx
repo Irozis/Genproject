@@ -52,7 +52,7 @@ export function EditorHeader({
         <span>Назад</span>
       </button>
       <div className="editor-header__brand" aria-label="Ad Layout Generator">
-        <img className="app-logo app-logo--header" src="/app-logo.png" alt="" aria-hidden="true" />
+        <img className="app-logo app-logo--header" src="./app-logo.png" alt="" aria-hidden="true" />
         <span>Ad Layout Generator</span>
       </div>
       <input

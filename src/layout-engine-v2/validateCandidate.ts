@@ -1,4 +1,4 @@
-import { getSafeRect } from './rules'
+import { getMinElementGap, getSafeRect } from './rules'
 import { ISSUE_PENALTIES } from './penalties'
 import type {
   FormatSpecV2,
@@ -85,6 +85,25 @@ function intersectionArea(a: LayoutRect, b: LayoutRect): number {
   return (right - left) * (bottom - top)
 }
 
+function rectDistance(a: LayoutRect, b: LayoutRect): number {
+  if (intersectionArea(a, b) > 0) {
+    return 0
+  }
+
+  const horizontalGap = Math.max(b.x - (a.x + a.width), a.x - (b.x + b.width), 0)
+  const verticalGap = Math.max(b.y - (a.y + a.height), a.y - (b.y + b.height), 0)
+
+  if (horizontalGap === 0) {
+    return verticalGap
+  }
+
+  if (verticalGap === 0) {
+    return horizontalGap
+  }
+
+  return Math.sqrt(horizontalGap ** 2 + verticalGap ** 2)
+}
+
 function rectArea(rect: LayoutRect): number {
   return Math.max(0, rect.width) * Math.max(0, rect.height)
 }
@@ -107,6 +126,10 @@ function overlapRatio(a: LayoutRect, b: LayoutRect): number {
 
 function issueSeverityForElement(element: LayoutElement): ValidationSeverity {
   return element.priority === 'optional' ? 'warning' : 'critical'
+}
+
+function issueSeverityForPair(first: LayoutElement, second: LayoutElement): ValidationSeverity {
+  return first.priority === 'required' || second.priority === 'required' ? 'critical' : 'warning'
 }
 
 function validateMissingRequired(candidate: LayoutCandidate): ValidationIssue[] {
@@ -252,7 +275,7 @@ function validateOverlap(candidate: LayoutCandidate): ValidationIssue[] {
       issues.push(
         createIssue({
           type: 'overlap',
-          severity: first.priority === 'required' || second.priority === 'required' ? 'critical' : 'warning',
+          severity: issueSeverityForPair(first, second),
           elementId: first.id,
           relatedElementId: second.id,
           message: `Elements "${first.id}" and "${second.id}" overlap by ${(ratio * 100).toFixed(1)}%.`,
@@ -260,6 +283,78 @@ function validateOverlap(candidate: LayoutCandidate): ValidationIssue[] {
       )
     }
   }
+
+  return issues
+}
+
+function findVisibleRole(candidate: LayoutCandidate, role: LayoutElementRole): LayoutElement | undefined {
+  return candidate.elements.find((element) => element.role === role && isVisible(element))
+}
+
+function validateImportantSpacing(candidate: LayoutCandidate, format: FormatSpecV2): ValidationIssue[] {
+  const issues: ValidationIssue[] = []
+  const checkedPairs = new Set<string>()
+
+  const addPairIssue = (first: LayoutElement | undefined, second: LayoutElement | undefined, minGap: number) => {
+    if (!first || !second) {
+      return
+    }
+
+    const pairKey = [first.id, second.id].sort().join(':')
+
+    if (checkedPairs.has(pairKey)) {
+      return
+    }
+
+    checkedPairs.add(pairKey)
+
+    const intersection = intersectionArea(first.rect, second.rect)
+
+    if (intersection > 0) {
+      const smallerArea = Math.min(rectArea(first.rect), rectArea(second.rect))
+      const ratio = smallerArea > 0 ? intersection / smallerArea : 0
+
+      issues.push(
+        createIssue({
+          type: 'overlap',
+          severity: issueSeverityForPair(first, second),
+          elementId: first.id,
+          relatedElementId: second.id,
+          message: `Important elements "${first.id}" and "${second.id}" intersect by ${(ratio * 100).toFixed(1)}%.`,
+        }),
+      )
+      return
+    }
+
+    const distance = rectDistance(first.rect, second.rect)
+
+    if (distance + 0.1 < minGap) {
+      issues.push(
+        createIssue({
+          type: 'overlap',
+          severity: 'warning',
+          elementId: first.id,
+          relatedElementId: second.id,
+          message: `Important elements "${first.id}" and "${second.id}" are ${distance.toFixed(1)}px apart, below minimum ${minGap.toFixed(1)}px.`,
+        }),
+      )
+    }
+  }
+
+  const headline = findVisibleRole(candidate, 'headline')
+  const cta = findVisibleRole(candidate, 'cta')
+  const image = findVisibleRole(candidate, 'image')
+  const subtitle = findVisibleRole(candidate, 'subtitle')
+  const badge = findVisibleRole(candidate, 'badge')
+
+  addPairIssue(badge, headline, getMinElementGap(format, 'badgeText'))
+  addPairIssue(badge, subtitle, getMinElementGap(format, 'textText'))
+  addPairIssue(badge, cta, getMinElementGap(format, 'textCta'))
+  addPairIssue(headline, subtitle, getMinElementGap(format, 'textText'))
+  addPairIssue(subtitle, cta, getMinElementGap(format, 'textCta'))
+  addPairIssue(headline, cta, getMinElementGap(format, 'headlineCta'))
+  addPairIssue(image, headline, getMinElementGap(format, 'imageText'))
+  addPairIssue(image, subtitle, getMinElementGap(format, 'imageText'))
 
   return issues
 }
@@ -332,7 +427,9 @@ function validateEmptySpace(candidate: LayoutCandidate, format: FormatSpecV2): V
 
   const occupiedRatio = occupiedArea / canvasArea
 
-  if (occupiedRatio >= 0.08) {
+  const minUsefulRatio = format.group === 'small' || format.group === 'wide' ? 0.12 : 0.18
+
+  if (occupiedRatio >= minUsefulRatio) {
     return []
   }
 
@@ -340,7 +437,7 @@ function validateEmptySpace(candidate: LayoutCandidate, format: FormatSpecV2): V
     createIssue({
       type: 'empty_space',
       severity: 'warning',
-      message: `Candidate "${candidate.name}" uses only ${(occupiedRatio * 100).toFixed(1)}% of the canvas area.`,
+      message: `Candidate "${candidate.name}" has excessive_empty_space: uses only ${(occupiedRatio * 100).toFixed(1)}% of the canvas area.`,
     }),
   ]
 }
@@ -352,6 +449,7 @@ export function validateLayoutCandidate(candidate: LayoutCandidate, format: Form
     ...validateUnsafeZone(candidate, format),
     ...validateTextSize(candidate),
     ...validateOverlap(candidate),
+    ...validateImportantSpacing(candidate, format),
     ...validateHiddenOptional(candidate),
     ...validateExcessiveCrop(candidate),
     ...validateEmptySpace(candidate, format),

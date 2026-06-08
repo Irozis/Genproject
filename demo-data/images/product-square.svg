@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200">
+  <rect width="1200" height="1200" fill="#f8fafc"/>
+  <rect x="190" y="190" width="820" height="820" rx="90" fill="#10b981"/>
+  <circle cx="780" cy="420" r="180" fill="#fbbf24"/>
+  <text x="285" y="720" font-family="Arial" font-size="120" font-weight="700" fill="#ffffff">Square</text>
+</svg>

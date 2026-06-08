@@ -14,6 +14,7 @@
     "desktop:build": "npm run build:desktop && electron-builder --win",
     "desktop:dist": "npm run build:desktop && electron-builder --win nsis",
     "desktop:pack": "npm run build:desktop && electron-builder --dir",
+    "dist:portable": "npm run build:desktop && electron-builder --win portable --dir && tsx scripts/preparePortableDemo.ts",
     "experiment": "tsx scripts/runExperiment.ts",
     "research:report": "tsx scripts/generateResearchReport.ts",
     "experiment:png": "tsx scripts/validatePngExports.ts",
@@ -52,20 +53,40 @@
     "wait-on": "^9.0.10"
   },
   "build": {
-    "appId": "local.ad-layout-generator",
-    "productName": "Ad Layout Generator",
+    "appId": "local.genproject.demo",
+    "productName": "Genproject Demo",
     "asar": false,
     "directories": {
-      "output": "desktop-release"
+      "output": "release"
     },
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "demo-data/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "demo-data",
+        "to": "demo-data"
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "demo-data",
+        "to": "demo-data"
+      },
+      {
+        "from": "README_ЗАПУСК.txt",
+        "to": "README_ЗАПУСК.txt"
+      }
     ],
     "win": {
       "icon": "public/app-logo.ico",
-      "target": "nsis",
+      "target": [
+        "portable",
+        "dir"
+      ],
       "signAndEditExecutable": false
     },
     "nsis": {
@@ -74,7 +95,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Ad Layout Generator"
+      "shortcutName": "Genproject Demo"
     }
   }
 }
